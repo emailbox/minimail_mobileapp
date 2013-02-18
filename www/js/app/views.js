@@ -36,7 +36,7 @@ App.Views.Body = Backbone.View.extend({
 
 	events: {
 		'click #refresh_people' : 'refresh_people',
-		'click .logout' : 'logout',
+		// 'click .logout' : 'logout',
 		'click .goto_senders' : 'goto_senders',
 
 		'click .base_header_menu .threads_change button' : 'menu_click',
@@ -2717,7 +2717,7 @@ App.Views.CommonReply = Backbone.View.extend({
 
 			});
 		}
-		
+
 		if(usePg){
 			alert('Photos unavailable');
 			return false;
@@ -5836,12 +5836,11 @@ App.Views.SendersList = Backbone.View.extend({
 });
 
 App.Views.Logout = Backbone.View.extend({
-	
-	el: 'body',
+
+	className: 'logout',
 
 	events: {
-		'click a' : 'logout' // composing new email,
-
+		'click #logout' : 'logout' // logging out
 	},
 
 	initialize: function() {
@@ -5849,8 +5848,11 @@ App.Views.Logout = Backbone.View.extend({
 
 	},
 
-	logout: function(){
+	logout: function(ev){
+		// This doesn't work at all
+		// - just stopped working completely for some reason
 
+		alert('logout clicked');
 		Backbone.history.loadUrl('logout');
 		return false;
 
@@ -5858,19 +5860,31 @@ App.Views.Logout = Backbone.View.extend({
 
 	render: function(){
 		var that = this;
-		// Remove any previous one
-		$('.logout').remove();
 
+		// Remove any previous one
+		// $('.logout').remove();
+
+		// Build from template
 		var template = App.Utils.template('t_logout');
 
-		this.$el.append(template());
+		// Write HTML
+		that.$el.html(template());
 
-		that.$el.find('div.logout').addClass('display');
+		// Show logout
+		that.$el.addClass('display');
 
-		that.$el.find('div.logout').transition({
-			y: '150px',
+		that.$el.transition({
+			top: '150px',
 			opacity: 1
 		},'fast');
+		
+		// Just show a logout dialog box
+		var p = confirm('Logout?');
+		if(p){
+			Backbone.history.loadUrl('logout');
+		} else {
+			that.close();
+		}
 
 		return this;
 	}

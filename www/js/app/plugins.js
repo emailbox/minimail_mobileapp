@@ -32,7 +32,6 @@ App.Plugins.Minimail = {
 				if(jData.code != 200){
 					//Failed logging in
 					clog('==failed logging in');
-
 					dfd.reject(false);
 					return;
 				}
@@ -49,6 +48,7 @@ App.Plugins.Minimail = {
 				// Resolve previous promise
 				dfd.resolve(true);
 
+				// Subscribe to push notifications
 				if(useForge){
 					// alert('subscribing');
 					forge.partners.parse.push.subscribe('c_' + App.Credentials.app_user.id,
@@ -60,6 +60,11 @@ App.Plugins.Minimail = {
 						}
 					);
 				}
+				if(usePg){
+					// todo...
+				}
+
+
 			}
 		};
 

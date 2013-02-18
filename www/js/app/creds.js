@@ -15,6 +15,6 @@ var tmp_credentials = {
 	thread_move_x_threshold: 0.2,
 	thread_move_y_threshold: 40, 
 
-	minimail_server: 'http://minimail.getemailbox.com'
+	minimail_server: 'https://minimail.herokuapp.com'
 
 };

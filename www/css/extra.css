@@ -819,25 +819,33 @@ body.console {
 
 /* Logout modal */
 
+#logout {
+  background: blue;
+  z-index: 200000;
+}
+
 .logout {
   display: none;
+  /*display: block;*/
   position: fixed;
   top: 40px;
-  opacity: .2;
+  opacity: .5;
 
   width: 100%;
   margin: 0pt auto;
 
+  z-index: 100000;
+
   text-align: center;
 }
 
-.logout > p {
+/*.logout > p {
   display: inline-block;
   background: white;
   border: 1px solid #fafafa;
 
   padding: 20px;
-}
+}*/
 
 .logout.display {
   display: block;

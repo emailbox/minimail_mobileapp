@@ -322,6 +322,7 @@ App.Router = Backbone.Router.extend({
 			$('div.logout').remove();
 		} else {
 			var page = new App.Views.Logout();
+			$('body').append(page.$el);
 			App.router.showView('logout',page);
 		}
 	},
@@ -350,6 +351,18 @@ App.Router = Backbone.Router.extend({
 					});
 
 				});
+
+		} else if(usePg) {
+
+			// Unsubscribe from Push Notifications
+			// - todo...
+
+			// Clear preferences
+			window.localStorage.clear();
+
+			// Clear HTML
+			$('body').html('');
+			window.location = [location.protocol, '//', location.host, location.pathname].join('');
 
 		} else {
 			localStorage.setItem(App.Credentials.prefix_user_token + 'user_token','');
