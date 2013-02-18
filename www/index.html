@@ -1,0 +1,2099 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+	<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>
+		Minimail
+	</title>
+
+	<!-- Using local development -->
+
+    <script src="cordova-2.4.0.js"></script>
+    <script src="childbrowser_local.js"></script>
+
+
+	
+
+	<!-- Using build.phonegap.com -->
+<!--
+    <script src="phonegap.js"></script>
+    <script src="childbrowser.js"></script>
+-->
+
+    <script src="PushNotification.js"></script>
+
+	<!--
+	<link rel="stylesheet/less" type="text/css" href="css/less/bootstrap.less">
+	-->
+
+	<script src="https://getemailbox.com/socket.io/socket.io.js"></script>
+
+	<!-- FilePicker -->
+	
+	<script type="text/javascript" src="filepicker.0.0.1.js"></script>
+	<!--
+	<script type="text/javascript">
+	(function(a){if(window.filepicker){return}var b=a.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===a.location.protocol?"https:":"http:")+"//api.filepicker.io/v1/filepicker.js";var c=a.getElementsByTagName("script")[0];c.parentNode.insertBefore(b,c);var d={};d._queue=[];var e="pick,pickMultiple,pickAndStore,read,write,writeUrl,export,convert,store,storeUrl,remove,stat,setKey,constructWidget,makeDropPane".split(",");var f=function(a,b){return function(){b.push([a,arguments])}};for(var g=0;g<e.length;g++){d[e[g]]=f(e[g],d._queue)}window.filepicker=d})(document); 
+	</script>
+	-->
+
+
+	<link href="css/bootstrap.css" type="text/css" rel="stylesheet"> <!-- Uncomment below if switching to Less-compiled -->
+
+	<!-- Extra.css needs to be below less compiler -->
+	<link href="css/extra.css" type="text/css" rel="stylesheet">
+	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
+
+	<script src="js/app/creds.js"></script>
+
+	<script src="js/libs/jquery-1.7.2.min.js"></script>
+	<script src="js/libs/jquery-ui-1.8.21.custom.min.js"></script>
+	<script src="js/libs/modernizr.2.6.2.dev.js"></script>
+	<script src="js/libs/json2.js"></script>
+	<script src="js/libs/dateFormat.js"></script>
+	<script src="js/libs/underscore-1.3.3.min.js"></script>
+	<script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
+
+	<script src="js/libs/backbone-0.9.2.js"></script>
+	<script src="js/libs/backbone.localStorage-min.js"></script>
+	<script src="js/libs/backbone.touch.js"></script>
+
+	<script src="js/libs/json-formatter.js"></script>
+	<script src="js/libs/date.js"></script>
+	<!-- http://momentjs.com/  would be an alternative -->
+
+	<script src="js/bootstrap/bootstrap-modal.js"></script>
+
+	<!--<script src="js/libs/jquery.ajaxQueue.js"></script>-->
+	<script src="js/libs/jquery.ajaxManager.js"></script>
+	<script src="js/libs/jquery.base64.js"></script>
+	
+	<!--<script src="js/libs/jquery.masonry-2.1.05.min.js"></script>-->
+	<script src="js/libs/jquery.imagesloaded.min.js"></script>
+	<script src="js/libs/jquery.transit.min.js"></script>
+	<script src="js/libs/jquery.scrollTo.min.js"></script>
+
+	<!-- FancyBox -->
+	<!--<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
+	<link rel="stylesheet" href="js/libs/fancybox//jquery.fancybox.css?v=2.1.3" type="text/css" media="screen" />
+	<script type="text/javascript" src="js/libs/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>-->
+
+	<script src="js/libs/jquery.ui.touch.punch.js"></script>
+
+	
+	<!-- <script src="libs/jquery.toObject.js"></script> -->
+
+	<script src="js/libs/less-1.3.0.min.js"></script>
+
+	<!--<script src="https://static.firebase.com/v0/firebase.js"></script>-->
+
+	<script src="js/app/app.js"></script>
+	<script src="js/app/utils.js"></script>
+	<script src="js/app/plugins.js"></script>
+	<script src="js/app/models.js"></script>
+	<script src="js/app/collections.js"></script>
+	<script src="js/app/views.js"></script>
+	<script src="js/app/routes.js"></script>
+	<script src="js/app/helpers.js"></script>
+
+
+	<script type="text/javascript">
+
+		var forge_enabled_if_available = true;
+
+		// Testing Forge usage
+		var useForge = false;
+		if(typeof forge !== 'undefined' && forge_enabled_if_available){
+			useForge = true;
+			// forge.enableDebug();
+			onReady();
+		}
+
+		// phonegap/cordova usage
+		var usePg = false;
+		try {
+			if(1==1){
+				usePg = true;
+			}
+		} catch(err){
+
+		}
+		// listener for phonegap
+		document.addEventListener("deviceready", function(){
+			onReady();
+		}, false);
+
+
+		function onReady(){
+
+			$(document).ready(function(){
+				// alert(1);
+				// alert($(window).width()); // 720
+				// alert($(window).height()); // 1230
+				// alert(0);
+				$('body').css('width',$(window).width() + 'px');
+				$('body').css('height',$(window).height() + 'px');
+				App.init();
+			});
+		}
+
+	</script>
+
+	<!--
+	<script src="https://trigger.io/catalyst/target/target-script-min.js#C8DE3C38-EA7F-4D3F-87D1-49E83F01B185"></script>
+	-->
+
+
+
+	<!-- Templates -->
+
+
+
+	<!-- Body Login -->
+	<script id="t_body_login" type="text/x-handlebars-template">
+
+		<div class="container">
+
+			<div class="intro_window">
+
+				<h1>
+					<span>mini</span>mail
+				</h1>
+
+				<br />
+
+				<p class="tagline">
+					Push the Envelope
+				</p>
+
+				<hr>
+
+				<p class="login">
+					<button class="btn btn-info btn-large">Login with Emailbox</button>
+				</p>
+
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<!-- Default Home View -->
+	<script id="t_body" type="text/x-handlebars-template">
+
+		
+		<div class="header">
+					
+			<div class="header_holder clearfix">
+
+				<div class="base_header_menu clearfix">
+					<div class="left">
+						<div class="btn-group pull-right-old">
+							<button data-action="compose" class="btn">
+								<i class="icon-envelope"></i>
+							</button>
+						</div>
+					</div>
+					<div class="center">
+
+						<div class="text-center">
+
+							<div class="btn-group threads_change">
+								
+								{{!
+								<button data-action="undecided" class="btn">
+									<i class="icon-inbox"></i>
+								</button>
+								<button data-action="delayed" class="btn">
+									<i class="icon-time"></i>
+								</button>
+								}}
+
+								<button data-action="all" class="btn">
+									<i class="icon-inbox"></i>
+								</button>
+								<button data-action="leisure" class="btn">
+									<i class="icon-glass"></i>
+								</button>
+								<button data-action="search" class="btn">
+									<i class="icon-search"></i>
+								</button>
+
+								{{!
+								<button data-action="collections" class="btn">
+									<i class="icon-list"></i>
+								</button>
+								}}
+								
+							</div>
+						</div>
+
+					</div>
+					<div class="right">
+						<div class="logo">
+							<span>m</span>M
+						</div>
+					</div>
+				</div>
+					
+
+			</div>
+			
+		</div>
+		
+
+		<div class="body_container">
+
+			<!--
+			<div id="emails">
+
+				<div class="email_list">
+
+					{{#each this}}
+						{{> t_email}}
+					{{/each}}
+
+				</div>
+
+			</div>
+			-->
+
+		</div>
+
+	</script>
+
+
+	<script id="t_email" type="text/x-handlebars-template" class="partial">
+
+		<div class="email">
+
+			{{#if Email.original.attachments.[0].thumbs.basewidth300}}
+				<div class="picture">
+					Picture
+				</div>
+			{{/if}}
+
+			<div class="from">
+				{{Email.original.headers.From_Parsed.[2]}}
+			</div>
+			<div class="subject">
+				{{Email.original.headers.Subject}}
+			</div>
+
+		</div>
+
+	</script>
+
+
+	
+	<script id="t_undecided" type="text/x-handlebars-template">
+
+			{{#Empty this}}
+
+				<div class="inbox_zero">
+					Inbox at Zero
+				</div>
+
+			{{else}}
+
+				<div class="undecided_threads threads_holder">
+
+					<!-- Any Threads? -->
+					{{#NotEmpty this}}
+
+						<div class="top_move">
+
+							&lt;- <span>All</span> -&gt;
+
+						</div>
+
+					{{/NotEmpty}}
+
+					{{#each this}}
+
+						<div class="thread no_text_select" data-id="{{Thread._id}}">
+
+							{{> t_undecided_thread}}
+
+							<div class="thread-bg thread-bg-ok">
+								<i class="icon-ok"></i>
+								<p>
+									Done
+								</p>
+							</div>
+
+							<div class="thread-bg thread-bg-time">
+								<i class="icon-time"></i>
+								<p>
+									&nbsp;
+								</p>
+							</div>
+
+						</div>
+
+					{{/each}}
+
+				</div>
+
+			{{/Empty}}
+
+	</script>
+
+
+	<script id="t_undecided_thread" type="text/x-handlebars-template" class="partial">
+
+
+		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+
+			<div class="clearfix">
+
+				<div class="card-top clearfix">
+
+					<div class="name ellipsis" data-address="{{Thread._id}}">
+						{{thread_participants_pretty Email}}
+					</div>
+
+
+					<div class="received" data-datetime="{{Thread.attributes.last_message_datetime}}">
+						{{display_shorttime Thread.attributes.last_message_datetime}}
+					</div>
+
+				</div>
+
+				<div class="card-middle clearfix">
+
+					<div class="subject ellipsis">
+						{{thread_subject Thread.original.subject}}
+					</div>
+
+				</div>
+
+
+				<div class="card-bottom clearfix">
+					<div class="last_message ellipsis">
+						{{{display_last_message Thread}}}
+					</div>
+
+					<div class="thread_count">
+						{{display_thread_count Email}}
+					</div>
+
+				</div>
+
+			</div>
+
+
+		</div>
+
+
+	</script>
+
+
+	
+	<script id="t_undecided_thread_view" type="text/x-handlebars-template">
+
+			<div class="header">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu undecided_thread_viewing clearfix">
+						<div class="left">
+							<div class="btn-group">
+								<button data-action="back" class="btn">Back</button>
+							</div>
+						</div>
+						<div class="right">
+							<div class="btn-group pull-right">
+								<button data-action="delay" class="btn">
+									<i class="icon-time"></i>
+								</button>
+								<button data-action="done" class="btn">
+									<i class="icon-ok"></i>
+								</button>
+								<button data-action="pin" class="btn">
+									<i class="icon-upload"></i>
+								</button>
+							</div>
+						</div>
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container">
+
+				<div class="loading"></div>
+
+			</div>
+
+			<div class="thread_footer">
+
+				<div class="reply">
+					&lt; reply
+				</div>
+				<div class="forward">
+					forward &gt;
+				</div>
+
+			</div>
+
+	</script>
+
+
+	<script id="t_undecided_thread_view_content" type="text/x-handlebars-template">
+
+		<div class="thread_container">
+
+			<div class="thread_details">
+				<div class="subject">
+					{{thread_subject Thread.original.subject}}
+				</div>
+				
+				<div class="people">
+					{{thread_participants_pretty Email}}
+				</div>
+			</div>
+
+			<div class="emails">
+
+				{{#each Email}}
+
+					<div class="email_holder">
+
+						<div class="email" data-id="{{_id}}">
+							
+
+							<div class="details clearfix">
+								
+								<div class="person">
+									{{thread_from_pretty this}}
+								</div>
+								<div class="time_and_more">
+									{{display_shorttime common.date}}
+								</div>
+
+
+							</div>
+
+							<div class="email_body">
+								
+
+								{{{display_bodies this}}}
+
+
+							</div>
+
+
+
+						</div>
+
+					</div>
+
+				{{/each}}
+
+			</div>
+			
+
+
+		</div>
+
+	</script>
+
+
+	<script id="t_undecided_thread_OLDOLDOLD" type="text/x-handlebars-template" class="partial">
+
+
+		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+
+			<div class="clearfix">
+
+				<div class="card-top">
+
+				</div>
+<!-- OLD VERSION OLD VERSION!!!!!!!!! -->
+				<div class="card-left">
+					
+					<div class="top clearfix">
+
+						<div class="quick_option nodisplay">
+
+						</div>
+
+						<div class="name_and_subject">
+
+							<div class="name ellipsis" data-address="{{Thread._id}}">
+								{{thread_participants_pretty Email}}
+							</div>
+
+							<div class="subject ellipsis">
+								{{thread_subject Thread.original.subject}}
+							</div>
+						</div><!-- OLD VERSION OLD VERSION!!!!!!!!! -->
+
+					</div>
+
+				</div>
+
+				<div class="card-right time_and_count">
+					
+					<div class="received" data-datetime="{{Thread.attributes.last_message_datetime}}">
+						{{display_shorttime Thread.attributes.last_message_datetime}}
+					</div>
+
+					<div class="thread_count">
+						{{display_thread_count Email}}
+					</div>
+
+				</div>
+
+			</div>  <!-- OLD VERSION OLD VERSION!!!!!!!!! -->
+
+
+			<div class="card-bottom">
+				<div class="bottom last_message ellipsis">
+					{{{display_last_message Thread}}}
+				</div>
+			</div>
+
+		</div>
+
+
+	</script>
+
+
+	
+	<script id="t_undecided_init" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+
+
+	<script id="t_delay_modal" type="text/x-handlebars-template">
+
+
+		<div class="overlay">
+			&nbsp;
+		</div>
+		<div class="button_panel">
+			<div class="options clearfix">
+
+				{{#each delay_options}}
+
+					<div class="option {{hide}}" data-type="{{key}}" data-wait="{{wait}}">
+						{{name}}
+					</div>
+
+				{{/each}}
+
+				<div class="option pickadate">
+					Pick a Date<input id="pickadate" type="datetime" class="invisible2"/>
+				</div>
+
+			</div>
+		</div>
+
+	</script>
+
+
+
+	<script id="t_delayed" type="text/x-handlebars-template">
+
+		<div class="">
+			
+			{{#Empty this}}
+
+				Reached Inbox Zero!
+
+			{{else}}
+
+				<div class="delayed_threads threads_holder">
+					{{#each this}}
+
+						<div class="thread no_text_select" data-id="{{Thread._id}}">
+
+							{{> t_delayed_thread}}
+
+							<div class="thread-bg thread-bg-ok">
+								<i class="icon-ok"></i>
+								<p>
+									Done
+								</p>
+							</div>
+
+							<div class="thread-bg thread-bg-time">
+								<i class="icon-time"></i>
+								<p>
+									&nbsp;
+								</p>
+							</div>
+
+						</div>
+
+					{{/each}}
+
+				</div>
+
+			{{/Empty}}
+			
+		</div>
+
+	</script>
+
+
+	
+	<script id="t_delayed_init" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+
+
+
+	<script id="t_delayed_thread" type="text/x-handlebars-template" class="partial">
+
+
+		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+
+			<div class="clearfix">
+
+				<div class="card-top clearfix">
+
+					<div class="name ellipsis" data-address="{{Thread._id}}">
+						{{thread_participants_pretty Email}}
+					</div>
+
+
+					<div class="received" data-datetime="{{Thread.attributes.last_message_datetime}}">
+						{{display_shorttime Thread.attributes.last_message_datetime}}
+					</div>
+
+				</div>
+
+				<div class="card-middle clearfix">
+
+					<div class="subject ellipsis">
+						{{thread_subject Thread.original.subject}}
+					</div>
+
+					<div class="due_ago">
+						<p>
+							{{due_ago Thread.AppPkgDevMinimail.wait_until}} <i class="icon-time"> </i>
+						</p>
+					</div>
+
+				</div>
+
+
+				<div class="card-bottom clearfix">
+					<div class="last_message ellipsis">
+						{{{display_last_message Thread}}}
+					</div>
+
+					<div class="thread_count">
+						{{display_thread_count Email}}
+					</div>
+
+				</div>
+
+			</div>
+
+
+		</div>
+
+
+	</script>
+
+
+
+
+
+	<script id="t_all" type="text/x-handlebars-template">
+
+			
+			{{#Empty this}}
+
+				<div class="inbox_zero">
+					Reached Inbox Zero!
+				</div>
+
+			{{else}}
+
+				<div class="all_threads threads_holder">
+
+					{{! Undecided Threads }}
+					{{#each undecided}}
+
+						<div class="thread no_text_select" data-id="{{Thread._id}}" data-thread-type="undecided">
+
+							{{> t_all_thread}}
+
+							<div class="thread-bg thread-bg-ok">
+								<i class="icon-ok"></i>
+								<p>
+									Done
+								</p>
+							</div>
+
+							<div class="thread-bg thread-bg-time">
+								<i class="icon-time"></i>
+								<p>
+									&nbsp;
+								</p>
+							</div>
+
+						</div>
+
+					{{/each}}
+
+					{{! Delayed Threads }}
+					{{#each delayed}}
+
+						<div class="thread no_text_select" data-id="{{Thread._id}}" data-thread-type="delayed">
+
+							{{> t_all_thread}}
+
+							<div class="thread-bg thread-bg-ok">
+								<i class="icon-ok"></i>
+								<p>
+									Done
+								</p>
+							</div>
+
+							<div class="thread-bg thread-bg-time">
+								<i class="icon-time"></i>
+								<p>
+									&nbsp;
+								</p>
+							</div>
+
+						</div>
+
+					{{/each}}
+
+
+				</div>
+
+			{{/Empty}}
+			
+	</script>
+
+
+	
+	<script id="t_all_init" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+
+
+
+	<script id="t_all_thread" type="text/x-handlebars-template" class="partial">
+
+
+		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+
+			<div class="clearfix">
+
+				<div class="card-top clearfix">
+
+					<div class="name ellipsis" data-address="{{Thread._id}}">
+						{{thread_participants_pretty Email}}
+					</div>
+
+
+					<div class="received" data-datetime="{{Thread.attributes.last_message_datetime}}">
+						{{display_shorttime Thread.attributes.last_message_datetime}}
+					</div>
+
+				</div>
+
+				<div class="card-middle clearfix">
+
+					<div class="subject ellipsis">
+						{{thread_subject Thread.original.subject}}
+					</div>
+
+					<div class="due_ago">
+						<p>
+							{{due_ago Thread.app.AppPkgDevMinimail.wait_until}}
+						</p>
+					</div>
+
+				</div>
+
+
+				<div class="card-bottom clearfix">
+					<div class="last_message ellipsis">
+						{{{display_last_message Thread}}}
+					</div>
+
+					<div class="thread_count">
+						{{display_thread_count Email}}
+					</div>
+
+				</div>
+
+			</div>
+
+
+		</div>
+
+
+	</script>
+
+
+	<script id="t_common_thread_view_loading" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+	
+	<script id="t_common_thread_view" type="text/x-handlebars-template">
+
+			<div class="header">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu undecided_thread_viewing clearfix">
+						<div class="left">
+							<div class="btn-group">
+								<button data-action="back" class="btn">Back</button>
+							</div>
+						</div>
+
+						<div class="center">
+							<div class="btn-group pull-right">
+								<button data-action="leisure" class="btn">
+									<i class="icon-glass"></i>
+								</button>
+							</div>
+						</div>
+
+						<div class="right">
+							<div class="btn-group pull-right">
+								<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn">
+									<i class="icon-time"></i>
+								</button>
+								<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn">
+									<i class="icon-ok"></i>
+								</button>
+								<!--
+								<button data-action="pin" class="btn">
+									<i class="icon-upload"></i>
+								</button>
+								-->
+							</div>
+						</div>
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container">
+
+				{{> t_common_thread_view_content}}
+
+			</div>
+
+			<div class="thread_footer common_thread">
+
+				<div class="reply">
+					<div class="btn">
+						&lt; reply
+					</div>
+
+				</div>
+				<div class="forward">
+					<div class="btn">
+						forward &gt;
+					</div>
+				</div>
+
+			</div>
+
+	</script>
+
+
+	<script id="t_common_thread_view_content" type="text/x-handlebars-template" class="partial">
+
+		<div class="thread_container">
+
+			<div class="thread_details">
+				<div class="subject">
+					{{thread_subject Thread.original.subject}}
+				</div>
+				
+				<div class="people">
+					{{thread_participants_pretty Email}}
+				</div>
+			</div>
+
+			<div class="emails">
+
+				<div class="email_sent_alert alert alert-success text-center nodisplay">
+					<strong>Email sent successfully!</strong> It will appear shortly
+				</div>
+
+				{{#each Email}}
+
+					<div class="email_holder">
+
+						<div class="email" data-id="{{_id}}">
+							
+
+							<div class="details clearfix">
+								
+								<div class="person">
+									{{thread_from_pretty this}}
+								</div>
+								<div class="time_and_more">
+									{{display_shorttime common.date}}
+								</div>
+
+
+							</div>
+
+							<div class="email_body">
+								
+								{{{display_bodies this}}}
+
+							</div>
+
+
+
+						</div>
+
+					</div>
+
+				{{/each}}
+
+			</div>
+			
+
+
+		</div>
+
+	</script>
+
+
+
+	
+	<script id="t_common_edit_email" type="text/x-handlebars-template">
+
+
+		<div class="header at-top">
+					
+			<div class="header_holder clearfix">
+
+				<div class="base_header_menu clearfix">
+					<div class="left">
+						<div class="btn-group">
+							
+						</div>
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn">
+								Cancel
+							</button>
+							<button data-action="save" class="btn btn-success">
+								Save
+							</button>
+						</div>
+					</div>
+				</div>
+					
+
+			</div>
+			
+		</div>
+
+		<div class="body_container nudge_down">
+
+			<br />
+
+			<div class="body">
+
+				<textarea id="textbody" name="textbody">{{textbody}}</textarea>
+
+			</div>
+
+		</div>
+
+
+	</script>
+
+
+
+	
+	<script id="t_common_thread_reply" type="text/x-handlebars-template">
+
+		<div class="common_thread_view nodisplay">
+
+			<div class="header at-top">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu undecided_thread_viewing clearfix">
+						<div class="left">
+							<div class="btn-group">
+								<button data-action="back" class="btn">Back to Compose</button>
+							</div>
+						</div>
+						<!--
+						<div class="right">
+							<div class="btn-group pull-right">
+								<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn">
+									<i class="icon-time"></i>
+								</button>
+								<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn">
+									<i class="icon-ok"></i>
+								</button>
+								<button data-action="pin" class="btn">
+									<i class="icon-upload"></i>
+								</button>
+							</div>
+						</div>
+						-->
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container nudge_down">
+
+				{{> t_common_thread_view_content}}
+
+			</div>
+
+		</div>
+
+		<div class="common_thread_reply_content">
+
+
+			<div class="header at-top">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu undecided_thread_viewing clearfix">
+						<div class="left">
+							<div class="btn-group">
+								<button data-action="thread" class="btn view_thread">View Thread</button>
+							</div>
+						</div>
+						<div class="right">
+							<div class="btn-group pull-right">
+								<button data-action="cancel" class="btn">
+									Cancel
+								</button>
+								<button data-action="send" class="btn btn-success">
+									Send
+								</button>
+							</div>
+						</div>
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container nudge_down">
+
+				<div class="addresses">
+					{{#each Participants}}
+
+						<span class="label participant" data-email="{{this}}">
+							<span class="remove_address">X</span> {{this}}
+						</span>
+
+					{{/each}}
+				</div>
+
+				<div class="body">
+
+					<textarea id="textbody" name="textbody"></textarea>
+
+				</div>
+
+				<div class="attachments compose_attachments">
+
+					<div class="add_attachment btn">
+						Attach File
+					</div>
+
+					<div class="add_photo btn">
+						&nbsp;
+						<i class="icon-camera"></i>
+						&nbsp;
+					</div>
+
+				</div>
+
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_common_photo_preview_image" type="text/x-handlebars-template" class="partial">
+
+		<img src="{{{url}}}" width="40" height="40"/>
+
+	</script>
+
+	
+	<script id="t_common_compose" type="text/x-handlebars-template">
+
+
+		<div class="header at-top">
+					
+			<div class="header_holder clearfix">
+
+				<div class="base_header_menu clearfix">
+					<div class="left">
+						<div class="btn-group">
+							<button data-action="contact" class="btn">
+								Contacts
+							</button>
+							<button data-action="contact_write" class="btn">
+								...
+							</button>
+						</div>
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn">
+								Cancel
+							</button>
+							<button data-action="send" class="btn btn-success">
+								Send
+							</button>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+		<div class="body_container nudge_down">
+
+			<div class="addresses">
+				
+			</div>
+
+			<div class="subject">
+
+				<input type="text" id="subject" name="subject" placeholder="Subject" />
+
+			</div>
+
+			<div class="body">
+
+				<textarea id="textbody" name="textbody"></textarea>
+
+			</div>
+
+			<div class="attachments compose_attachments">
+
+				<div class="add_attachment btn">
+					Attach File
+				</div>
+
+				<div class="add_photo btn">
+					&nbsp;
+					<i class="icon-camera"></i>
+					&nbsp;
+				</div>
+
+			</div>
+
+		</div>
+
+
+	</script>
+
+
+	<script id="t_compose_recipient" type="text/x-handlebars-template" class="partial">
+
+		<span class="label participant" data-email="{{this}}">
+			<span class="remove_address">X</span>{{this}}
+		</span>
+
+	</script>
+
+
+	
+	<script id="t_common_leisure_create" type="text/x-handlebars-template">
+
+		<div class="common_leisue_create_inside_view">
+
+			<div class="header at-top">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu clearfix">
+						
+							<h1 class="text-center">
+								Creating Leisure Filter
+							</h1>
+						
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="header">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu leisure_create clearfix">
+
+						<div class="right">
+							<div class="btn-group pull-right">
+								<button data-action="cancel" class="btn">
+									Cancel
+								</button>
+								<button data-action="create" class="btn btn-success">
+									Create
+								</button>
+							</div>
+						</div>
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container nudge_down">
+
+				<br />
+				<br />
+
+				<form id="something">
+
+					<div class="filter_options">
+
+						<div class="filter_option">
+							<h4>
+								From
+							</h4>
+							<input id="from" name="from" type="text" value="{{normal.from}}" />
+						</div>
+						<div class="filter_option">
+							<h4>
+								To
+							</h4>
+							<input id="to" name="to" type="text" value="{{normal.to}}" />
+						</div>
+						<div class="filter_option">
+							<h4>
+								Subject
+							</h4>
+							<input id="subject" name="subject" type="text" value="{{normal.subject}}" />
+						</div>
+
+					</div>
+
+					<div class="filter_create_name nodisplay">
+						<h4>
+							Name of Leisure Filter
+						</h4>
+						<input id="name" name="name" type="text" value="{{normal.name}}" />
+					</div>
+
+
+				</form>
+
+			</div>
+
+		</div>
+
+	</script>
+
+
+	
+	<script id="t_leisure_item_view" type="text/x-handlebars-template">
+
+			<div class="header">
+						
+				<div class="header_holder clearfix">
+
+					<div class="base_header_menu clearfix">
+
+						<!--
+						<div class="left">
+							<div class="btn-group">
+								<button data-action="settings" class="btn">
+									<i class="icon-asterisk"></i>
+								</button>
+							</div>
+						</div>
+						<div class="center">
+							<div class="btn-group">
+								<button data-action="pretty" class="btn">
+									Pretty
+								</button>
+								<button data-action="text" class="btn">
+									Text
+								</button>
+							</div>
+						</div>
+						-->
+
+						<div class="right">
+							<div class="btn-group">
+								<button data-action="back" class="btn">Back</button>
+							</div>
+						</div>
+					</div>
+						
+
+				</div>
+				
+			</div>
+
+			<div class="body_container">
+
+				{{> t_leisure_item_view_content}}
+
+			</div>
+
+	</script>
+
+
+	<script id="t_leisure_item_view_content" type="text/x-handlebars-template" class="partial">
+
+		<div class="filter_container">
+
+			<div class="filter_name">
+				<div class="name">
+					{{AppMinimailLeisureFilter.name}}
+				</div>
+				
+				<div class="total_unread_threads">
+					{{display_threads_unread_total Threads}} unread
+				</div>
+				<div class="total_threads">
+					{{display_threads_total Threads}} threads
+				</div>
+			</div>
+
+			<div class="leisure_threads">
+
+				{{#each Threads}}
+
+					{{! More than 2 threads? }}
+
+					{{#compare_length this.Email ">" 0}}
+						
+						<!-- Handle multi-email pretty emails (mailing lists) -->
+
+					{{! else}}
+
+						<div class="lt_thread_holder">
+
+							<div class="lt_thread" data-id="{{_id}}">
+								
+
+								<div class="details clearfix">
+									
+									{{print Email}}
+									{{#each Email}}
+
+										<div class="">
+											{{! original.HtmlBody}}
+											{{{display_body this}}}
+										</div>
+
+									{{/each}}
+
+								</div>
+
+							</div>
+
+						</div>
+
+
+					{{/compare_length}}
+
+				{{/each}}
+
+			</div>
+			
+
+
+		</div>
+
+	</script>
+
+
+
+
+	<script id="t_select_email_list" type="text/x-handlebars-template">
+
+
+		<div class="overlay">
+			&nbsp;
+		</div>
+		<div class="list_options">
+			<div class="options clearfix">
+
+				{{#each this}}
+
+					<div class="option" data-email="{{this}}">
+						{{this}}
+					</div>
+
+				{{/each}}
+
+			</div>
+		</div>
+
+	</script>
+
+
+	
+	<script id="t_leisure_init" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+
+	<script id="t_leisure" type="text/x-handlebars-template">
+
+			{{#Empty this}}
+
+				<div class="inbox_zero">
+					Nothing to read (instructions here)
+				</div>
+
+			{{else}}
+
+				<div class="all_threads threads_holder">
+
+					{{! Leisure List }}
+					{{#each this}}
+
+						<div class="leisure_item no_text_select" data-id="{{AppMinimailLeisureFilter._id}}">
+
+							{{> t_leisure_item}}
+
+						</div>
+
+					{{/each}}
+
+
+				</div>
+
+			{{/Empty}}
+
+			<div class="leisure_footer common_footer nodisplay">
+
+				<div class="base_footer_menu clearfix">
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="create" class="btn">
+								<i class="icon-plus"></i>
+							</button>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
+	</script>
+
+
+	<script id="t_leisure_item" type="text/x-handlebars-template" class="partial">
+
+		<div class="leisure_item_holder">
+
+			<div class="filter_name">
+
+				<div class="leisure_unread_threads">
+					{{{display_unread_leisure_count ThreadUnreadCount}}}
+				</div>
+
+				{{AppMinimailLeisureFilter.name}}
+			</div>
+
+			<div class="item_threads">
+
+				{{#each Thread}}
+
+					<div class="item_thread clearfix" data-thread-id="{{_id}}" data-read="{{attributes.read.status}}">
+
+						<div class="timeago" data-time="{{attributes.last_message_datetime}}">
+							{{display_last_thread_monthday attributes.last_message_datetime}}
+						</div>
+						<div class="subject ellipsis">
+							{{original.subject}}
+						</div>
+
+					</div>
+
+				{{/each}}
+
+			</div>
+
+		</div>
+
+	</script>
+
+
+	
+	<script id="t_search" type="text/x-handlebars-template">
+
+		<div class="quick_searches">
+
+			<div class="search_category" data-type="links" data-detail="recently_viewed">
+				<i class="icon-bookmark"></i> Links
+			</div>
+
+			<div class="search_category" data-type="attachments">
+				<i class="icon-download-alt"></i> Attachments
+
+				<div class="details nodisplay">
+					<div class="detail_item" data-type="recently_viewed">
+						Recently Received
+					</div>
+					<div class="detail_item" data-type="biggest">
+						Biggest
+					</div>
+				</div>
+
+			</div>
+
+			<!--
+			<div class="search_category" data-type="contacts" data-detail="recently_viewed">
+				<i class="icon-user"></i> Contacts
+				
+				<div class="details nodisplay">
+					<div class="detail_item" data-type="recently_viewed">
+						Recently Might Have Seen
+					</div>
+					<div class="detail_item" data-type="frequent">
+						Frequent
+					</div>
+				</div>
+
+			</div>
+			-->
+
+			<div class="search_category" data-type="threads">
+				<i class="icon-inbox"></i> Emails / Threads
+
+				<div class="details nodisplay">
+					<div class="detail_item" data-type="recently_viewed">
+						Recently Viewed
+					</div>
+					<div class="detail_item" data-type="recently_acted_on">
+						Recently Acted On
+					</div>
+					<div class="detail_item" data-type="long_threads">
+						Long Threads (8+ emails)
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+
+	</script>
+
+	
+
+	<script id="t_search_emails" type="text/x-handlebars-template">
+
+		<div class="search_emails_thread_results">
+
+		</div>
+
+		<div class="thread_footer search_footer">
+
+			<div class="search_input">
+
+				<div class="search_prefilters">
+					<button class="btn show_search">Search</button>
+					<select class="prefilters_select">
+						{{#each filter_options}}
+							<option class="prefilter" value="{{key}}">
+								{{name}}
+							</option>
+						{{/each}}
+					</select>
+				</div>
+
+			    <div class="form-search nodisplay">
+					<input type="text" class="input search-query">
+					<button class="btn submit" type="submit">Search</button>
+			    	<button class="btn btn-danger cancel">X</button>
+				</div>
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_search_emails_thread_results" type="text/x-handlebars-template">
+
+		{{#each this}}
+
+			<div class="thread no_text_select" data-id="{{Thread._id}}" data-thread-type="undecided">
+
+				<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+
+					<div class="clearfix">
+
+						<div class="card-top clearfix">
+
+							<div class="name ellipsis" data-address="{{Thread._id}}">
+								{{thread_participants_pretty Email}}
+							</div>
+
+
+							<div class="received" data-datetime="{{Thread.attributes.last_message_datetime}}">
+								{{display_shorttime Thread.attributes.last_message_datetime}}
+							</div>
+
+						</div>
+
+						<div class="card-middle clearfix">
+
+							<div class="subject ellipsis">
+								{{thread_subject Thread.original.subject}}
+							</div>
+
+						</div>
+
+
+						<div class="card-bottom clearfix">
+							<div class="last_message ellipsis">
+								{{{display_last_message Thread}}}
+							</div>
+
+							<div class="thread_count">
+								{{display_thread_count Email}}
+							</div>
+
+						</div>
+
+					</div>
+
+
+				</div>
+
+			</div>
+
+		{{/each}}
+
+	</script>
+
+
+	<script id="t_search_emails_email_results" type="text/x-handlebars-template">
+
+
+		{{! iterate over Emails}}
+
+		{{#each this}}
+			
+			<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">
+
+				<div class="thread-preview clearfix" data-thread-id="{{attributes.thread_id}}">
+
+					<div class="clearfix">
+
+						<div class="card-top clearfix">
+
+							<div class="name ellipsis" data-address="{{attributes.thread_id}}">
+								{{email_participants_pretty this}}
+							</div>
+
+
+							<div class="received" data-datetime="{{common.date}}">
+								{{display_shorttime common.date}}
+							</div>
+
+						</div>
+
+						<div class="card-middle clearfix">
+
+							<div class="subject ellipsis">
+								{{thread_subject original.headers.Subject}}
+							</div>
+
+						</div>
+
+
+						<div class="card-bottom clearfix">
+
+							<div class="last_message ellipsis nodisplay">
+								{{display_last_message_of_email this}}
+							</div>
+
+							<div class="thread_count">
+								
+							</div>
+
+						</div>
+
+					</div>
+
+
+				</div>
+
+			</div>
+
+		{{/each}}
+
+	</script>
+
+	
+	<script id="t_search_thread_results_loading" type="text/x-handlebars-template">
+
+		<div class="loading"></div>
+
+	</script>
+
+
+
+	
+
+	<script id="t_search_attachments" type="text/x-handlebars-template">
+
+		<div class="search_attachments_results">
+
+		</div>
+
+		<div class="thread_footer search_footer">
+
+			<div class="search_input">
+
+				<div class="search_prefilters">
+					<button class="btn show_search">Search</button>
+					<select class="prefilters_select">
+						{{#each filter_options}}
+							<option class="prefilter" value="{{key}}">
+								{{name}}
+							</option>
+						{{/each}}
+					</select>
+				</div>
+
+			    <div class="form-search nodisplay">
+					<input type="text" class="input search-query">
+					<button class="btn submit" type="submit">Search</button>
+			    	<button class="btn btn-danger cancel">X</button>
+				</div>
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_search_attachments_results" type="text/x-handlebars-template">
+
+		{{#each this}}
+
+			<div class="attachment no_text_select" data-path="{{attachment.path}}">
+
+				<div class="clearfix">
+
+
+					<div class="preview">
+						
+						{{{attachment_small_preview attachment}}}
+
+					</div>
+
+					<div class="filename ellipsis">
+
+						{{attachment.name}}
+
+					</div>
+
+
+					<div class="datetime">
+						{{display_shorttime date}}
+
+					</div>
+
+				</div>
+
+			</div>
+
+		{{/each}}
+
+	</script>
+
+
+	<script id="t_search_links" type="text/x-handlebars-template">
+
+		<div class="search_links_results">
+
+		</div>
+
+		<div class="thread_footer search_footer">
+
+			<div class="search_input">
+
+				<div class="search_prefilters">
+					<button class="btn show_search">Search</button>
+					<select class="prefilters_select">
+						{{#each filter_options}}
+							<option class="prefilter" value="{{key}}">
+								{{name}}
+							</option>
+						{{/each}}
+					</select>
+				</div>
+
+			    <div class="form-search nodisplay">
+					<input type="text" class="input search-query">
+					<button class="btn submit" type="submit">Search</button>
+			    	<button class="btn btn-danger cancel">X</button>
+				</div>
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_search_links_results" type="text/x-handlebars-template">
+
+		{{#each this}}
+
+			<div class="parsed_link no_text_select" data-link="{{link}}">
+
+				<div class="clearfix">
+
+					<div class="link_short ellipsis">
+
+						{{link}}
+
+					</div>
+
+
+					<div class="datetime">
+						{{display_shorttime date}}
+					</div>
+
+				</div>
+
+			</div>
+
+		{{/each}}
+
+	</script>
+
+	
+	<script id="t_search_waiting_for_input" type="text/x-handlebars-template">
+
+		<div class="waiting_for_input">
+			<!--Enter your search criteria-->
+		</div>
+
+	</script>
+
+
+	<script id="t_collections" type="text/x-handlebars-template">
+
+		<div class="">
+
+			<h3>Collections are currently inactive</h3>
+
+		</div>
+
+	</script>
+
+
+	
+
+
+	<script id="t_senders" type="text/x-handlebars-template">
+
+		
+		<div class="header">
+			
+			<div class="header_holder clearfix">
+
+				<h1>
+					Senders
+				</h1>
+
+				<!--
+				<a id="back" href="#" class="next-btn next-text">
+					<span>
+						Hide All
+					</span>
+				</a>
+				-->
+				
+				<a id="back" href="#" class="back-btn">
+					<img src="img/arrow-left.png" />
+				</a>
+
+			</div>
+
+		</div>
+		
+
+		<div class="body_container nudge_down">
+
+			<div class="sender_status">
+
+				<a href="#" class="" data-status="approved">
+					<span>
+						Reading
+					</span>
+				</a>
+
+				<a href="#" class="" data-status="pending">
+					<span>
+						Pending
+					</span>
+				</a>
+
+				<a href="#" class="" data-status="hiding">
+					<span>
+						Hiding
+					</span>
+				</a>
+
+			</div>
+
+			<div id="senders">
+
+				<div class="senders_list">
+
+					<!-- t_senders_list -->
+
+				</div>
+
+			</div>
+
+		</div>
+
+	</script>
+
+	<!-- Senders List Template -->
+	<script id="t_senders_list" type="text/x-handlebars-template" class="">
+
+		{{#if this}}
+			{{#each this}}
+				
+				<div class="sender clearfix" data-id="{{AppMinimalContact._id}}" data-status="{{AppMinimalContact.status}}">
+					<div class="move_sender" data-status="approved">
+						+
+					</div>
+					<div class="sender_info">
+						<div class="domain">
+							{{AppMinimalContact.domain}}
+						</div>
+						<div class="local">
+							{{AppMinimalContact.local}}
+						</div>
+					</div>
+					<div class="move_sender" data-status="hiding">
+						-
+					</div>
+
+				</div>
+			{{/each}}
+		{{else}}
+			<div class="empty_list">
+				No senders in this list
+			</div>
+		{{/if}}
+
+	</script>
+
+	<script id="t_senders_list_loading" type="text/x-handlebars-template" class="partial">
+
+		<div class="loading">
+			Loading...
+		</div>
+
+	</script>
+
+
+	<script id="t_logout" type="text/x-handlebars-template">
+
+		<div class="logout">
+			<p>
+				<a href="#" id="logout" class="btn btn-danger">
+					Logout
+				</a>
+			</p>
+		</div>
+
+	</script>
+
+
+	<!-- Toast template -->
+	<script id="t_toast" type="text/x-handlebars-template">
+		<div id="toast">
+			<div class="toast-bg">
+				{{message}}
+			</div>
+		</div>
+	</script>
+
+
+	<!-- Debug Messages template -->
+	<script id="t_debug_messages" type="text/x-handlebars-template">
+		<div id="debug-messages">
+			{{#compare_size this ">" 0}}
+				<div class="debug-messages-bg">
+					{{#each this}}
+						<div class="debug-message">
+							{{text}} <span class="timeago" title="{{datetime}}"></span>
+						</div>
+					{{/each}}
+				</div>
+			{{/compare_size}}
+		</div>
+	</script>
+
+
+	<!-- Intro template -->
+	<script id="t_modal_intro" type="text/x-handlebars-template">
+		<div class="modal hide" id="modalIntro">
+			<div class="modal-body">
+				<h3>Welcome to "Filemess"</h3>
+			</div>
+		</div>
+	</script>
+
+
+</head>
+<body>
+
+</body>
+</html>
