@@ -1,5 +1,4 @@
 
-
 ## Contents  
 
 Source for the minimail mobile email client for Android. The app works in conjunction with a server-side component (receiving and sending emails, Push Notifications, leisure filters) and the Emailbox API (https://getemailbox.com/docs).  
@@ -18,7 +17,7 @@ Source for the minimail mobile email client for Android. The app works in conjun
 1. (coming soon)
 1. Follow the instructions at https://github.com/emailbox/minimail_mobileapp_full (coming soon)
 
-> **Note:** Push Notifications don't work when building locally
+> **Note:** Push Notifications don't work when building locally. Working only on PhoneGap Build
 
 ## Server-side   
 By default the basic minimail server is used. If you want to run your own server:  
@@ -28,10 +27,12 @@ By default the basic minimail server is used. If you want to run your own server
 
 ## App Todos
 - switch to Require.js, Component, Browserify, etc. (easier plugins)
+- Push Notifications
+- Camera and File Upload (emailbox file api)
 
 ## Build Todos:
 - Tests  
-- Add instructions for Trigger.io Forge (easier builds)  
+- auto-switch between local and build.phonegap builds (not commenting out scripts)  
 - Build and test for iPhone  
 
 ## How to build (coming soon):  
