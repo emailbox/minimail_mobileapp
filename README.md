@@ -12,20 +12,19 @@ Source for the minimail mobile email client for Android. The app works in conjun
 1. Fork this repo (optional)
 1. Sign up for Adobe PhoneGap Build: http://build.phonegap.com/plans/free 
 1. Create a new project in PhoneGap Build using your forked GitHub URL 
-1. Build the project and download the Android build (must enable )
+1. Build the project and download the Android build 
 
-## Option 2: Build locally with Eclipse
+## Option 2: Build locally with Eclipse  
 1. (coming soon)
 1. Follow the instructions at https://github.com/emailbox/minimail_mobileapp_full (coming soon)
 
 > **Note:** Push Notifications don't work when building locally
 
-## Server-side  
-By default the basic minimail server is used. If you want to run your own server:
-1. Register as an emailbox developer (https://getemailbox.com/first)
-1. Follow instructions at repo: https://github.com/emailbox/minimail_nodeserver  
-1. Change the value for `minimail_server` in `creds.json` in the mobile app to use your server (usually on heroku). 
-
+## Server-side   
+By default the basic minimail server is used. If you want to run your own server:  
+1. Register as an emailbox developer (https://getemailbox.com/first)  
+1. Follow instructions at repo: https://github.com/emailbox/minimail_nodeserver    
+1. Change the value for `minimail_server` in `creds.json` in the mobile app to use your server (usually on heroku).  
 
 ## App Todos
 - switch to Require.js, Component, Browserify, etc. (easier plugins)
@@ -34,9 +33,6 @@ By default the basic minimail server is used. If you want to run your own server
 - Tests  
 - Add instructions for Trigger.io Forge (easier builds)  
 - Build and test for iPhone  
-
-## Major Gotchas/Issues:  
-- Please post (additional) issues in GitHub's issue tracker! 
 
 ## How to build (coming soon):  
 1. Download the Android SDK tools (adt-bundle) 
