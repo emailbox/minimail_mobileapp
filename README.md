@@ -27,6 +27,7 @@ By default the basic minimail server is used. If you want to run your own server
 
 ## App Todos
 - switch to Require.js, Component, Browserify, etc. (easier plugins)
+- Fix contacts (switch from Forge)  
 - Push Notifications
 - Camera and File Upload (emailbox file api)
 
