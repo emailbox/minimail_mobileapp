@@ -21,7 +21,11 @@ Source for the minimail mobile email client for Android. The app works in conjun
 > **Note:** Push Notifications don't work when building locally
 
 ## Server-side  
-Want to run your own server-side minimail code as well? (available soon)  
+By default the basic minimail server is used. If you want to run your own server:
+1. Register as an emailbox developer (https://getemailbox.com/first)
+1. Follow instructions at repo: https://github.com/emailbox/minimail_nodeserver  
+1. Change the value for `minimail_server` in `creds.json` in the mobile app to use your server (usually on heroku). 
+
 
 ## App Todos
 - switch to Require.js, Component, Browserify, etc. (easier plugins)
