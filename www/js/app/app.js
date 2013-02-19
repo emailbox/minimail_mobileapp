@@ -285,7 +285,8 @@ var App = {
 
 					$("#app-status-ul").append('<li>registering android</li>');
 					pushNotification.register(function(){
-						alert('success w/ Push Notifications');
+						// alert('success w/ Push Notifications');
+						App.Utils.Notification.debug.temporary('Push Setup OK'); // not actually ok, not registering, nothing sending to it
 					}, function(err){
 						// alert('failed Push Notifications');
 						App.Utils.Notification.debug.temporary('Failed Push Notification Setup');
