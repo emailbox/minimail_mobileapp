@@ -38,6 +38,9 @@ App.Utils = {
 				window.setTimeout(function(){
 					App.Utils.Notification.debug.remove(tmp_key);
 				},3000);
+			},
+			temp: function(message){
+				return App.Utils.Notification.debug.temporary(message);
 			}
 
 		},
@@ -149,7 +152,7 @@ App.Utils = {
 			if(useForge){
 				
 				forge.prefs.set(key, JSON.stringify(value), function(){
-
+					// App.Events.trigger('saveAppDataStore');
 					dfd.resolve(true);
 
 				},
@@ -164,7 +167,7 @@ App.Utils = {
 
 				setTimeout(function(){
 					var tmp = window.localStorage.setItem(key,JSON.stringify(value));
-
+					// App.Events.trigger('saveAppDataStore');
 					dfd.resolve(tmp);
 
 				},1);
@@ -173,7 +176,7 @@ App.Utils = {
 				
 				setTimeout(function(){
 					var tmp = localStorage.setItem(key,JSON.stringify(value));
-
+					// App.Events.trigger('saveAppDataStore');
 					dfd.resolve(tmp);
 
 				},1);
@@ -363,8 +366,8 @@ App.Utils = {
 		// - automatically happens by skipping $.each (below)
 
 		path = opts.path.split('.');
-		clog('path');
-		clog(path);
+		// clog('path');
+		// clog(path);
 
 		// Put humptydumpty back together
 		// - [ and ] designate start/end
@@ -531,6 +534,26 @@ App.Utils = {
 			vars[hash[0]] = hash[1];
 		}
 		return vars;
+	},
+
+	getOAuthParamsInUrl: function(url){
+			
+		var queryString = location.hash.substring(1); // remove "#"
+		if(url){
+			var tmp = document.createElement('a');
+			tmp.href = url;
+			queryString = tmp.hash.substring(1); // remove "#"
+		}
+
+		var oauthParams = {},
+			regex = /([^&=]+)=([^&]*)/g,
+			m;
+
+		while (m = regex.exec(queryString)){
+			oauthParams[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+		}
+
+		return oauthParams;
 	},
 
 	nl2br: function(str, is_xhtml) {
@@ -788,6 +811,12 @@ App.Utils = {
 
 		return noty(opts);
 
+	},
+
+	reloadApp: function(){
+		// Reload the page
+		window.location = [location.protocol, '//', location.host, location.pathname].join('');
+		
 	}
 
 	// https://github.com/collective/icalendar/blob/master/src/icalendar/parser.py
@@ -904,7 +933,7 @@ var Api = {
 						// Get item from localstorage
 						var tmpPath = tmpModel+'.'+id;
 						clog('Looking for: '+tmpPath);
-						var tmpItem = localStorage.getItem(App.Credentials.prefix_user_token + tmpPath);
+						var tmpItem = localStorage.getItem(App.Credentials.prefix_access_token + tmpPath);
 						if(typeof(tmpItem) == 'undefined'){
 							// Unable to find
 							clog('Failed to find');
@@ -991,6 +1020,7 @@ var Api = {
 
 		// Chain to _return
 
+		// console.log(JSON.stringify(queryOptions.data));
 
 		// Want responses? 
 		if(queryOptions.response){
@@ -1063,7 +1093,9 @@ var Api = {
 
 		var queryDefaults = {
 			data: {},
-			headers: {"Content-Type" : "application/json"},
+			headers: {
+				"Content-Type" : "application/json"
+			},
 			success: function(response){
 				clog('API request succeeded');
 				// clog(response);
@@ -1134,7 +1166,7 @@ var Api = {
 		queryOptions.data = {
 							auth: {
 									app: App.Credentials.app_key,
-									user_token: App.Credentials.user_token
+									access_token: App.Credentials.access_token
 								},
 							data: data
 							};
@@ -1216,9 +1248,21 @@ var Api = {
 		start_listening: function(){
 			// Start listening on the socket.io feed
 			// return false;
-			clog('Listening...');
+			console.log('Starting to listen...');
 			var socket = io.connect(App.Credentials.base_api_url + '/'); // SSL
-			socket.emit('room', App.Credentials.user_token); // immediately change room to my unique app user_token
+			var room_login = {
+				app: App.Credentials.app_key,
+				access_token: App.Credentials.access_token,
+				user: App.Credentials.user
+			};
+			// console.log('rl');
+			// console.log(room_login);
+			socket.on('disconnect',function(){
+				// alert('disconnected');
+			});
+			socket.on('connect',function(){
+				socket.emit('room', JSON.stringify(room_login)); // log into room
+			});
 			socket.on('event', function (new_event) {
 
 				// See if Event.name exists
@@ -1235,15 +1279,17 @@ var Api = {
 
 				// Go through each plugin and fire the callback (with firebase data) if it matches
 				var fired = 0;
+				
 				$.each(Api.Event.listen_on,function(i,listener){
 					// clog('listen_on');
-					
+
 					// See if listener is on many different events
 					if(typeof(listener.data.event) != 'object'){
 						listener.data.event = [listener.data.event];
 					}
 
 					$.each(listener.data.event, function(i,lEvent){
+
 						if(lEvent != new_event.event){
 							//clog('Listener plugin not match Event (utils.js)');
 							return;
@@ -1282,6 +1328,12 @@ var Api = {
 
 			// Model, Event.name, Data
 			// - can also include an id
+
+			/*
+			data: {
+				event: '
+			}
+			*/
 
 			var id = App.Utils.guid();
 			Api.Event.listen_on[id] = {

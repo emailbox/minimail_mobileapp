@@ -8,7 +8,7 @@ App.Plugins.Minimail = {
 		var dfd = $.Deferred();
 
 		var loginData = {
-			user_token: App.Credentials.user_token
+			access_token: App.Credentials.access_token
 		};
 
 		var ajaxOptions = {
@@ -740,6 +740,51 @@ App.Plugins.Minimail = {
 		// Trim to 50
 		App.Data.Store.ThreadsRecentlyActedOn = App.Data.Store.ThreadsRecentlyActedOn.splice(0,50);
 
+	},
+
+	update_remote: function(css_or_html){
+
+		// Update remote CSS
+		if(css_or_html == 'both' || css_or_html == 'css'){
+			
+			$.ajax({
+				url: 'css/extra.css',
+				cache: false,
+				success: function(cssText){
+					
+					// Emit event
+					Api.event({
+						data: {
+							event: 'AppMinimailDebugCss.phone_update',
+							obj: {
+								css: cssText
+							}
+						},
+						success: function(response){
+							response = JSON.parse(response);
+						}
+					});
+
+					// alert('Debug CSS turned on');
+					// App.Utils.Storage.set('cssDebugOn',cssText);
+				}
+			});
+		}
+
+		// Update remote HTML
+		if(css_or_html == 'both' || css_or_html == 'html'){
+			Api.event({
+				data: {
+					event: 'AppMinimailDebugHtml.phone_update',
+					obj: {
+						html: $('body').html()
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+				}
+			});
+		}
 	}
 
 

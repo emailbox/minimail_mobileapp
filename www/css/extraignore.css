@@ -5,8 +5,6 @@
   outline: 0;
   box-sizing: border-box;
 
-  font-family: Helvetica, sans-serif;
-  
 }
 
 html, *,
@@ -29,7 +27,6 @@ body {
   position: relative;
   /*background: url(../img/whitey.png) repeat;*/
   overflow: hidden;
-  background: #444;
 }
 
 body.console {
@@ -59,16 +56,13 @@ body.console {
 
 /* Intro/login page */
 .intro_window {
-  
-  color: #b0b0b0;
-
+  background: white;
   text-align: center;
   margin: 0pt auto;
   margin-top:150px;
+  /*width: 600px;*/
 
   padding: 20px;
-
-  /*width: 600px;*/
   /*border: 1px solid #ccc;*/
 }
 
@@ -188,17 +182,13 @@ body.console {
 .header {
   font-family: Helvetica, Georgia, sans-serif;
   color: #333;
-  border-top: 1px solid black;
+  border-top: 1px solid #333;
   
   position: fixed;
   bottom:0px;
   left: 0px;
   width: 100%;
-  background: #333;
-  background: -webkit-linear-gradient(#333, #111);
-  
-  box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
+  background: white;
 
   line-height: 40px;
 
@@ -211,12 +201,7 @@ body.console {
   bottom: auto;
 
   border-top: 0px;
-  border-bottom: 1px solid black;
-  
-  background: #333;
-  background: -webkit-linear-gradient(#111, #333);
-  
-  -webkit-box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;
+  border-bottom: 1px solid #333;
 
 }
 
@@ -319,11 +304,11 @@ body.console {
 }
 
 .base_header_menu .btn-group .btn {
-  border: 4px solid #444;
+  border: 1px solid #333;
+  /*background: white;*/
+  /*color: black;*/
   padding: 0px 12px;
   height: 40px;
-  
-  background: #eee;
 }
 
 .base_header_menu .btn:first-child {
@@ -344,7 +329,7 @@ body.console {
   border: 0px;
 }
 .base_header_menu .btn-group .btn[data-id="home"].active {
-  /*background: white;*/
+  background: white;
 }
 
 .base_header_menu .logo {
@@ -377,14 +362,6 @@ body.console {
   width: 34%;
   margin-right: 6%;
   text-align: right;
-}
-
-
-/* Replying */
-
-.base_header_menu.common_reply .left,
-.base_header_menu.common_reply .right {
-  width: 40%;
 }
 
 
@@ -481,18 +458,17 @@ body.console {
   font-family: Helvetica, Georgia, sans-serif;
   color: #333;
   border-top: 1px solid #333;
-  background: -webkit-linear-gradient(#444, #333);
+  border-bottom: 1px dashed #ccc;
   
   position: fixed;
-  bottom:61px;
+  bottom:59px;
   left: 0px;
   width: 100%;
+  background: white;
 
   line-height: 50px;
-  
-  border-top: 1px solid black;
-  box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
+
+  box-shadow: 0px -1px 5px 0px #ccc;
 
   z-index: 100;
 }
@@ -505,11 +481,6 @@ body.console {
   font-weight: 200;
 }
 
-.thread_footer .btn,
-.thread_footer .btn,
-.thread_footer button {
-    border: 4px solid #444;
-}
 
 
 /* Search (searching emails and threads) main view */
@@ -521,8 +492,9 @@ body.console {
 .thread_footer.search_footer > div {
   width: 100%;
   display: inline-block;
-    
+
   text-align: center;
+
   font-weight: 200;
 }
 
@@ -536,20 +508,16 @@ body.console {
   margin-left: 1%;
 }
 .thread_footer.search_footer button.cancel {
-  width: 50px;
-  height: 10%;
+  width: 10%;
   margin-left: 1%;
-  text-align: center;
 }
 
 .search_category {
   position: relative;
-  border-top: 1px solid rgb(170,170,170);
+  border-top: 1px solid #ccc;
   z-index: 9;
 
-  background: #222;
-  color: #eee;
-  font-weight: bold;
+  background: white;
 
   padding: 18px 10px;
 
@@ -590,16 +558,13 @@ body.console {
 }
 
 .search_footer .prefilters_select {
-  margin: 15px 0 8px;
-  width: auto;
+  margin: 8px 0 8px;
   border: 0px;
   text-align: right;
   text-decoration: underline;
   font-size: 20px;
   font-weight: bold;
 
-  background: transparent;
-  color: #eee;
   height: 34px;
 }
 
@@ -644,14 +609,13 @@ body.console {
 
 .search_attachments_results .attachment {
   position: relative;
-  border-top: 1px solid #222;
+  border-top: 1px solid #ccc;
   z-index: 9;
 
   width: 100%;
   overflow-x: hidden;
 
-  background: #222;
-  color: #eee;
+  background: white;
 
   padding: 18px 0;
 
@@ -685,14 +649,13 @@ body.console {
 
 .search_links_results .parsed_link {
   position: relative;
-  border-top: 1px solid #222;
+  border-top: 1px solid #ccc;
   z-index: 9;
 
   width: 100%;
   overflow-x: hidden;
 
-  background: #222;
-  color: #eee;
+  background: white;
 
   padding: 18px 0;
 
@@ -893,23 +856,20 @@ body.console {
 
 #toast {
   position: fixed;
-  bottom: 61px;
+  bottom: 20px;
   text-align: center;
   width: 100%;
   z-index: 100;
   opacity: 0;
-  
-  background: white;
-  color: #333;
 
-  /*-webkit-border-radius: 2px;
-  border-radius: 2px;*/
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
 }
 
 #toast > div {
   display: inline-block;
-  /*background: #555;
-  color: white;*/
+  background: #555;
+  color: white;
   padding: 4px;
 }
 
@@ -947,7 +907,7 @@ body.console {
   display: table-cell;
   vertical-align: bottom;
 
-  background: #444;
+  background: #ffeffe;
 
 }
 
@@ -1002,11 +962,7 @@ body.console {
 
 .thread {
   position: relative;
-  border-top: 1px solid rgb(170,170,170);
-  
-  box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  
+  border-top: 1px solid #ccc;
   z-index: 9;
 
   width: 100%;
@@ -1088,9 +1044,8 @@ body.console {
   cursor: pointer;
   
   z-index: 11;
-    
-  color: rgb(170,170,170);
-  background: #222;
+
+  background: white;
 
   /*padding-left: 5px;*/
 }
@@ -1134,7 +1089,7 @@ body.console {
 .thread-preview .card-top .name {
   display: inline-block;
   width: 200px;
-  font-weight: bold;
+  font-weight: 200;
 }
 
 .thread-preview .card-top .received {
@@ -1146,12 +1101,12 @@ body.console {
 }
 
 .thread-preview .card-middle .subject {
-  color: #eee;
+  color: #333;
   display: inline-block;
   
   width: 85%;
 
-  font-weight: normal;
+  font-weight: bold;
 
   font-size: 18px;
   line-height: 20px;
@@ -1205,16 +1160,15 @@ body.console {
 
 .leisure_item {
   position: relative;
-  border-top: 1px solid rgb(170,170,170);
+  border-top: 1px solid #ccc;
   z-index: 9;
 
   padding: 18px 0;
 
   width: 360px; /* hardcoded! */
   overflow-x: hidden;
-    
-  color: #eee;
-  background: #222;
+
+  background: white;
 }
 
 .leisure_item_holder {
@@ -1282,9 +1236,9 @@ body.console {
 
 .leisure_item .filter_name {
   font-weight: 200;
-  font-size: 20px;
-  line-height: 28px;
-    
+  font-size: 24px;
+  line-height: 34px;
+
   /*padding-left: 4%;*/
 }
 
@@ -1303,20 +1257,13 @@ body.console {
 }
 
 .leisure_item .filter_name .leisure_unread_threads {
-  color: rgba(0, 139, 139, 1);
+  color: rgba(0, 139, 139, 0.8);
   display: inline-block;
   
-  /*width: 12%;*/
+  width: 12%;
+  padding-left: 4%;
 
   font-size: 17px;
-  
-  border: 1px solid rgba(0, 139, 139, 0.8);
-  border-radius: 20px;
-  width: 50px;
-  
-  margin-left: 5px;
-  
-  text-align: center;
 }
 
 .leisure_item .filter_name .leisure_unread_threads super {
@@ -1329,7 +1276,6 @@ body.console {
   color: #666;
 
   line-height: 20px;
-  margin-top: 15px;
 }
 
 .leisure_item .item_thread {
@@ -1368,9 +1314,7 @@ body.console {
 /* Leisure Item view */
 
 .leisure_item_view {
-    background: white;
-    width: 100%;
-    overflow-x: hidden;
+
 }
 
 .leisure_item_view .filter_name {
@@ -1430,8 +1374,8 @@ body.console {
   left: 0;
   width: 1024px;
   height: 1024px;
-  background: black;
-  opacity: .8;
+  background: #fff;
+  opacity: .5;
 }
 
 .delay_modal .button_panel {
@@ -1440,11 +1384,7 @@ body.console {
   left: 5%;
   width: 90%;
 
-  background: #444;
-  
-  box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
-  
+  background: #e1e1e1;
 
   -webkit-border-radius: 2px;
   border-radius: 2px;
@@ -1465,12 +1405,8 @@ body.console {
   width: 32%;
   margin-left: 1%;
   margin-top: 1%;
-  
-  color: #eee;
-  background: -webkit-linear-gradient(#333, #111);
-
-  border-radius: 4px;
-  border: 2px solid #222;
+  background: white;
+  color: black;
 
   position: relative;
 }
@@ -1499,7 +1435,6 @@ body.console {
 /* Common Thread Viewing */
 
 .common_thread_view {
-  background: white;
   padding-bottom: 120px;
 }
 
@@ -1612,34 +1547,6 @@ body.console {
 
 .common_compose {
 
-}
-
-.common_compose .btn-send,
-.common_thread_reply .btn-send {
-    text-shadow: none;
-    color: #222;
-    background: #D9E577 !important;
-}
-
-.common_compose #subject,
-.common_thread_reply #subject {
-    background: none;
-    border: 0px;
-    box-shadow: none;
-    font-size: 18pt;
-    line-height: 20pt;
-    color: #66CCB3;
-}
-
-.common_compose #textbody,
-.common_thread_reply #textbody {
-    background: none;
-    border: 0px;
-    box-shadow: none;
-    color: #BED6FF;
-    
-    font-size: 14pt;
-    line-height: 15pt;
 }
 
 .common_compose .addresses {
@@ -1793,12 +1700,13 @@ body.console {
   width: 95%;
   margin-left: 2.5%;
 
-  /*border-top: 0px;*/
+  border-top: 0px;
 
+  background: #fafafa;
 }
 
 .compose_attachments {
-  border-top: 1px solid #222;
+  border: 1px solid #ccc;
   padding: 5px;
 }
 

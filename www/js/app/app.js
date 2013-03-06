@@ -1,6 +1,6 @@
 //forge.debug = true;
 
-var debugging_mode = false
+var debugging_mode = true;
 var clog = function(v){
 	if(debugging_mode){
 		window.console.log(v);
@@ -29,6 +29,7 @@ var App = {
 			Thread: {},
 			Email: {},
 			AppMinimailLeisureFilter: {},
+			AppMinimailDebugCss: {},
 
 			// Not Models on server (local only, sync later)
 			ThreadsRecentlyViewed: [],
@@ -55,18 +56,6 @@ var App = {
 		// Filepicker
 		filepicker.setKey(App.Credentials.filepicker_key);
 
-		// Update in-memory store with localStorage/Prefs
-		App.Utils.Storage.get('AppDataStore')
-			.then(function(store){
-				if(store != null){
-					// Make sure all the default keys exist
-					App.Data.Store = $.extend(App.Data.Store,store);
-					console.log('AppDataStore');
-					console.log(App.Data.Store);
-				} else {
-					console.log('null AppDataStore');
-				}
-			});
 
 		App.Data.Keys.ctrl = false;
 		$(window).keydown(function(evt) {
@@ -105,50 +94,129 @@ var App = {
 			}
 		});
 
-		// Listen for 
+
+		// Update in-memory store with localStorage/Prefs
+		App.Utils.Storage.get('AppDataStore')
+			.then(function(store){
+				if(store != null){
+					// Make sure all the default keys exist
+					App.Data.Store = $.extend(App.Data.Store,store);
+					console.log('AppDataStore');
+					console.log(App.Data.Store);
+				} else {
+					console.log('null AppDataStore');
+				}
+			});
+
+		// Listen for request to save AppDataStore
 		App.Events.on('saveAppDataStore',function(opts){
 			// Store App.Data.Store into localStorage!
 			App.Utils.Storage.set('AppDataStore',App.Data.Store);
 		});
 		// Save every 60 seconds
+		// - after coming back, does it run a ton of times? (queued when in standby?)
 		window.setInterval(function(){
 			App.Events.trigger('saveAppDataStore',true);
 		},60000);
 
+		// CSS
+		// - local or debug version of CSS
+		App.Utils.Storage.get('cssDebugOn')
+			.then(function(cssDebugText){
+				if(cssDebugText != undefined && cssDebugText != null){
+					// Using debug version
+					// Check for local version of debug css
+					// - App.Data.Store.AppMinimailDebugCss
+
+					// Add to page
+					$('#NormalCSS').remove();
+					$('head').append('<style id="DebugCSS" type="text/css">'+cssDebugText+'</style>');
+
+				} 
+				else {
+					// Not using debug version
+					// - add local extra.css
+					$('head').append('<link id="NormalCSS" rel="stylesheet" href="css/extra.css" type="text/css" />');
+
+					// Get local version of CSS
+					$.ajax({
+						url: 'css/extra.css',
+						cache: false,
+						success: function(cssText){
+							// App.Utils.Storage.set('cssDebugOn',cssText);
+						}
+					});
+				}
+			});
+
+
 		// init Router
 		// - not sure if this actually launches the "" position...
 		App.router = new App.Router();
+		// Backbone.history.start({silent: true}); // Launches "" router
+		// Backbone.history.start(); // Launches "" router
+		// App.router.navigate('',true);
+
+
+		// Get access_token if it exists
+		var oauthParams = App.Utils.getOAuthParamsInUrl();
+		if(typeof oauthParams.access_token == "string"){
+
+			// Have an access_token
+			// - save it to localStorage
+			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier);
+			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token);
+
+			// Save
+			App.Events.trigger('saveAppDataStore',true);
+
+			// Reload page, back to #
+			window.location = [location.protocol, '//', location.host, location.pathname].join('');
+			return;
+		}
+
+		// Continue loading router
 		Backbone.history.start({silent: true}); // Launches "" router
 		App.router.navigate('',true);
 
 		// Debug messages
+		// - add to body
 		var debug_messages = new App.Views.DebugMessages();
 		debug_messages.render();
 
-		App.Utils.Storage.get(App.Credentials.prefix_user_token + 'user_token')
-			.then(function(user_token){
+		// Get user and set to app global
+		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'user')
+			.then(function(user){
+				App.Credentials.user = user;
+			});
 
-				console.log('STORED user_token');
-				console.log(user_token);
+		// Get access_token, set to app global, login to minimail server (doesn't allow offline access yet)
+		// - switch to be agnostic to online state (if logged in, let access offline stored data: need better storage/sync mechanisms)
+		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'access_token')
+			.then(function(access_token){
 
-				App.Credentials.user_token = user_token;
+				console.log('Stored access_token:' + access_token);	
+
+				// Make available to requests
+				App.Credentials.access_token = access_token;
 
 				// Run login script from body_login page if not logged in
-				if(typeof App.Credentials.user_token != 'string' || App.Credentials.user_token.length < 1){
+				if(typeof App.Credentials.access_token != 'string' || App.Credentials.access_token.length < 1){
 					// App.router.navigate("body_login", true);
 					Backbone.history.loadUrl('body_login')
 					return;
 				}
 
 
-				// Validate credentials
+				// Validate credentials with minimail server and emailbox 
+				// - make an api request to load my email address
 
 				var dfd = $.Deferred();
 
 				App.Plugins.Minimail.login()
 					.then(function(){
 
-						// Logged in on server
+						// Logged in on minimail server
 
 						// Check login status against Emailbox
 						Api.search({
@@ -164,16 +232,16 @@ var App = {
 								if(res.code != 200){
 									dfd.reject();
 									
-									App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token',null)
+									App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',null)
 										.then(function(){
-											App.Credentials.user_token = null;
+											App.Credentials.access_token = null;
 											Backbone.history.loadUrl('body_login')
 										});
 										return;
 								}
 
 								var loginData = {
-									user_token: App.Credentials.user_token
+									access_token: App.Credentials.access_token
 								};
 
 								// Set EmailAccountData
@@ -185,7 +253,104 @@ var App = {
 								Api.Event.start_listening();
 								Backbone.history.loadUrl('body');
 								
+								// CSS ()
+								// - local or debug version of CSS
 
+								// Listen for debugCss to be turned on/off remotely
+								Api.Event.on({
+									event: 'AppMinimailDebugCss.turn'
+								},function(result){
+									// Get local version of CSS
+									if(result.data == 'on'){
+										App.Utils.Notification.toast('Turning ON Debug CSS and restarting');
+										window.setTimeout(function(){
+											$.ajax({
+												url: 'css/extra.css',
+												cache: false,
+												success: function(cssText){
+													// App.Plugins.Minimail.update_remote('both');
+													App.Utils.Storage.set('cssDebugOn',cssText)
+														.then(function(){
+															App.Utils.reloadApp();
+														});
+
+												}
+											});
+										},500);
+
+									} else if(result.data == 'off'){
+										App.Utils.Notification.toast('Turning OFF Debug CSS and restarting');
+										window.setTimeout(function(){
+											App.Utils.Storage.set('cssDebugOn',null)
+												.then(function(){
+													App.Utils.reloadApp();
+												});
+										},500);
+									}
+								});
+								
+								// Load any existing and start listeners if we're using debug css
+								App.Utils.Storage.get('cssDebugOn')
+									.then(function(cssDebugText){
+										if(cssDebugText != undefined && cssDebugText != null){
+											// - start listener for new changes to Css.debug
+											
+											App.Utils.Notification.toast('Using debugCSS');
+
+											// Update any remote versions
+											// - by using an emitted event
+
+											// Update remote CSS
+											App.Plugins.Minimail.update_remote('both');
+
+											// Listen for changes to css triggered by remote (web)
+											Api.Event.on({
+												event: 'AppMinimailDebugCss.web_update'
+											},function(result){
+												// alert('update to css from remote');
+
+												// Update the CSS in the page
+												// - contains the new CSS
+												App.Utils.Notification.debug.temporary('Updating local CSS from remote');
+												App.Utils.Notification.toast('Updating local CSS from remote');
+												
+												$('#NormalCSS').remove();
+												$('#DebugCSS').remove();
+												console.log('Event RESULT');
+												console.log(result);
+												console.log(result.css);
+
+												App.Utils.Storage.set('cssDebugOn',result.css)
+
+												$('head').append('<style id="DebugCSS" type="text/css">'+result.data.css+'</style>');
+
+											});
+
+											// Listen for requests for newest HTML triggered by remote (web)
+											Api.Event.on({
+												event: 'AppMinimailDebugHtml.request_refresh'
+											},function(result){
+												// alert('update to css from remote');
+
+												// Get and emit HTML
+												Api.event({
+													data: {
+														event: 'AppMinimailDebugHtml.phone_update',
+														obj: {
+															html: $('body').html()
+														}
+													},
+													success: function(response){
+														response = JSON.parse(response);
+														console.log('PHONE RESPONSE');
+														console.log(response);
+													}
+												});
+
+											});
+
+										}
+									});
 
 								// Api.count({
 								// 	data: {
@@ -220,10 +385,10 @@ var App = {
 
 						console.log('Failed');
 
-						// localStorage.setItem(App.Credentials.prefix_user_token + 'user_token',null);
-						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', null)
+						// localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',null);
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', null)
 							.then(function(){
-								App.Credentials.user_token = null;
+								App.Credentials.access_token = null;
 								Backbone.history.loadUrl('body_login')
 							});
 

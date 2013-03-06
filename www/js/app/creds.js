@@ -4,7 +4,7 @@ var tmp_credentials = {
 	base_api_url: "https://getemailbox.com",
 
 	app_key: "pkg.dev.minimail",
-	prefix_user_token : 'minimail_',
+	prefix_access_token : 'minimail_',
 
 	data_version : 7,
 	email_collect_limit: 5,
@@ -14,7 +14,7 @@ var tmp_credentials = {
 
 	thread_move_x_threshold: 0.2,
 	thread_move_y_threshold: 40, 
-
-	minimail_server: 'https://minimail.herokuapp.com'
+	
+	minimail_server: 'http://minimail.getemailbox.com'
 
 };

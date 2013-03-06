@@ -45,8 +45,8 @@
     <gap:splash src="res/screen/ios/screen-ipad-portrait.png"      gap:platform="ios"     width="768" height="1024" />
     <gap:splash src="res/screen/ios/screen-ipad-landscape.png"     gap:platform="ios"     width="1024" height="768" />
 
-    	<gap:plugin name="Storage" />
-		<gap:plugin name="GenericPush" />
-		<gap:plugin name="ChildBrowser" />
+	<gap:plugin name="Storage" />
+	<gap:plugin name="GenericPush" />
+	<gap:plugin name="ChildBrowser" />
 
 </widget>

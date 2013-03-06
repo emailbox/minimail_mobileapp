@@ -83,21 +83,25 @@ App.Router = Backbone.Router.extend({
 
 		// Unless user_token is already in querystring
 		
-		if(typeof App.Credentials.user_token != 'string' || App.Credentials.user_token.length < 1){
+		if(typeof App.Credentials.access_token != 'string' || App.Credentials.prefix_access_token.length < 1){
 			
-			var qs = App.Utils.getUrlVars();
+			// var qs = App.Utils.getUrlVars();
+			var oauthParams = App.Utils.getOAuthParamsInUrl();
+			// console.log('oauthParams');
+			// console.log(oauthParams);
+			// alert('oauth');
+			// return false;
 
-			if(typeof qs.user_token == "string"){
-				// Have a user_token
+			// if(typeof qs.user_token == "string"){
+			if(typeof oauthParams.access_token == "string"){
+
+				// Have an access_token
 				// - save it to localStorage
-
-				App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token',qs.user_token)
-					.then(function(){
-						
-						// Reload page, back to #home
-						window.location = [location.protocol, '//', location.host, location.pathname].join('');
-					});
-
+				// localStorage.setItem(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier);
+				// localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token);
+				
+				// // Reload page, back to #home
+				// window.location = [location.protocol, '//', location.host, location.pathname].join('');
 			} else {
 				// Show login splash screen
 				var page = new App.Views.BodyLogin();
@@ -109,6 +113,8 @@ App.Router = Backbone.Router.extend({
 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
 			return;
 		} 
+
+
 
 	},
 
@@ -365,7 +371,7 @@ App.Router = Backbone.Router.extend({
 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
 
 		} else {
-			localStorage.setItem(App.Credentials.prefix_user_token + 'user_token','');
+			localStorage.clear();//(App.Credentials.prefix_user_token + 'user_token','');
 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
 		}
 

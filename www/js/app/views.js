@@ -125,8 +125,9 @@ App.Views.Body = Backbone.View.extend({
 		// Load the Undecided View
 		// Backbone.history.loadUrl('undecided');
 		var doclick = 'all';
-		// this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('click');
-		this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('touchend');
+		this.$('.base_header_menu button[data-action="'+doclick+'"]').addClass('active');
+		Backbone.history.loadUrl(doclick);
+		// this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('touchend');
 
 		return this;
 	},
@@ -2719,8 +2720,9 @@ App.Views.CommonReply = Backbone.View.extend({
 		}
 
 		if(usePg){
-			alert('Photos unavailable');
-			return false;
+			
+			// Launch Camera
+			// - also allow photo album? Anything else by default? 
 			navigator.camera.getPicture(function(imageURI){
 
 				// Todo: Save file to filepicker
@@ -2738,9 +2740,14 @@ App.Views.CommonReply = Backbone.View.extend({
 				console.log('Error getting image');
 				console.log(err);
 			}, { 
-				quality: 80, 
-				destinationType: Camera.DestinationType.FILE_URI 
-			}); 
+				quality: 20, 
+				destinationType: Camera.DestinationType.FILE_URI,
+				correctOrientation: true,
+				allowEdit: true, 
+				encodingType: Camera.EncodingType.PNG,
+				targetWidth: 1000,
+				targetHeight: 1000
+			});
 
 		}
 
@@ -2966,6 +2973,64 @@ App.Views.CommonCompose = Backbone.View.extend({
 				// Error
 				clog('Error getting contact');
 			});
+		} else if(usePg){
+
+			// Sample contact:
+
+			// {
+			//     "id": "1",
+			//     "rawId": "1",
+			//     "displayName": null,
+			//     "name": {
+			//         "formatted": ""
+			//     },
+			//     "nickname": null,
+			//     "phoneNumbers": null,
+			//     "emails": [{
+			//         "type": "other",
+			//         "value": "nickybob45@aol.com",
+			//         "id": "6",
+			//         "pref": false
+			//     }],
+			//     "addresses": null,
+			//     "ims": null,
+			//     "organizations": null,
+			//     "birthday": null,
+			//     "note": "",
+			//     "photos": [{
+			//         "value": "content://com.android.contacts/contacts/1/photo",
+			//         "type": "url",
+			//         "id": "1",
+			//         "pref": false
+			//     }],
+			//     "categories": null,
+			//     "urls": null
+			// }
+
+			var contactFields = ["id","displayName","name","emails","photos"];
+			var contactFindOptions = {
+				// filter: searchCritera,
+				multiple: true
+			};
+
+			navigator.contacts.find(contactFields, function(all_contacts){
+				// Filter contacts who have no email address
+				var contacts_with_email = [];
+				$.each(all_contacts,function(i,contact){
+					try {
+						if(contact.emails.length > 0){
+							contacts_with_email.push(contact);
+						}
+					} catch (err){
+
+					}
+				});
+				alert(contacts_with_email.length);
+			}, function(err){
+				// Err with contacts
+				alert('Error with contacts');
+			}, contactFindOptions);
+
 		} else {
 
 			this.contact_write();
@@ -3269,8 +3334,8 @@ App.Views.CommonCompose = Backbone.View.extend({
 		}
 
 		if(usePg){
-			alert('Photos unavailable');
-			return false;
+			
+			// Launch camera
 			navigator.camera.getPicture(function(imageURI){
 
 				// Todo: Save file to filepicker
@@ -3288,9 +3353,16 @@ App.Views.CommonCompose = Backbone.View.extend({
 				console.log('Error getting image');
 				console.log(err);
 			}, { 
-				quality: 80, 
-				destinationType: Camera.DestinationType.FILE_URI 
+				quality: 20, 
+				destinationType: Camera.DestinationType.FILE_URI,
+				correctOrientation: true,
+				allowEdit: true, 
+				encodingType: Camera.EncodingType.PNG,
+				targetWidth: 1000,
+				targetHeight: 1000
 			}); 
+
+			// This does not run until camera returns
 
 		}
 
@@ -3657,7 +3729,8 @@ App.Views.LeisureList = Backbone.View.extend({
 		// 'click .sender' : 'approve',
 		// 'click .sender_status a' : 'status_change'
 
-		'click .leisure_item' : 'view_leisure_category'
+		'click .leisure_item .filter_name' : 'open_leisure_preview',
+		'click .leisure_item .item_threads' : 'view_leisure_category'
 
 	},
 
@@ -3676,6 +3749,25 @@ App.Views.LeisureList = Backbone.View.extend({
 
 	},
 
+	open_leisure_preview: function(ev){
+		// Show/hide threads for this filter
+
+		var that = this;
+		var elem = ev.currentTarget;
+		var threadElem = $(elem).parents('.leisure_item');
+
+		if($(threadElem).find('.item_threads').hasClass('nodisplay')){
+			// Show threads
+			$(threadElem).find('.item_threads').removeClass('nodisplay')
+		} else {
+			// Hide threads
+			$(threadElem).find('.item_threads').addClass('nodisplay')
+		}
+
+		return false;
+
+	},
+
 
 	view_leisure_category: function(ev){
 		// View an individual email
@@ -3685,7 +3777,7 @@ App.Views.LeisureList = Backbone.View.extend({
 		// - probably have some of the info cached already (all relevant headers)
 
 		// Get Thread id
-		var id = $(elem).attr('data-id');
+		var id = $(threadElem).attr('data-id');
 
 		// Set last scroll position
 		this.last_scroll_position = $('.all_threads').scrollTop();
@@ -4098,7 +4190,6 @@ App.Views.LeisureItem = Backbone.View.extend({
 		var data = App.Data.Store.AppMinimailLeisureFilter[this.leisureid];
 		if(data == undefined){
 			// Thread not set at all
-			alert('filter not set at all');
 			that.refresh_and_render_filter();
 
 			// Shouldn't not be set at all
@@ -5974,7 +6065,13 @@ App.Views.BodyLogin = Backbone.View.extend({
 				});
 		} else if(usePg){
 			
-			p.callback = 'https://getemailbox.com/testback/'
+			var p = {
+				response_type: 'token',
+				client_id : App.Credentials.app_key,
+				redirect_uri : 'https://getemailbox.com/testback/'
+				// state // optional
+				// x_user_id // optional	
+			};
 			var params = $.param(p);
 			var call_url = App.Credentials.base_api_url + "/apps/authorize/?" + params;
 
@@ -6000,6 +6097,47 @@ App.Views.BodyLogin = Backbone.View.extend({
 				var url = loc;
 
 				if(parser.hostname == 'getemailbox.com' && parser.pathname == '/testback/'){
+					
+					// var qs = App.Utils.getUrlVars();
+					var oauthParams = App.Utils.getOAuthParamsInUrl(url);
+
+					// if(typeof qs.user_token == "string"){
+					if(typeof oauthParams.access_token == "string"){
+
+						// Have an access_token
+						// - save it to localStorage
+						localStorage.setItem(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier);
+						localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token);
+						
+						// Reload page, back to #home
+						window.location = [location.protocol, '//', location.host, location.pathname].join('');
+
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token)
+							.then(function(){
+								
+								// Reload page, back to #home
+								// forge.logging.info('reloading');
+
+								// alert('success');
+								window.plugins.childBrowser.close();
+
+								$('body').html('');
+								window.location = [location.protocol, '//', location.host, location.pathname].join('');
+							});
+
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier)
+							.then(function(){
+								clog('Saved user');
+							});
+
+					} else {
+						// Show login splash screen
+						var page = new App.Views.BodyLogin();
+						App.router.showView('bodylogin',page);
+					}
+
+					return;
+
 
 					// First, parse the query string
 					var params = {}, queryString = url.substring(url.indexOf('#')+1),
@@ -6022,6 +6160,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 								// alert('success');
 								window.plugins.childBrowser.close();
 
+								$('body').html('');
 								window.location = [location.protocol, '//', location.host, location.pathname].join('');
 							});
 						
@@ -6101,8 +6240,18 @@ App.Views.BodyLogin = Backbone.View.extend({
 			};
 
 		} else {
+
+			var p = {
+				response_type: 'token',
+				client_id : App.Credentials.app_key,
+				redirect_uri : [location.protocol, '//', location.host, location.pathname].join('')
+				// state // optional
+				// x_user_id // optional	
+			};
 			var params = $.param(p);
+
 			window.location = App.Credentials.base_api_url + "/apps/authorize/?" + params;
+
 		}
 
 		return false;

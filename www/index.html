@@ -7,20 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 	<title>
-		Minimail
+		minimail
 	</title>
 
 	<!-- Using local development -->
-<!--
+
     <script src="cordova-2.4.0.js"></script>
     <script src="childbrowser_local.js"></script>
--->
+
 
 	<!-- Using build.phonegap.com -->
-
+<!--
     <script src="phonegap.js"></script>
     <script src="childbrowser.js"></script>
-
+-->
 
     <script src="PushNotification.js"></script>
 
@@ -42,8 +42,10 @@
 
 	<link href="css/bootstrap.css" type="text/css" rel="stylesheet"> <!-- Uncomment below if switching to Less-compiled -->
 
-	<!-- Extra.css needs to be below less compiler -->
+	<!-- Extra.css needs to be below less compiled -->
+	<!--
 	<link href="css/extra.css" type="text/css" rel="stylesheet">
+	-->
 	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
 
 	<script src="js/app/creds.js"></script>
@@ -114,12 +116,18 @@
 		// phonegap/cordova usage
 		var usePg = false;
 		try {
-			if(1==1){
+			if (!useForge && navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/)) {
 				usePg = true;
-			}
+			} 
 		} catch(err){
 
 		}
+
+		// Browser (development)
+		if(!usePg && !useForge){
+			onReady();
+		}
+
 		// listener for phonegap
 		document.addEventListener("deviceready", function(){
 			onReady();
@@ -164,11 +172,9 @@
 
 				<br />
 
-				<p class="tagline">
+				<p class="tagline nodisplay">
 					Push the Envelope
 				</p>
-
-				<hr>
 
 				<p class="login">
 					<button class="btn btn-info btn-large">Login with Emailbox</button>
@@ -1026,7 +1032,7 @@
 
 			<div class="body">
 
-				<textarea id="textbody" name="textbody">{{textbody}}</textarea>
+				<textarea id="textbody" name="textbody" placeholder="body">{{textbody}}</textarea>
 
 			</div>
 
@@ -1049,7 +1055,7 @@
 					<div class="base_header_menu undecided_thread_viewing clearfix">
 						<div class="left">
 							<div class="btn-group">
-								<button data-action="back" class="btn">Back to Compose</button>
+								<button data-action="back" class="btn">Compose</button>
 							</div>
 						</div>
 						<!--
@@ -1089,7 +1095,7 @@
 						
 				<div class="header_holder clearfix">
 
-					<div class="base_header_menu undecided_thread_viewing clearfix">
+					<div class="base_header_menu common_reply clearfix">
 						<div class="left">
 							<div class="btn-group">
 								<button data-action="thread" class="btn view_thread">View Thread</button>
@@ -1126,7 +1132,7 @@
 
 				<div class="body">
 
-					<textarea id="textbody" name="textbody"></textarea>
+					<textarea id="textbody" name="textbody" placeholder="body"></textarea>
 
 				</div>
 
@@ -1181,7 +1187,7 @@
 							<button data-action="cancel" class="btn">
 								Cancel
 							</button>
-							<button data-action="send" class="btn btn-success">
+							<button data-action="send" class="btn btn-success btn-send">
 								Send
 							</button>
 						</div>
@@ -1200,13 +1206,13 @@
 
 			<div class="subject">
 
-				<input type="text" id="subject" name="subject" placeholder="Subject" />
+				<input type="text" id="subject" name="subject" placeholder="subject" />
 
 			</div>
 
 			<div class="body">
 
-				<textarea id="textbody" name="textbody"></textarea>
+				<textarea id="textbody" name="textbody" placeholder="body"></textarea>
 
 			</div>
 
@@ -1532,13 +1538,13 @@
 			<div class="filter_name">
 
 				<div class="leisure_unread_threads">
-					{{{display_unread_leisure_count ThreadUnreadCount}}}
+					&nbsp;{{{display_unread_leisure_count ThreadUnreadCount}}}&nbsp;
 				</div>
 
 				{{AppMinimailLeisureFilter.name}}
 			</div>
 
-			<div class="item_threads">
+			<div class="item_threads nodisplay">
 
 				{{#each Thread}}
 
@@ -1568,11 +1574,11 @@
 		<div class="quick_searches">
 
 			<div class="search_category" data-type="links" data-detail="recently_viewed">
-				<i class="icon-bookmark"></i> Links
+				<i class="icon-bookmark icon-white"></i> Links
 			</div>
 
 			<div class="search_category" data-type="attachments">
-				<i class="icon-download-alt"></i> Attachments
+				<i class="icon-download-alt icon-white"></i> Attachments
 
 				<div class="details nodisplay">
 					<div class="detail_item" data-type="recently_viewed">
@@ -1587,7 +1593,7 @@
 
 			<!--
 			<div class="search_category" data-type="contacts" data-detail="recently_viewed">
-				<i class="icon-user"></i> Contacts
+				<i class="icon-user icon-white"></i> Contacts
 				
 				<div class="details nodisplay">
 					<div class="detail_item" data-type="recently_viewed">
@@ -1602,7 +1608,7 @@
 			-->
 
 			<div class="search_category" data-type="threads">
-				<i class="icon-inbox"></i> Emails / Threads
+				<i class="icon-inbox icon-white"></i> Emails / Threads
 
 				<div class="details nodisplay">
 					<div class="detail_item" data-type="recently_viewed">
