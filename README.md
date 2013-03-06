@@ -6,7 +6,7 @@ If you want to try it out, choose one of the options (1&2 below) to install the 
 
 Please fork and submit pull requests!  
 
-## Current status: 
+## Current status 
 
 Version: 0.1 aka extreme alpha  
 It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, create Leisure Filters, and search links/attachments/emails. Because Push Notifications are not yet functioning, I recommend continuing to use your exiting mail app alongside minimail.    
@@ -39,7 +39,7 @@ Source for the minimail mobile email client for Android. The app works in conjun
 1. (coming soon)
 1. Follow the instructions at https://github.com/emailbox/minimail_mobileapp_full (coming soon)
 
-> **Note:** Push Notifications don't work when building locally. Working only on PhoneGap Build (actually, not yet there)
+> **Note:** Push Notifications don't work when building locally. Working only on PhoneGap Build (actually, not even there yet)
 
 ## Server-side   
 By default the basic minimail server is used. If you want to run your own server:  
