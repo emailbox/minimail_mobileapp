@@ -1,8 +1,5 @@
-
 ## Contents  
-
 Source for the minimail mobile email client for Android. The app works in conjunction with a server-side component (receiving and sending emails, Push Notifications, leisure filters) and the Emailbox API (https://getemailbox.com/docs).  
-
 
 ## Requirements:  
 - Android 2.2+
@@ -30,6 +27,8 @@ By default the basic minimail server is used. If you want to run your own server
 - Fix contacts (switch from Forge)  
 - Push Notifications
 - Camera and File Upload (emailbox file api)
+- CSS scheme (color, positioning, dimensions) 
+- Additional phones/platforms (per-dimensions/responsive css w/ defaults) 
 
 ## Build Todos:
 - Tests  
