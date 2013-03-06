@@ -1,7 +1,6 @@
 
-* { 
-  
-  -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
+* {
+
   outline: 0;
   box-sizing: border-box;
 
@@ -12,7 +11,14 @@
 html, *,
 textarea:focus, input:focus,
 a, a:hover, a:active, a:focus {
+  
+}
 
+html, *, body, 
+textarea, input,
+a, 
+.btn {
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 .btn {
