@@ -52,6 +52,10 @@ body.console {
   margin-top: 61px;
 }
 
+.has-header .body_container {
+  margin-top: 61px;
+}
+
 /* container */
 .container-fluid {
   padding: 0px;
@@ -1937,7 +1941,8 @@ body.console {
   white-space: nowrap;
 }
 
-.no_text_select {
+.no_text_select,
+.no-text-select {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
@@ -1962,7 +1967,7 @@ body.console {
 
 
 .loading {
-  border: 3px solid #999;
+  border: 3px solid #ccc;
   -webkit-border-radius: 30px;
   height: 18px;
   width: 18px;
@@ -1993,6 +1998,53 @@ body.console {
   text-align: center;
 }
 
+
+/* Choosing contacts */
+
+.view_choose_contacts {
+
+}
+
+.view_choose_contacts .contact {
+  padding: 10px;
+
+  border-bottom: 1px solid #222;
+}
+
+.view_choose_contacts .contact .photo {
+  float: left;
+  width: 50px;
+  height: 50px;
+  padding-left: 5px;
+  
+}
+
+.view_choose_contacts .contact .name_and_info {
+  float: left;
+  width: 280px;
+  padding-left: 20px;
+}
+
+.view_choose_contacts .contact .display_name {
+  font-size: 18pt;
+  line-height: 20pt;
+  font-weight: 100;
+  color: #b0b0b0;
+
+  width: 100%;
+}
+
+.view_choose_contacts .contact .display_name.only_display_name {
+  /*padding-top: 8px;*/
+}
+
+.view_choose_contacts .contact .display_email {
+  color: #eee;
+  font-size: 14pt;
+  line-height: 16pt;
+
+  width: 100%;
+}
 
 
 
