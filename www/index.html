@@ -11,16 +11,16 @@
 	</title>
 
 	<!-- Using local development -->
-
+<!--
     <script src="cordova-2.4.0.js"></script>
     <script src="childbrowser_local.js"></script>
-
+-->
 
 	<!-- Using build.phonegap.com -->
-<!--
+
     <script src="phonegap.js"></script>
     <script src="childbrowser.js"></script>
--->
+
 
     <script src="PushNotification.js"></script>
 
@@ -1166,7 +1166,6 @@
 	
 	<script id="t_common_compose" type="text/x-handlebars-template">
 
-
 		<div class="header at-top">
 					
 			<div class="header_holder clearfix">
@@ -1241,6 +1240,71 @@
 		<span class="label participant" data-email="{{this}}">
 			<span class="remove_address">X</span>{{this}}
 		</span>
+
+	</script>
+
+	
+	<script id="t_choose_contacts" type="text/x-handlebars-template">
+
+		<div class="header at-top">
+					
+			<div class="header_holder clearfix">
+
+				<div class="base_header_menu clearfix">
+					<div class="left">
+						
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn cancel">
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+		<div class="body_container">
+
+			<div class="contacts">
+
+				{{#each contacts}}
+
+					<div class="contact clearfix" data-email="{{email}}">
+
+						<div class="photo">
+							<img src="{{photo}}" width="40px" height="40px" />
+						</div>
+
+						<div class="name_and_info no_text_select">
+
+							{{#ifCond name email}}
+								<div class="display_name only_display_name ellipsis">
+									{{name}}
+								</div>
+							{{else}}
+								<div class="display_name ellipsis">
+									{{name}}
+								</div>
+
+								<div class="display_email ellipsis">
+									{{email}}
+								</div>
+							{{/ifCond}}
+
+						</div>
+
+					</div>
+
+				{{/each}}
+
+			</div>
+
+		</div>
+
 
 	</script>
 
@@ -2054,6 +2118,15 @@
 				Logout
 			</div>
 		</p>
+
+	</script>
+
+
+	<script id="t_common_loading" type="text/x-handlebars-template" class="partial">
+
+		<div class="loading">
+			&nbsp;
+		</div>
 
 	</script>
 
