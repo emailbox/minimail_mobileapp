@@ -34,7 +34,7 @@ App.Models.Contact = App.Models.EmailBoxModel.extend({
 });
 
 
-App.Models.Attachment = App.Models.EmailBoxModel.extend({
+App.Models.Attachment = Backbone.Model.extend({
 
 	// belongsTo: {
 	// 	Thread: App.Models.Email
@@ -43,7 +43,7 @@ App.Models.Attachment = App.Models.EmailBoxModel.extend({
 });
 
 
-App.Models.Link = App.Models.EmailBoxModel.extend({
+App.Models.Link = Backbone.Model.extend({
 
 	// belongsTo: {
 	// 	Thread: App.Models.Email
