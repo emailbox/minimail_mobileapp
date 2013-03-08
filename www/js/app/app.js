@@ -15,6 +15,7 @@ var App = {
 	Plugins:     {},
 	Events: 	 _.extend({}, Backbone.Events),
 	Data: 		 {
+		// tmp_contacts: [], // testing contacts
 		online: true,
 		Keys: {},
 		debug_messages: {},
@@ -38,6 +39,8 @@ var App = {
 
 			// Local only (don't sync?)
 			Attachment: {},
+			Contacts: [],
+			ContactsParsed: [],
 			Contact: {},
 			Link: {}
 		}
