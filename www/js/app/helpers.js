@@ -14,22 +14,22 @@ General Helpers
 // Some from https://raw.github.com/gist/1468937/f76f926f7961ea731fe30c4095a9e95dfe785eba/handlebars-helpers.js
 
 // Helpers
-Handlebars.registerHelper("ifCond", function(val1, val2, fn, elseFn) {
+Handlebars.registerHelper("ifCond", function(val1, val2, options) {
 	
 	if (val1 == val2) {
-		return fn(this);
-	} else if(elseFn != undefined) {
-		return elseFn(this);
+		return options.fn(this);
+	} else if(options.inverse != undefined) {
+		return options.inverse(this);
 	} else {
 		return null;
 	}
 });
-Handlebars.registerHelper("ifTypeCond", function(val1, val2, fn, elseFn) {
+Handlebars.registerHelper("ifTypeCond", function(val1, val2, options) {
 	
 	if (typeof(val1) == val2) {
-		return fn(this);
-	} else if(elseFn != undefined) {
-		return elseFn(this);
+		return options.fn(this);
+	} else if(options.inverse != undefined) {
+		return options.inverse(this);
 	} else {
 		return null;
 	}
