@@ -2924,6 +2924,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 	contact: function(ev){
 		// Choose a contact
 		var that = this;
+			elem = ev.currentTarget;
 
 		// Validate email
 
@@ -2959,7 +2960,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 						chose_email: that.chose_email,
 						emails: emails
 					});
-					$('body > div').addClass('nodisplay');
+					$('body > .full_page').addClass('nodisplay');
 					$('body').append(subView.$el);
 					subView.render();
 
@@ -3007,33 +3008,46 @@ App.Views.CommonCompose = Backbone.View.extend({
 			//     "urls": null
 			// }
 
-			var contactFields = ["id","displayName","name","emails","photos"];
-			var contactFindOptions = {
-				// filter: searchCritera,
-				multiple: true
-			};
 
-			navigator.contacts.find(contactFields, function(all_contacts){
-				// Filter contacts who have no email address
-				var contacts_with_email = [];
-				$.each(all_contacts,function(i,contact){
-					try {
-						if(contact.emails.length > 0){
-							contacts_with_email.push(contact);
-						}
-					} catch (err){
+			// Already have contacts data?
 
-					}
+			// Change element to "loading contacts"
+			$(elem).text('Loading...');
+
+			// Display contacts chooser subview
+			window.setTimeout(function(){
+				that.subViewContacts = new App.Views.ChooseContact({
+					Parent: that,
+					multiple: true
 				});
-				alert(contacts_with_email.length);
-			}, function(err){
-				// Err with contacts
-				alert('Error with contacts');
-			}, contactFindOptions);
+				that.$el.addClass('nodisplay');
+				$('body').append(that.subViewContacts.$el);
+				that.subViewContacts.render();
+
+				// Change text back
+				$(elem).text('Contacts');
+
+			},1);
+
+
 
 		} else {
 
-			this.contact_write();
+			// use sample data
+			// $(elem).text('Loading...');
+
+			that.subViewContacts = new App.Views.ChooseContact({
+				Parent: that,
+				multiple: true,
+				contacts: App.Data.tmp
+			});
+			that.$el.addClass('nodisplay');
+			$('body').append(that.subViewContacts.$el);
+			that.subViewContacts.render();
+
+
+
+			// this.contact_write();
 
 
 		}
@@ -3077,7 +3091,10 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// Add using a template
 		var template = App.Utils.template('t_compose_recipient');
 
-		that.$('.addresses').append(template(email));
+		// If exists, display it
+		if(email){
+			that.$('.addresses').append(template(email));
+		}
 
 	},
 
@@ -3391,6 +3408,251 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 });
 
+
+
+App.Views.ChooseContact = Backbone.View.extend({
+	
+	className: 'view_choose_contacts has-header',
+
+	events: {
+		'click .contact' : 'choose_email',
+		'click .cancel' : 'cancel'
+	},
+
+	initialize: function(options) {
+		var that = this;
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'back');
+
+		// this.el = this.options.el;
+
+		// Get contacts
+		// - display whether we are fetching contacts and updating them
+		// - should be treated as a Collection of Contact Models
+
+		if(usePg){
+			var contactFields = ["id","displayName","name","emails","photos"];
+			var contactFindOptions = {
+				// filter: searchCritera,
+				multiple: true
+			};
+
+			// Data already exists locally?
+			// - go get new data
+
+			navigator.contacts.find(contactFields, function(all_contacts){
+				// Filter contacts who have no email address
+				var contacts_with_email = [];
+				$.each(all_contacts,function(i,contact){
+					try {
+						if(contact.emails.length > 0){
+							contacts_with_email.push(contact);
+						}
+					} catch (err){
+
+					}
+				});
+
+				// alert(contacts_with_email.length);
+
+				// Parse and sort
+				var contacts_parsed = that.parse_and_sort(contacts_with_email);
+
+				// Re-render if empty
+				if(!App.Data.Store.Contacts.length){
+					// No data
+					// Update local store
+					App.Data.Store.Contacts = contacts_with_email;
+					App.Data.Store.ContactsParsed = contacts_parsed;
+					// Re-render
+					alert('rerender');
+					that.render();
+				} else {
+					// Update local store
+					App.Data.Store.Contacts = contacts_with_email;
+					App.Data.Store.ContactsParsed = contacts_parsed;
+				}
+
+				// Api.event({
+				// 	data: {
+				// 		event: 'Render.test3',
+				// 		obj: contacts_with_email.splice(0,100)
+				// 	}
+				// });
+
+			}, function(err){
+				// Err with contacts
+				alert('Error with contacts');
+			}, contactFindOptions);
+
+		} else if(useForge) {
+
+		} else {
+			// Browser
+
+			App.Data.Store.Contacts = App.Data.tmp_contacts;
+			var contacts_parsed = that.parse_and_sort(App.Data.Store.Contacts);
+			App.Data.Store.ContactsParsed = contacts_parsed;
+
+			// Re-render
+			alert('rerender');
+			that.render();
+
+		}
+
+	},
+
+	cancel: function(ev){
+		// Cancel and return
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Return
+		this.back(null);
+
+		return false;
+
+	},
+
+	choose_email: function(ev){
+		// Chose one of the emails for the person
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Get email
+		var email = $(elem).attr('data-email');
+
+		// Return
+		this.back(email);
+
+
+		return false;
+
+	},
+
+	back: function(email){
+		var that = this;
+
+		// Add email to the parent page
+		this.options.Parent.chose_email(email);
+
+		// Show the parent
+		// - should be using a window manager
+		that.options.Parent.$el.removeClass('nodisplay');
+		// $('body > .common_compose').removeClass('nodisplay');
+
+		// Close this view
+		this.close();
+
+	},
+
+	parse_and_sort: function(contacts){
+
+		contacts = _.map(contacts,function(contact){
+			var data = {
+				name: contact.displayName,
+				email: '',
+				photo: ''
+			};
+
+			if(contact.emails.length < 1){
+				return [];
+			}
+
+			var tmp_return = [];
+
+			_.each(contact.emails,function(email, index){
+				var tmp_data = _.clone(data);
+
+				// Set display to email value, if displayName doesn't exist
+				if(!contact.displayName){
+					tmp_data.name = email.value;
+				}
+
+				// Set photo value
+				try {
+					if(contact.photos.length > 0){
+						data.photo = contact.photos[0].value; // url to content://com...
+						// alert(data.photo);
+					}
+				} catch(err){
+					console.log('shoot');
+				}
+
+				// Set email value
+				tmp_data.email = email.value;
+
+				tmp_return.push(tmp_data);
+			})
+
+			return tmp_return;
+
+		});
+		contacts = _.reduce(contacts,function(contact,next){
+			return contact.concat(next);
+		});
+		contacts = _.compact(contacts);
+		contacts = _.uniq(contacts);
+
+		// Sort
+		contacts = App.Utils.sortBy({
+			arr: contacts,
+			path: 'email',
+			direction: 'desc', // desc
+			type: 'string'
+		});
+
+		return contacts;
+
+	},
+
+	render: function() {
+		var that = this;
+		// Data
+		// var data = this.options.accounts.UserGmailAccounts;
+
+		// Should start the updater for accounts
+		// - have a separate view for Accounts?
+
+		// console.log(JSON.stringify(this.options.contacts[0]));
+		// Api.event({
+		// 	data: {
+		// 		event: 'Render.test',
+		// 		obj: this.options.contacts.splice(0,10)
+		// 	}
+		// });
+
+		// Sort/organize contacts
+
+		// Get into list of contacts and emails
+		// - displaying 1 contact and 1 email per line
+
+		// Empty App.Data.Store.Contacts?
+		// - never got them before
+		if(App.Data.Store.ContactsParsed.length < 1){
+
+			// Template
+			var template = App.Utils.template('t_common_loading');
+
+			// Write HTML
+			this.$el.html(template());
+
+			// Don't continue displaying
+			return
+
+		}
+
+		// Template
+		var template = App.Utils.template('t_choose_contacts');
+
+		// Write HTML
+		this.$el.html(template({
+			contacts: App.Data.Store.ContactsParsed
+		}));
+
+		return this;
+	}
+});
 
 
 App.Views.SelectEmailList = Backbone.View.extend({
