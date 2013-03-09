@@ -2347,6 +2347,8 @@ App.Views.CommonReply = Backbone.View.extend({
 		'click .btn[data-action="cancel"]' : 'cancel',
 		'click .btn[data-action="send"]' : 'send',
 
+		'click .btn[data-action="contacts"]' : 'contact',
+
 		'click .remove_address' : 'remove_address',
 
 		'click .add_attachment' : 'add_attachment',
@@ -2636,6 +2638,150 @@ App.Views.CommonReply = Backbone.View.extend({
 		$(window).scrollTop(0);
 
 		return false;
+
+	},
+
+	contact: function(ev){
+		// Choose a contact
+		var that = this;
+			elem = ev.currentTarget;
+
+		// Validate email
+
+		if(useForge){
+			forge.contact.select(function(contact){
+				// Got contact
+				// - validate Email
+
+				// Gather only emails
+				var emails = _.map(contact.emails,function(email){
+					return email.value;
+				});
+
+				// Valid email?
+				emails = _.filter(emails,function(email){
+					if(App.Utils.Validate.email(email)){
+						return true;
+					}
+				});
+
+				// Unique?
+				emails = _.uniq(emails);
+				// emails = emails.concat(emails); // testing multiple emails
+
+				// How many left?
+				if(emails.length == 1){
+					// Only 1 email
+					that.chose_email(emails[0]);
+
+				} else if(emails.length > 1) {
+					// Show subview to choose which email to use
+					var subView = new App.Views.SelectEmailList({
+						chose_email: that.chose_email,
+						emails: emails
+					});
+					$('body > .full_page').addClass('nodisplay');
+					$('body').append(subView.$el);
+					subView.render();
+
+				} else {
+					// No emails found
+					alert('No emails found for that contact');
+					return false;
+				}
+
+			},function(content){
+				// Error
+				clog('Error getting contact');
+			});
+		} else if(usePg){
+
+			// Already have contacts data?
+
+			// Change element to "loading contacts"
+			$(elem).text('Loading...');
+
+			// Display contacts chooser subview
+			window.setTimeout(function(){
+				that.subViewContacts = new App.Views.ChooseContact({
+					Parent: that,
+					multiple: true
+				});
+				that.$el.addClass('nodisplay');
+				$('body').append(that.subViewContacts.$el);
+				that.subViewContacts.render();
+
+				// Change text back
+				$(elem).text('Contacts');
+
+			},1);
+
+
+
+		} else {
+
+			// use sample data
+			// $(elem).text('Loading...');
+
+			that.subViewContacts = new App.Views.ChooseContact({
+				Parent: that,
+				multiple: true,
+				contacts: App.Data.tmp
+			});
+			that.$el.addClass('nodisplay');
+			$('body').append(that.subViewContacts.$el);
+			that.subViewContacts.render();
+
+
+
+			// this.contact_write();
+
+
+		}
+
+		return false;
+
+	},
+
+	contact_write: function(ev){
+		// Enter an email directly
+		var that = this;
+
+		var email = prompt('Write Email Address');
+		if(!email){
+			return false;
+		}
+
+		if(App.Utils.Validate.email(email)){
+
+			// var subView = new App.Views.SelectEmailList({
+			// 	chose_email: that.chose_email,
+			// 	emails: [email,email]
+			// });
+			// $('body > div').addClass('nodisplay');
+			// $('body').append(subView.$el);
+			// subView.render();
+
+			// Add using a template
+			that.chose_email(email);
+
+		} else {
+			alert('Invalid Email Address');
+		}
+
+	},
+
+	chose_email: function(email){
+		// Add the emailt to the list
+		var that = this;
+
+		// Add using a template
+		var template = App.Utils.template('t_compose_recipient');
+
+		// If exists, display it
+		if(email){
+			that.$('.addresses').append(template(email));
+		}
 
 	},
 
@@ -2975,39 +3121,6 @@ App.Views.CommonCompose = Backbone.View.extend({
 				clog('Error getting contact');
 			});
 		} else if(usePg){
-
-			// Sample contact:
-
-			// {
-			//     "id": "1",
-			//     "rawId": "1",
-			//     "displayName": null,
-			//     "name": {
-			//         "formatted": ""
-			//     },
-			//     "nickname": null,
-			//     "phoneNumbers": null,
-			//     "emails": [{
-			//         "type": "other",
-			//         "value": "nickybob45@aol.com",
-			//         "id": "6",
-			//         "pref": false
-			//     }],
-			//     "addresses": null,
-			//     "ims": null,
-			//     "organizations": null,
-			//     "birthday": null,
-			//     "note": "",
-			//     "photos": [{
-			//         "value": "content://com.android.contacts/contacts/1/photo",
-			//         "type": "url",
-			//         "id": "1",
-			//         "pref": false
-			//     }],
-			//     "categories": null,
-			//     "urls": null
-			// }
-
 
 			// Already have contacts data?
 
@@ -3655,6 +3768,34 @@ App.Views.ChooseContact = Backbone.View.extend({
 });
 
 
+App.Views.ThreadOptions = Backbone.View.extend({
+	
+	className: 'thread_preview_options',
+
+	events: {
+
+	},
+
+	initialize: function(options) {
+		var that = this;
+		_.bindAll(this, 'render');
+
+	},
+
+	render: function() {
+		var that = this;
+
+		// Template
+		var template = App.Utils.template('t_all_thread_options');
+
+		// Write HTML
+		this.$el.html(template());
+
+		return this;
+	}
+});
+
+
 App.Views.SelectEmailList = Backbone.View.extend({
 	
 	className: 'select_email_list',
@@ -3726,7 +3867,9 @@ App.Views.All = Backbone.View.extend({
 		// 'click .sender' : 'approve',
 		// 'click .sender_status a' : 'status_change'
 
-		'click .thread-preview' : 'view_email'
+		// 'click .thread-preview' : 'view_email'
+		'shorttap .thread-preview' : 'preview_thread',
+		'longtap .thread-preview' : 'view_email'
 
 	},
 
@@ -3751,15 +3894,25 @@ App.Views.All = Backbone.View.extend({
 
 	},
 
+	// longtap: function(ev){
+	// 	var that = this,
+	// 		elem = ev.currentTarget;
 
-	view_email: function(ev){
-		// View an individual email thread
-		var elem = ev.currentTarget;
+	// 	alert('longtap');
+	// 	return false;
+	// },
+
+	subViewThreadOptions: {},
+	preview_thread: function(ev){
+		// Preview a thread
+		var that = this,
+			elem = ev.currentTarget;
+
 		var threadElem = $(elem).parents('.thread');
-
+		
 		// In multi-select mode?
 		if(this.$('.all_threads').hasClass('multi-select-mode')){
-
+			
 			// Already selected?
 			if($(elem).hasClass('multi-selected')){
 				// un-selected
@@ -3778,6 +3931,83 @@ App.Views.All = Backbone.View.extend({
 
 			return false;
 		}
+
+		// Expand/shrink
+		if($(elem).hasClass('removed_ellipsis')){
+			// Shrinking
+
+			// Add ellipses back
+			$(elem).removeClass('removed_ellipsis');
+			$(elem).find('.ellipsis_removed').addClass('ellipsis').removeClass('ellipsis_removed');
+
+			// Close subViews
+			_.each(that.subViewThreadOptions,function(subView){
+				subView.close();
+			});
+
+		} else {
+			// Expanding
+
+			// Re-add other ellipses
+			$('.thread-preview').removeClass('removed_ellipsis');
+			$('.thread-preview').find('.ellipsis_removed').addClass('ellipsis').removeClass('ellipsis_removed');
+
+			// Close other subViews
+			_.each(that.subViewThreadOptions,function(subView){
+				subView.close();
+			});
+
+			// Remove ellipsis
+			$(elem).addClass('removed_ellipsis');
+			$(elem).find('.ellipsis').addClass('ellipsis_removed').removeClass('ellipsis');
+
+			// Create sub view with options
+			var subViewKey = $(elem).attr('data-thread-id');
+			that.subViewThreadOptions[subViewKey] = new App.Views.ThreadOptions({
+				Parent: that,
+				threadid: subViewKey
+			});
+			// App.router.showView('subthreadoptions',that.subViewThreadOptions[subViewKey]);//.render();
+			that.subViewThreadOptions[subViewKey].render();
+
+			// Write HTML before element
+			$(elem).after(that.subViewThreadOptions[subViewKey].$el);
+			
+
+		}
+
+
+		return false;
+
+	},
+
+	view_email: function(ev){
+		// View an individual email thread
+
+		var elem = ev.currentTarget;
+		var threadElem = $(elem).parents('.thread');
+
+		// In multi-select mode?
+		// if(this.$('.all_threads').hasClass('multi-select-mode')){
+		// 	alert(1);
+		// 	// Already selected?
+		// 	if($(elem).hasClass('multi-selected')){
+		// 		// un-selected
+		// 		$(elem).removeClass('multi-selected');
+
+		// 		// Anybody else selected?
+		// 		if($('.multi-selected').length < 1){
+		// 			// turn of multi-select mode
+		// 			$(elem).parents('.all_threads').removeClass('multi-select-mode');
+		// 		}
+
+		// 	} else {
+		// 		// select row
+		// 		$(elem).addClass('multi-selected');
+		// 	}
+
+		// 	return false;
+		// }
 
 		// - probably have some of the info cached already (all relevant headers)
 

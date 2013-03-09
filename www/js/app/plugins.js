@@ -400,22 +400,26 @@ App.Plugins.Minimail = {
 				// 	// select row
 				// 	$(this).addClass('multi-selected');
 				// }
-				return;
-			}
+				
 
-			// Are two fingers being used?
-			if(e.originalEvent.touches.length > 1){
-				// multi-finger
+				// return;
 
-				// add touch to all events
-				$(this).addClass('touch_start');
-				$('.touch_start').addClass('multi-selected');
-				$('.touch_start').removeClass('touch_start');
+			} else {
 
-				$parent_controller.addClass('multi-select-mode');
+				// Are two fingers being used?
+				if(e.originalEvent.touches.length > 1){
+					// multi-finger
 
-				// clog('===firing');
-				return;
+					// add touch to all events
+					$(this).addClass('touch_start');
+					$('.touch_start').addClass('multi-selected');
+					$('.touch_start').removeClass('touch_start');
+
+					$parent_controller.addClass('multi-select-mode');
+
+					// clog('===firing');
+					return;
+				}
 			}
 
 			var coords = App.Utils.get_point_position(e);
@@ -431,6 +435,13 @@ App.Plugins.Minimail = {
 			$(this).attr('finger-position-x',coords.x);
 			$(this).attr('finger-position-y',coords.y);
 
+			// Store total amount moved
+			$(this).attr('x-total-diff',0);
+			$(this).attr('y-total-diff',0);
+
+			// Store time started
+			// - prevent firing if held for awhile
+			$(this).attr('finger-time',new Date().getTime());
 
 		},
 
@@ -452,6 +463,16 @@ App.Plugins.Minimail = {
 
 				var x_diff = coords.x - this_x;
 				var y_diff = coords.y - this_y;
+
+				// Add diff to existing diff values
+				$(this).attr('x-total-diff', parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff));
+				$(this).attr('y-total-diff', parseInt($(this).attr('y-total-diff')) + Math.abs(y_diff));
+
+				var $parent_controller = $(this).parents('.all_threads');
+				// Already in multi-select mode?
+				if($parent_controller.hasClass('multi-select-mode')){
+					return;
+				}
 
 				// Moved finger/mouse too far vertically?
 				// - revert
@@ -542,7 +563,15 @@ App.Plugins.Minimail = {
 				var y_diff = coords.y - this_y;
 
 				var x_ratio_diff = Math.abs(x_diff / $(this).parents('.thread').width());
-				if(x_ratio_diff > App.Credentials.thread_move_x_threshold){
+
+
+				var $parent_controller = $(this).parents('.all_threads');
+				// // Already in multi-select mode?
+				// if($parent_controller.hasClass('multi-select-mode')){
+				// 	return;
+				// }
+
+				if(x_ratio_diff > App.Credentials.thread_move_x_threshold && !$parent_controller.hasClass('multi-select-mode')){
 					// Moved far enough
 
 
@@ -635,7 +664,29 @@ App.Plugins.Minimail = {
 					}
 
 				} else {
+
+					// Did not move far enough
+					// - trigger a "shorttap" or "longtap" event on thread-preview
+
+					// Total distance traveled too far?
+					var x_total_diff = parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff);
+					var y_total_diff = parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff);
+					if(x_total_diff < 40 && y_total_diff < 40){
+						// Didn't travel too far
+
+						// 
+						var newTime = new Date().getTime();
+						var elapsed = newTime - parseInt($(that).attr('finger-time'));
+						if(elapsed < 300){
+							$(that).trigger('shorttap');
+						} else {
+							$(that).trigger('longtap');
+						}
+
+					}
+
 					// Revert back to original position
+					// - missed everything
 					App.Plugins.Minimail.revert_box(this);
 				}
 			}
@@ -746,7 +797,7 @@ App.Plugins.Minimail = {
 
 		// Update remote CSS
 		if(css_or_html == 'both' || css_or_html == 'css'){
-			
+
 			$.ajax({
 				url: 'css/extra.css',
 				cache: false,
