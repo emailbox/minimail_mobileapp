@@ -666,7 +666,7 @@
 	<script id="t_delayed_thread" type="text/x-handlebars-template" class="partial">
 
 
-		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+		<div class="thread-preview clearfix no_text_select" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
 
 			<div class="clearfix">
 
@@ -805,7 +805,7 @@
 	<script id="t_all_thread" type="text/x-handlebars-template" class="partial">
 
 
-		<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
+		<div class="thread-preview clearfix no_text_select" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
 
 			<div class="clearfix">
 
@@ -853,6 +853,19 @@
 
 		</div>
 
+
+	</script>
+
+
+	<script id="t_all_thread_options" type="text/x-handlebars-template" class="partial">
+
+		
+		<div class="btn-group">
+			<button data-action="done" class="btn done">Done w/ Older</button>
+			<button data-action="delay" class="btn delay">Delay Older</button>
+			<button data-action="reply" class="btn reply">Reply</button>
+		</div>
+	
 
 	</script>
 
@@ -1014,7 +1027,7 @@
 							<button data-action="cancel" class="btn">
 								Cancel
 							</button>
-							<button data-action="save" class="btn btn-success">
+							<button data-action="save" class="btn btn-success btn-save">
 								Save
 							</button>
 						</div>
@@ -1098,7 +1111,8 @@
 					<div class="base_header_menu common_reply clearfix">
 						<div class="left">
 							<div class="btn-group">
-								<button data-action="thread" class="btn view_thread">View Thread</button>
+								<button data-action="thread" class="btn view_thread">Thread</button>
+								<button data-action="contacts" class="btn contacts">Contacts</button>
 							</div>
 						</div>
 						<div class="right">
@@ -1106,7 +1120,7 @@
 								<button data-action="cancel" class="btn">
 									Cancel
 								</button>
-								<button data-action="send" class="btn btn-success">
+								<button data-action="send" class="btn btn-success btn-send">
 									Send
 								</button>
 							</div>
@@ -1342,7 +1356,7 @@
 								<button data-action="cancel" class="btn">
 									Cancel
 								</button>
-								<button data-action="create" class="btn btn-success">
+								<button data-action="create" class="btn btn-success btn-create">
 									Create
 								</button>
 							</div>
