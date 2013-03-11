@@ -766,7 +766,7 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 
 
 		var now = new Date();
-		var now_sec = parseInt(now.getTime());
+		var now_sec = parseInt(now.getTime() / 1000);
 
 		return this.fetch({
 			data: {

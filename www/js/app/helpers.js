@@ -1198,6 +1198,16 @@ Handlebars.registerHelper("email_participants_pretty", function(email) {
 });
 
 
+Handlebars.registerHelper("prettydate", function(v, format) {
+	//  Either today's date-time, or Yesterday, or Date
+
+	format = format || 'ddd, MMMM d, yyyy';
+	var tmp = new Date(v);
+	return tmp.toString(format)
+
+});
+
+
 Handlebars.registerHelper("thread_from_pretty", function(email) {
 	// SAME AS ABOVE (just outside $.each removed)
 

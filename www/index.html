@@ -10,14 +10,13 @@
 		minimail
 	</title>
 
-	<!-- Using local development -->
+	<!-- Using local development (comment out for build.phonegap.com) -->
 <!--
     <script src="cordova-2.4.0.js"></script>
     <script src="childbrowser_local.js"></script>
 -->
 
 	<!-- Using build.phonegap.com -->
-
     <script src="phonegap.js"></script>
     <script src="childbrowser.js"></script>
 
@@ -41,11 +40,12 @@
 
 
 	<link href="css/bootstrap.css" type="text/css" rel="stylesheet"> <!-- Uncomment below if switching to Less-compiled -->
+	<link href="css/mobiscroll.custom-2.4.4.min.css" type="text/css" rel="stylesheet">
 
 	<!-- Extra.css needs to be below less compiled -->
-	<!--
+	
 	<link href="css/extra.css" type="text/css" rel="stylesheet">
-	-->
+	
 	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
 
 	<script src="js/app/creds.js"></script>
@@ -76,6 +76,7 @@
 	<script src="js/libs/jquery.imagesloaded.min.js"></script>
 	<script src="js/libs/jquery.transit.min.js"></script>
 	<script src="js/libs/jquery.scrollTo.min.js"></script>
+	<script src="js/libs/mobiscroll.2.4.4.min.js"></script>
 
 	<!-- FancyBox -->
 	<!--<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
@@ -593,16 +594,42 @@
 				{{#each delay_options}}
 
 					<div class="option {{hide}}" data-type="{{key}}" data-wait="{{wait}}">
-						{{name}}
+						<div class="name">
+							{{name}}
+						</div>
+						<div class="details">
+							{{prettydate wait 'ddd'}}
+							<br />
+							{{prettydate wait 'MMM d'}}
+							<br />
+							{{prettydate wait 'h:mmtt'}}
+						</div>
 					</div>
 
 				{{/each}}
 
+				<div class="nodisplay">
 				<div class="option pickadate">
 					Pick a Date<input id="pickadate" type="datetime" class="invisible2"/>
 				</div>
+				</div>
 
 			</div>
+
+			<div class="choose_datetime nodisplay">
+				<div id="date" name="date_scroller"></div>
+				<div id="time" name="time_scroller"></div>
+
+				<div class="buttons clearfix">
+					<div class="btn btn-cancel">
+						Cancel
+					</div>
+					<div class="btn btn-success btn-delay">
+						Delay
+					</div>
+				</div>
+			</div>
+
 		</div>
 
 	</script>

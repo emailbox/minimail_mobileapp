@@ -836,6 +836,34 @@ App.Plugins.Minimail = {
 				}
 			});
 		}
+	},
+
+	formatDateForScroll: function(dateobj){
+
+		var tmp = [
+			dateobj.toString('M') - 1, // month,
+			dateobj.toString('d'),// day, 
+			dateobj.toString('yyyy'),// year, 
+			dateobj.toString('h'),// hour, 
+			dateobj.toString('m'),// min, 
+			dateobj.toString('t') == 'A' ? 0 : 1,// ampm
+		];
+
+
+		// console.log('formatDateForScroll');
+		// console.log(tmp);
+		return tmp;
+
+	},
+
+	parseDateFromScroll: function(date_arr){
+		// turn a date_arr into a js date object
+
+		// year, month, day, hours, minutes, seconds, milliseconds
+		var tmp = new Date(date_arr[2],date_arr[0],date_arr[1],date_arr[3],date_arr[4],0,0);
+
+		return tmp;
+
 	}
 
 

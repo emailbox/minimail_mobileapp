@@ -13,7 +13,7 @@ var tmp_credentials = {
 	s3_bucket: "https://s3.amazonaws.com/emailboxv1/",
 
 	thread_move_x_threshold: 0.2,
-	thread_move_y_threshold: 40, 
+	thread_move_y_threshold: 50, 
 	
 	minimail_server: 'http://minimail.getemailbox.com'
 

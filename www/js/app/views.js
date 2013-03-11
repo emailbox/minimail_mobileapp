@@ -3869,7 +3869,9 @@ App.Views.All = Backbone.View.extend({
 
 		// 'click .thread-preview' : 'view_email'
 		'shorttap .thread-preview' : 'preview_thread',
-		'longtap .thread-preview' : 'view_email'
+		'longtap .thread-preview' : 'view_email',
+
+		'click .thread-preview' : 'click_view_email'
 
 	},
 
@@ -3979,6 +3981,16 @@ App.Views.All = Backbone.View.extend({
 
 		return false;
 
+	},
+
+	click_view_email: function (ev){
+		// Clicked
+		// - only used by testing browser
+		if(usePg){
+			return false;
+		}
+
+		this.view_email(ev);
 	},
 
 	view_email: function(ev){
@@ -6896,7 +6908,10 @@ App.Views.DelayModal = Backbone.View.extend({
 	events: {
 		'click .option' : 'click_option',
 		'click .overlay' : 'cancel',
-		'blur #pickadate' : 'picked_date'
+		'blur #pickadate' : 'picked_date',
+
+		'click .btn-cancel' : 'cancel_confirmation',
+		'click .btn-delay' : 'choose_confirmation'
 	},
 
 	initialize: function() {
@@ -6954,12 +6969,14 @@ App.Views.DelayModal = Backbone.View.extend({
 		var delay_options = App.Plugins.Minimail.getDelayOptions();
 		
 		// Get option from delay_options
-		var wait = null;
+		var wait = null,
+			tmp_delay = null;
 		$.each(delay_options,function(i,val){
 			
 			if(waitType == val.key){
 				// using this one
 				wait = val.wait;
+				// tmp_delay = val;
 			}
 		});
 		if(wait == null){
@@ -6968,9 +6985,61 @@ App.Views.DelayModal = Backbone.View.extend({
 			return;
 		}
 
+		// Date
+		// var arr = this.$("#date").mobiscroll().parseValue(wait);
+		// console.log('hello');
+		
+		// var mobi_inst = $('#date').mobiscroll('getInst');
+		var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
+		
+		// Trigger date confirmation
+		this.$('.options').addClass('nodisplay');
+		this.$('.choose_datetime').removeClass('nodisplay');
+
+		// mobi_inst.val(wait.toString());
+		// console.log(1);
+		// console.log(mobi_inst.parseValue(wait));
+
+		// time
+		// this.$("#time").mobiscroll().time({
+		// 	display: 'inline',
+		// 	theme: 'wp'
+		// });
+
+		// $('#pickadate').click();
+
 		// Save delay
 		// - triggers other actions
-		that.save_delay(wait, save_text);
+		// that.save_delay(wait, save_text);
+
+		return false;
+
+	},
+
+	cancel_confirmation: function(ev){
+		// Cancelled choosing datetime
+		// - return to 
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Swap classes
+		this.$('.options').removeClass('nodisplay');
+		this.$('.choose_datetime').addClass('nodisplay');
+
+		return false;
+	},
+
+	choose_confirmation: function(ev){
+		// Confirmed a delay
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Get the datetime from the element
+		var wait = App.Plugins.Minimail.parseDateFromScroll(that.dateScroll.mobiscroll('getValue'));
+		
+		// Save delay
+		that.save_delay(wait, wait.toString('ddd, MMM d'));
 
 		return false;
 
@@ -6986,14 +7055,27 @@ App.Views.DelayModal = Backbone.View.extend({
 		// get wait datetime
 		// - convert to a datetime
 		var wait = new Date($(elem).val());
-		clog('wait');
-		clog(wait);
+		// clog('wait');
+		// clog(wait);
 
 		// Save delay
 		// - triggers other actions
 		that.save_delay(wait, 'The Future');
 
 		return false;
+	},
+
+	modify_date: function(ev){
+		// trigger by longtap on the element
+
+		// Hide everything else and show the calendar
+
+		// Show the calendar
+		// - with default date selected
+		$( ".calendar" ).datepicker({
+			// defaultDate: 
+		});
+
 	},
 
 	save_delay: function(wait, save_text){
@@ -7016,6 +7098,7 @@ App.Views.DelayModal = Backbone.View.extend({
 		// clog(now_sec);
 		// clog(delay_seconds);
 		// clog(in_seconds);
+		// alert(delay_seconds);
 
 		App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
 
@@ -7039,12 +7122,12 @@ App.Views.DelayModal = Backbone.View.extend({
 		this.$el.html(template({
 			delay_options: delay_options
 		}));
-		clog(this.$el);
 
-		// forge ui enhancements
-		if(useForge){
-			forge.ui.enhanceAllInputs();
-		}
+		// Date-time scroller/picker
+		this.dateScroll = this.$("#date").mobiscroll().datetime({
+			display: 'inline',
+			theme: 'wp'
+		});
 
 		return this;
 	}
