@@ -9,7 +9,7 @@ Please fork and submit pull requests!
 ## Current status 
 
 Version: 0.1 aka extreme alpha  
-It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, create Leisure Filters, and search links/attachments/emails. Because Push Notifications are not yet functioning, I recommend continuing to use your exiting mail app alongside minimail.    
+It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, create Leisure Filters, and search links/attachments/emails. Because Push Notifications are not yet functioning, I recommend continuing to use your existing mail app alongside minimail.    
 
 Priorities include: 
 - Refactor into correct Backbone patterns
