@@ -2,7 +2,7 @@
 
 Minimail is an open source email client that is customizable using common web languages like HTML, CSS, and Javascript. It runs on Android, and it skips dealing with IMAP or managing the email sending/receiving/parsing hairyness.  
 
-If you want to try it out, choose one of the options (1&2 below) to install the client. Or just browse through the code on GitHub. If you want to run the server as well, see "Server-side" below.  
+To try it out, just choose Option 1 (below) and you want to even write any code!. Or, you can just browse through the code on GitHub. If you want to run the server component as well, see "Server-side" below.  
 
 Please fork and submit pull requests!  
 
