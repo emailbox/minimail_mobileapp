@@ -586,8 +586,10 @@ App.Plugins.Minimail = {
 						App.Plugins.Minimail.saveAsDone(thread_id); // should also kill any wait_until queues
 
 						// Scroll the window
-						var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
-						$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74,500);
+						if($(this).parents('.thread').is(':last-child')){
+							var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
+							$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74,500);
+						}
 
 						// Hide it
 						// $(this).parents('.thread').slideUp('slow');
@@ -641,8 +643,12 @@ App.Plugins.Minimail = {
 							$(this).parents('.thread').addClass('finished');
 
 							// Scroll the window
-							var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
-							$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74,500);
+							// - if last element
+							
+							if($(this).parents('.thread').is(':last-child')){
+								var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
+								$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74,500);
+							}
 
 							// Save delay
 							var delay_seconds = 60 * 60 * 3; // 3 hours
@@ -840,18 +846,24 @@ App.Plugins.Minimail = {
 
 	formatDateForScroll: function(dateobj){
 
+		var hour = parseInt(dateobj.toString('h')),
+			ampm = dateobj.toString('t') == 'A' ? 0 : 1;
+
+		// must convert 12 to 0 for hours (expected by mobiscroll)
+		if(hour == 12){
+			hour = 0;
+		}
+
 		var tmp = [
 			dateobj.toString('M') - 1, // month,
 			dateobj.toString('d'),// day, 
 			dateobj.toString('yyyy'),// year, 
-			dateobj.toString('h'),// hour, 
+			hour,// hour, 
 			dateobj.toString('m'),// min, 
-			dateobj.toString('t') == 'A' ? 0 : 1,// ampm
+			ampm,// ampm
 		];
 
-
-		// console.log('formatDateForScroll');
-		// console.log(tmp);
+		// Return formatted array
 		return tmp;
 
 	},
@@ -859,9 +871,22 @@ App.Plugins.Minimail = {
 	parseDateFromScroll: function(date_arr){
 		// turn a date_arr into a js date object
 
-		// year, month, day, hours, minutes, seconds, milliseconds
-		var tmp = new Date(date_arr[2],date_arr[0],date_arr[1],date_arr[3],date_arr[4],0,0);
+		var hours = date_arr[3];
 
+		// must convert 0 to 12 for hours (output by mobiscroll)
+		// if(hour == 0){
+		// 	hour = 12;
+		// }
+
+		// Handle PM
+		if(date_arr[5] == 1){
+			hour = hour + 12;	
+		}
+
+		// year, month, day, hours, minutes, seconds, milliseconds
+		var tmp = new Date(date_arr[2],date_arr[0],date_arr[1],hours,date_arr[4],0,0);
+
+		// Return valid Date object
 		return tmp;
 
 	}

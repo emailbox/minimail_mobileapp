@@ -6992,10 +6992,12 @@ App.Views.DelayModal = Backbone.View.extend({
 		// var mobi_inst = $('#date').mobiscroll('getInst');
 		var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
 		this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
-		
+
 		// Trigger date confirmation
-		this.$('.options').addClass('nodisplay');
-		this.$('.choose_datetime').removeClass('nodisplay');
+		window.setTimeout(function(){
+			that.$('.options').addClass('nodisplay');
+			that.$('.choose_datetime').removeClass('nodisplay');
+		},300);
 
 		// mobi_inst.val(wait.toString());
 		// console.log(1);
