@@ -35,21 +35,21 @@ Source for the minimail mobile email client for Android. The app works in conjun
 1. Create a new project in PhoneGap Build using your forked GitHub URL (or just the https url for this repo)  
 1. Build the project, then download and install the created Android build (.ipk). Takes about 30 seconds. [Use a barcode scanner](https://play.google.com/store/apps/details?id=com.google.zxing.client.android&hl=en) for easy download! 
 
-## Option 2: Build locally with Eclipse (lots of things to install)  
-1. (coming soon) 
-
 > **Note:** Push Notifications don't work when building locally. Working only on PhoneGap Build (actually, not even there yet)
+
+## Design and Debugging  
+Try out [debug.phonegap.com](http://debug.phonegap.com) (super buggy and slow, but a useful HTML view) or use minimail's CSS editor (under the developer/debug menu when using the server client). With minimail's CSS editor, you won't have to change any code to see your CSS updates live. 
 
 ## Server-side   
 By default the basic minimail server is used. If you want to run your own server:  
 
-1. Register as an emailbox developer (https://getemailbox.com/first)  
+1. Register as an emailbox developer (https://getemailbox.com/login/first)  
 1. Follow instructions at repo: https://github.com/emailbox/minimail_nodeserver  
 1. Change the value for `minimail_server` in `creds.json` in the mobile app to use your server (usually on heroku). 
 
 ## App Todos
+- Issues have been moved to GitHub's issue tracker: [https://github.com/emailbox/minimail_mobileapp/issues](https://github.com/emailbox/minimail_mobileapp/issues)
 - switch to Require.js, Component, Browserify, etc. (easier plugins)
-- Fix contacts (switch from Forge)  
 - Push Notifications
 - Camera and File Upload (emailbox file api)
 - CSS scheme (color, positioning, dimensions) 
@@ -57,8 +57,7 @@ By default the basic minimail server is used. If you want to run your own server
 
 ## Build Todos:
 - Tests  
-- auto-switch between local and build.phonegap builds (not commenting out scripts)  
-- Build and test for iPhone  
+- Build for iPhone  
 
 ## How to build (coming soon):  
 1. Download the Android SDK tools (adt-bundle) 
