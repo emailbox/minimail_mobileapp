@@ -501,3 +501,4 @@ var App = {
 };
 
 
+jQuery.fn.reverse = [].reverse;
