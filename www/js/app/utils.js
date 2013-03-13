@@ -1259,9 +1259,14 @@ var Api = {
 			// console.log(room_login);
 			socket.on('disconnect',function(){
 				// alert('disconnected');
+				App.Utils.Notification.debug.temp('Disconnected from websocket');
 			});
 			socket.on('connect',function(){
+				App.Utils.Notification.debug.temp('Connected to websocket');
 				socket.emit('room', JSON.stringify(room_login)); // log into room
+			});
+			socket.on('error', function(){
+				App.Utils.Notification.debug.temp('Error with websocket');
 			});
 			socket.on('event', function (new_event) {
 
@@ -1269,13 +1274,15 @@ var Api = {
 				if(typeof(new_event.event) != 'string'){
 					// Missing
 					clog('Missing new_event.event');
+					alert('missing new_event.event');
 					return;
 				}
 
 				// Log that we received a new Event
-				clog('Event Received:' + new_event.event);
+				// clog('Event Received:' + new_event.event);
 				// clog(new_event);
-				clog(new_event);
+				// clog(new_event);
+				App.Utils.Notification.debug.temp('Event Received:' + new_event.event);
 
 				// Go through each plugin and fire the callback (with firebase data) if it matches
 				var fired = 0;
