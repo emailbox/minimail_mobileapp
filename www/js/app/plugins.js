@@ -383,23 +383,22 @@ App.Plugins.Minimail = {
 			// Already in multi-select mode?
 			if($parent_controller.hasClass('multi-select-mode')){
 				// In multi-select
-				// - let the click handler do things
 
-				// // Already selected?
-				// if($(this).hasClass('multi-selected')){
-				// 	// un-selected
-				// 	$(this).removeClass('multi-selected');
+				// Already selected?
+				if($(this).hasClass('multi-selected')){
+					// un-selected
+					$(this).removeClass('multi-selected');
 
-				// 	// Anybody else selected?
-				// 	if($('.multi-selected').length < 1){
-				// 		// turn of multi-select mode
-				// 		$parent_controller.removeClass('multi-select-mode');
-				// 	}
+					// Anybody else selected?
+					if($('.multi-selected').length < 1){
+						// turn of multi-select mode
+						$parent_controller.removeClass('multi-select-mode');
+					}
 
-				// } else {
-				// 	// select row
-				// 	$(this).addClass('multi-selected');
-				// }
+				} else {
+					// select row
+					$(this).addClass('multi-selected');
+				}
 				
 
 				// return;
@@ -448,6 +447,10 @@ App.Plugins.Minimail = {
 		move: function(e){
 
 			// Are we looking at this guy right now?
+
+			if($(this).hasClass('previewing')){
+				return false;
+			}
 			if($(this).hasClass('touch_start')){
 
 				// Get coordinates
@@ -571,9 +574,8 @@ App.Plugins.Minimail = {
 				// 	return;
 				// }
 
-				if(x_ratio_diff > App.Credentials.thread_move_x_threshold && !$parent_controller.hasClass('multi-select-mode')){
-					// Moved far enough
-
+				if(!$(this).hasClass('previewing') && x_ratio_diff > App.Credentials.thread_move_x_threshold && !$parent_controller.hasClass('multi-select-mode')){
+					// Moved far enough to take an action (delay/done)
 
 					var thread_id = $(this).parents('.thread').attr('data-id');
 
@@ -871,6 +873,10 @@ App.Plugins.Minimail = {
 	parseDateFromScroll: function(date_arr){
 		// turn a date_arr into a js date object
 
+		date_arr = _.map(date_arr,function(v){
+			return parseInt(v);
+		});
+
 		var hours = date_arr[3];
 
 		// must convert 0 to 12 for hours (output by mobiscroll)
@@ -880,7 +886,7 @@ App.Plugins.Minimail = {
 
 		// Handle PM
 		if(date_arr[5] == 1){
-			hour = hour + 12;	
+			hours = hours + 12;	
 		}
 
 		// year, month, day, hours, minutes, seconds, milliseconds
