@@ -1377,8 +1377,57 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		this.set_scroll_position();
 
-		Backbone.history.loadUrl('reply/' + this.threadid);
+		// Load Reply subview
+		// Backbone.history.loadUrl('reply/' + this.threadid);
 
+		// Hide myself
+		that.$el.addClass('nodisplay');
+
+		// Build the subview
+		that.subViewReply = new App.Views.CommonReply({
+			threadid: this.threadid
+		});
+		// Add to window and render
+		$('body').append(that.subViewReply.$el);
+		that.subViewReply.render();
+
+		// Listen for events
+
+		// Cancel event
+		that.subViewReply.ev.on('cancel',function(){
+			// Close subview
+			
+			that.subViewReply.close();
+
+			// Display thread
+			that.$el.removeClass('nodisplay');
+
+			// Scroll to correct position
+			var scrollTo = 0;
+			if($('body > .common_thread_view').attr('last-scroll-position')){
+				scrollTo = $('body > .common_thread_view').attr('last-scroll-position');
+			}
+			$(window).scrollTop(scrollTo);
+
+		});
+
+		// Send event
+		that.subViewReply.ev.on('sent',function(){
+			// Close subview
+			
+			that.subViewReply.close();
+
+			// Display thread
+			that.$el.removeClass('nodisplay');
+
+			// Scroll to correct position
+			var scrollTo = 0;
+			if($('body > .common_thread_view').attr('last-scroll-position')){
+				scrollTo = $('body > .common_thread_view').attr('last-scroll-position');
+			}
+			$(window).scrollTop(scrollTo);
+
+		});
 
 		return false;
 	},
@@ -2356,10 +2405,13 @@ App.Views.CommonReply = Backbone.View.extend({
 
 	},
 
+	ev: _.extend({}, Backbone.Events),
+
 	disable_buttons: false,
 
 	initialize: function(options) {
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
 		var that = this;
 		// this.el = this.options.el;
 
@@ -2405,6 +2457,15 @@ App.Views.CommonReply = Backbone.View.extend({
 
 	},
 
+	beforeClose: function(){
+		var that = this;
+
+		// unbind events
+		this.ev.unbind();
+
+		return;
+	},
+
 
 	remove_address: function(ev){
 		// remove a person from the sending list
@@ -2420,23 +2481,11 @@ App.Views.CommonReply = Backbone.View.extend({
 	cancel: function(ev){
 		// Going back to mailbox
 		// - highlight the correct row we were on? (v2)
+		var that = this,
+			elem = ev.currentTarget;
 
-		// Is there some way of referencing the Backbone view instead of using jquery? 
-
-		// Re-show .main_body
-		$('body > .common_thread_view').removeClass('nodisplay');
-
-		// Scroll to correct position
-		var scrollTo = 0;
-		if($('body > .common_thread_view').attr('last-scroll-position')){
-			scrollTo = $('body > .common_thread_view').attr('last-scroll-position');
-		}
-		$(window).scrollTop(scrollTo);
-
-		// this.after_sent();
-		
-		// Close myself
-		this.close();
+		// emit a cancel event to the parent
+		this.ev.trigger('cancel');
 
 		return false;
 	},
@@ -3003,18 +3052,35 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		var data = App.Data.Store.Thread[this.threadid];
 		if(data == undefined){
+			alert('thread data not set, not loading');
 			// Thread not set at all
-			alert('thread not set at all');
+			// - get it and start replying
+			//		- should be able to start replying right away, load details in a minute
+			
+			// Template
+			var template = App.Utils.template('t_common_loading');
 
-			// Shouldn't not be set at all
-			// - show a total loading screen (loading Thread and Emails)
-			// - todo...
+			// Write HTML
+			this.$el.html(template());
 
 
-			return false;
+			return this;
 		} else {
 			// Just render the Thread data (we should have it)
 			
+			var tmp_emails = new App.Collections.Emails();
+			tmp_emails.fetch_for_thread({
+				thread_id: that.threadid,
+				success: function(emails){
+					// Anything different from the existing look?
+					// - update the View with new data
+					
+					clog('re-rendering Thread');
+					// that.render();
+
+				}
+			});
+
 			that.render_thread();
 
 		}
@@ -3773,13 +3839,333 @@ App.Views.ThreadOptions = Backbone.View.extend({
 	className: 'thread_preview_options',
 
 	events: {
-
+		'click .done' : 'click_done',
+		'click .delay' : 'click_delay',
+		'click .reply' : 'click_reply'
 	},
 
 	initialize: function(options) {
 		var that = this;
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'mass_action');
+		_.bindAll(this, 'after_delay_modal');
 
+		// Expecting to be initiated with:
+		/*
+		{
+			Parent: // App.Views.All
+			ThreadElem: // .thread
+			threadid:  // string
+			type: ['delayed','undecided']
+		}
+		*/
+
+		var allowed_types = ['delayed','undecided']; // "delayed" might be wrong!!!
+		if(!this.options.type){
+			alert('Expecting type in options');
+		}
+
+
+	},
+
+	click_done: function(ev){
+		// Mark older messages as done
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Get this message's id
+		// - mark everything older than this email that matches the conditions presented earlier
+		// - must already be in the undecided, etc.
+		var thread_id = this.options.threadid;
+
+		if(this.options.type == 'undecided'){
+
+			// Build the conditions for the update
+			// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
+			var conditions = {
+				'$or' : [
+					{
+						'$and' : [
+							{
+								// doesn't exist for us, and is unread
+								'app.AppPkgDevMinimail' : {'$exists' : false},
+								'attributes.read.status' : 0
+							}
+						]
+					},{
+						'$and' : [
+							{
+								// exists as acted upon, and is marked as "undecided" still
+								'app.AppPkgDevMinimail' : {'$exists' : true},
+								'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+								'app.AppPkgDevMinimail.done' : 0
+							}
+						]
+					}
+				]
+			}
+			
+			var time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+
+			// Add the condition that it must be older
+			conditions['attributes.last_message_datetime_sec'] = {
+				"$lte" :  time_sec // older = less-than-or-equal-to
+			};
+
+			// Run update command
+			// Api.update({
+			// 	data: {
+			// 		model: 'Thread',
+			// 		conditions: conditions,
+			// 		multi: true, // edit more than 1? (yes)
+			// 		paths: {
+			// 			"$set" : {
+			// 				"app.AppPkgDevMinimail.done" : 1
+			// 			}
+			// 		}
+			// 	},
+			// 	success: function(response){
+			// 		// Successfully updated
+			// 		response = JSON.parse(response);
+			// 		if(response.code != 200){
+			// 			// Updating failed somehow
+			// 			// - this is bad, it means the action we thought we took, we didn't take
+			// 		}
+			// 	}
+			// });
+
+			// Assume update succeeded
+
+			// Mark all the visible ones
+			// - easy to see all the ones above (that haven't already had an action taken on them)
+			that.mass_action('done', this.options.type, time_sec);
+
+		}
+
+		if(this.options.type == 'delayed'){
+			alert('delayed');
+		}
+
+
+		return false;
+	},
+
+	click_delay: function(ev){
+		// Delay older messages
+		// - displayes DelayModal
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Display delay_modal Subview
+		var subView = new App.Views.DelayModal({
+			context: that,
+			threadid: that.threadid,
+			onComplete: that.after_delay_modal
+		});
+		$('body').append(subView.$el);
+		subView.render();
+
+		return false;
+
+	},
+
+	after_delay_modal: function(wait, save_text){
+
+		var that = this;
+
+		// Get this message's id
+		// - mark everything older than this email that matches the conditions presented earlier
+		// - must already be in the undecided, etc.
+		var thread_id = this.options.threadid;
+
+		// Return if a null value was sent through by DelayModal
+		if(!wait){
+			return false;
+		}
+
+		if(this.options.type == 'undecided'){
+
+			// Build the conditions for the update
+			// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
+			var conditions = {
+				'$or' : [
+					{
+						'$and' : [
+							{
+								// doesn't exist for us, and is unread
+								'app.AppPkgDevMinimail' : {'$exists' : false},
+								'attributes.read.status' : 0
+							}
+						]
+					},{
+						'$and' : [
+							{
+								// exists as acted upon, and is marked as "undecided" still
+								'app.AppPkgDevMinimail' : {'$exists' : true},
+								'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+								'app.AppPkgDevMinimail.done' : 0
+							}
+						]
+					}
+				]
+			}
+			
+			var time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+
+			// Add the condition that it must be older
+			conditions['attributes.last_message_datetime_sec'] = {
+				"$lte" :  time_sec // older = less-than-or-equal-to
+			};
+
+			// Run update command
+			// Api.update({
+			// 	data: {
+			// 		model: 'Thread',
+			// 		conditions: conditions,
+			// 		multi: true, // edit more than 1? (yes)
+			// 		paths: {
+			// 			"$set" : {
+			// 				"app.AppPkgDevMinimail.done" : 1
+			// 			}
+			// 		}
+			// 	},
+			// 	success: function(response){
+			// 		// Successfully updated
+			// 		response = JSON.parse(response);
+			// 		if(response.code != 200){
+			// 			// Updating failed somehow
+			// 			// - this is bad, it means the action we thought we took, we didn't take
+			// 		}
+			// 	}
+			// });
+
+			// Assume update succeeded
+
+			// Mark all the visible ones
+			// - easy to see all the ones above (that haven't already had an action taken on them)
+			that.mass_action('delay', this.options.type, time_sec, wait, save_text);
+
+		}
+
+		return false;
+
+	},
+
+	mass_action: function(action, type, seconds, wait, wait_save_text){
+		// Mass animation on previous items
+		// - action: done, delay (with additional info about delay datetime)
+		// - type: undecided or delayed
+		// - seconds: time in seconds to mark against older
+
+		var that = this;
+
+		seconds = parseInt(seconds);
+
+		var waitTime = 0;
+		$('.thread[data-thread-type="'+type+'"]').reverse().each(function(i, threadElem){
+
+			var time_sec = parseInt(App.Data.Store.Thread[$(threadElem).attr('data-id')].attributes.last_message_datetime_sec);
+			if(time_sec <= seconds){
+				// Affected this one!
+
+				// Slide the .thread-preview and show the Thread
+				// - sliding based on type (delayed, undecided)
+				var previewElem = $(threadElem).find('.thread-preview');
+
+				// Slide depending on undecided/done
+				if(action == 'done'){
+					// Slide RIGHT for "done"
+
+					$(previewElem).delay(waitTime).animate({
+						left: $(threadElem).width(),
+						opacity: 0
+					},{
+						duration: 500,
+						complete: function(){
+							// $(this).parents('.thread').slideUp();
+							$(previewElem).removeClass('touch_start');
+						}
+					});
+
+					// Add classes for done
+					$(threadElem).addClass('tripped dragright');
+
+				} else if(action == 'delay') {
+					// Slide LEFT for delay
+
+					$(previewElem).delay(waitTime).animate({
+						right: $(threadElem).width(),
+						opacity: 0
+					},{
+						duration: 500,
+						complete: function(){
+							// $(this).parents('.thread').slideUp();
+							$(previewElem).removeClass('touch_start');
+						}
+					});
+
+					// Add classes for delay
+					$(threadElem).addClass('tripped dragleft');
+
+					// Add text
+					$(threadElem).find('.thread-bg-time p').html(wait_save_text);
+
+				}
+
+				waitTime += 100;
+
+			}
+
+		});
+
+		that.close();
+
+		return;
+	},
+
+	click_reply: function(ev){
+		// Load the Reply route
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Set scroll position on parent before going to reply view
+		that.options.Parent.set_scroll_position();
+
+		// Launch router w/ thread_id
+		// Backbone.history.loadUrl('reply/' + this.options.threadid);
+
+		// Hide myself
+		that.options.Parent.$el.addClass('nodisplay');
+
+		// Build the subview
+		that.subViewReply = new App.Views.CommonReply({
+			threadid: this.options.threadid
+		});
+		// Add to window and render
+		$('body').append(that.subViewReply.$el);
+		that.subViewReply.render();
+
+		// Listen for events
+
+		// Canceled sending a reply
+		that.subViewReply.ev.on('cancel',function(){
+
+			// Close subview
+			that.subViewReply.close();
+
+			// Display Parent
+			that.options.Parent.$el.removeClass('nodisplay');
+
+			// Scroll to correct position
+			that.options.Parent.$('.data-lsp').scrollTop(that.options.Parent.last_scroll_position);
+			// console.log(that.options.Parent.last_scroll_position);
+			// $('.all_threads').scrollTop(that.options.Parent.last_scroll_position);
+
+		});
+
+		return false;
 	},
 
 	render: function() {
@@ -3890,6 +4276,14 @@ App.Views.All = Backbone.View.extend({
 		App.Events.off('new_email',this.refresh_and_render_threads);
 	},
 
+	set_scroll_position: function(){
+		var that = this;
+		
+		// Set last scroll position
+		this.last_scroll_position = this.$('.data-lsp').scrollTop();
+		this.$el.attr('last-scroll-position',this.last_scroll_position);
+
+	},
 
 	refresh_data: function(){
 		// Refresh the data for the view
@@ -3939,7 +4333,7 @@ App.Views.All = Backbone.View.extend({
 			// Shrinking
 
 			// Add ellipses back
-			$(elem).removeClass('removed_ellipsis');
+			$(elem).removeClass('removed_ellipsis previewing');
 			$(elem).find('.ellipsis_removed').addClass('ellipsis').removeClass('ellipsis_removed');
 
 			// Close subViews
@@ -3951,7 +4345,7 @@ App.Views.All = Backbone.View.extend({
 			// Expanding
 
 			// Re-add other ellipses
-			$('.thread-preview').removeClass('removed_ellipsis');
+			$('.thread-preview').removeClass('removed_ellipsis previewing');
 			$('.thread-preview').find('.ellipsis_removed').addClass('ellipsis').removeClass('ellipsis_removed');
 
 			// Close other subViews
@@ -3960,22 +4354,30 @@ App.Views.All = Backbone.View.extend({
 			});
 
 			// Remove ellipsis
-			$(elem).addClass('removed_ellipsis');
+			$(elem).addClass('removed_ellipsis previewing');
 			$(elem).find('.ellipsis').addClass('ellipsis_removed').removeClass('ellipsis');
 
 			// Create sub view with options
 			var subViewKey = $(elem).attr('data-thread-id');
 			that.subViewThreadOptions[subViewKey] = new App.Views.ThreadOptions({
 				Parent: that,
-				threadid: subViewKey
+				ThreadElem: threadElem,
+				threadid: subViewKey,
+				type: $(threadElem).attr('data-thread-type')
 			});
 			// App.router.showView('subthreadoptions',that.subViewThreadOptions[subViewKey]);//.render();
 			that.subViewThreadOptions[subViewKey].render();
 
 			// Write HTML before element
-			$(elem).after(that.subViewThreadOptions[subViewKey].$el);
-			
+			$(elem).before(that.subViewThreadOptions[subViewKey].$el);
 
+			// re-scroll to account for display
+			// alert(that.subViewThreadOptions[subViewKey].$el.height());
+			var heightObj = that.subViewThreadOptions[subViewKey].$el.outerHeight() + 10;
+			$('.all_threads').scrollTop( $('.all_threads').scrollTop() + heightObj );
+			// $('.all_threads').scrollTop($(document).height() + App.Data.xy.win_height);
+			// that.$el.scrollTop(that.$el.scrollTop() + 20);
+			
 		}
 
 
@@ -3990,7 +4392,33 @@ App.Views.All = Backbone.View.extend({
 			return false;
 		}
 
-		this.view_email(ev);
+		this.preview_thread(ev);
+		// this.view_email(ev);
+
+		// var elem = ev.currentTarget,
+		// 	threadElem = $(elem).parents('.thread');
+
+		// var thread_id = $(threadElem).attr('data-id');
+
+		// // Hide thread preview
+		// // $(this).parents('.thread').slideUp('slow');
+		// $(elem).animate({
+		// 	left: -1 * $(elem).parents('.thread').width()
+		// },{
+		// 	complete: function(){
+		// 		// $(this).parents('.thread').slideUp();
+		// 		$(elem).removeClass('touch_start');
+		// 	}
+		// });
+
+		// // Display delay_modal Subview
+		// var subView = new App.Views.DelayModal({
+		// 	context: this,
+		// 	threadid: thread_id
+		// });
+		// $('body').append(subView.$el);
+		// subView.render();
+
 	},
 
 	view_email: function(ev){
@@ -4511,7 +4939,7 @@ App.Views.LeisureItem = Backbone.View.extend({
 		var that = this;
 
 		// Set last scroll position
-		this.last_scroll_position = $(window).scrollTop();
+		this.last_scroll_position = this.$el.scrollTop();
 		this.$el.attr('last-scroll-position',this.last_scroll_position);
 
 		clog('.' + this.className);
@@ -6610,11 +7038,14 @@ App.Views.BodyLogin = Backbone.View.extend({
 
 						// Have an access_token
 						// - save it to localStorage
-						localStorage.setItem(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier);
-						localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token);
-						
-						// Reload page, back to #home
-						window.location = [location.protocol, '//', location.host, location.pathname].join('');
+
+						// App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier);
+						// App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token);
+
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier)
+							.then(function(){
+								// Saved user!
+							});
 
 						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token)
 							.then(function(){
@@ -6625,14 +7056,16 @@ App.Views.BodyLogin = Backbone.View.extend({
 								// alert('success');
 								window.plugins.childBrowser.close();
 
+
+								// // Reload page, back to #home
+								// window.location = [location.protocol, '//', location.host, location.pathname].join('');
+
 								$('body').html('');
+
+								// Reload page, back to #home
 								window.location = [location.protocol, '//', location.host, location.pathname].join('');
 							});
 
-						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier)
-							.then(function(){
-								clog('Saved user');
-							});
 
 					} else {
 						// Show login splash screen
@@ -6930,8 +7363,14 @@ App.Views.DelayModal = Backbone.View.extend({
 		// $('#delay_modal').remove();
 		// this.unbind();
 
-		// Slide piece back in
-		App.Plugins.Minimail.revert_box(this.options.context);
+		// call onComplete if exists
+		if(this.options.onComplete){
+			this.options.onComplete(null);
+		} else {
+			// Slide piece back in
+			App.Plugins.Minimail.revert_box(this.options.context);
+		}
+
 		return false;
 	},
 
@@ -7040,8 +7479,25 @@ App.Views.DelayModal = Backbone.View.extend({
 		// Get the datetime from the element
 		var wait = App.Plugins.Minimail.parseDateFromScroll(that.dateScroll.mobiscroll('getValue'));
 		
+		// var save_text = wait.toString('ddd, MMM d');
+		var save_text = wait.toString('ddd, MMM d') + '<br />' + wait.toString('h:mmtt');
+
+		// Today?
+		if(new Date(wait).clearTime().toString() == new Date().clearTime().toString()){
+			save_text = 'Today<br />' + wait.toString('h:mmtt');
+		}
+
+		// Tomorrow?
+		if(new Date(wait).clearTime().toString() == new Date().addDays(1).clearTime().toString()){
+			save_text = 'Tomorrow<br />' + wait.toString('h:mmtt');
+		}
+
+		// save_text += '<br />' + wait.toString('h:mmtt');
+
+		// save_text += wait.toString(' hmmtt');
+
 		// Save delay
-		that.save_delay(wait, wait.toString('ddd, MMM d'));
+		that.save_delay(wait, save_text.toString());
 
 		return false;
 
@@ -7081,28 +7537,28 @@ App.Views.DelayModal = Backbone.View.extend({
 	},
 
 	save_delay: function(wait, save_text){
+		// Save the delay
+		// - or return the result to the calling function, if it exists
 		var that = this;
 
-		// Update view
-		$(this.threadView).find('.thread-bg-time p').text(save_text);
-		$(this.threadView).addClass('finished');
+		// Check for onComplete function
+		if(this.options.onComplete){
+			this.options.onComplete(wait,save_text);
+		} else {
 
-		// Save delay
-		var now = new Date();
-		var now2 = now.getTime();
-		var now_sec = parseInt(now2 / 1000);
-		var delay_time = wait.getTime() / 1000;
+			// Update view
+			$(this.threadView).find('.thread-bg-time p').html(save_text);
+			$(this.threadView).addClass('finished');
 
-		var delay_seconds = parseInt(delay_time - now_sec);
-		var in_seconds = now_sec + delay_seconds;//(60*60*3);
+			// Save delay
+			var now_sec = parseInt(new Date().getTime() / 1000);
+			var delay_time = wait.getTime() / 1000;
 
-		// clog('seconds');
-		// clog(now_sec);
-		// clog(delay_seconds);
-		// clog(in_seconds);
-		// alert(delay_seconds);
+			var delay_seconds = parseInt(delay_time - now_sec);
+			var in_seconds = now_sec + delay_seconds;
 
-		App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
+			App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
+		}
 
 		// Close view
 		this.close();
