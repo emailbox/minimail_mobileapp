@@ -384,21 +384,22 @@ App.Plugins.Minimail = {
 			if($parent_controller.hasClass('multi-select-mode')){
 				// In multi-select
 
-				// Already selected?
-				if($(this).hasClass('multi-selected')){
-					// un-selected
-					$(this).removeClass('multi-selected');
+				// // Already selected?
+				// if($(this).hasClass('multi-selected')){
+				// 	// un-selected
+				// 	$(this).removeClass('multi-selected');
 
-					// Anybody else selected?
-					if($('.multi-selected').length < 1){
-						// turn of multi-select mode
-						$parent_controller.removeClass('multi-select-mode');
-					}
+				// 	// Anybody else selected?
+				// 	if($('.multi-selected').length < 1){
+				// 		// turn of multi-select mode
+				// 		$parent_controller.removeClass('multi-select-mode');
+				// 	}
 
-				} else {
-					// select row
-					$(this).addClass('multi-selected');
-				}
+				// } else {
+				// 	// select row
+				// 	$(this).addClass('multi-selected');
+
+				// }
 				
 
 				// return;
@@ -694,8 +695,8 @@ App.Plugins.Minimail = {
 					}
 
 					// Revert back to original position
-					// - missed everything
 					App.Plugins.Minimail.revert_box(this);
+
 				}
 			}
 				

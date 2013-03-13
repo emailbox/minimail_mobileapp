@@ -3914,26 +3914,27 @@ App.Views.ThreadOptions = Backbone.View.extend({
 			};
 
 			// Run update command
-			// Api.update({
-			// 	data: {
-			// 		model: 'Thread',
-			// 		conditions: conditions,
-			// 		multi: true, // edit more than 1? (yes)
-			// 		paths: {
-			// 			"$set" : {
-			// 				"app.AppPkgDevMinimail.done" : 1
-			// 			}
-			// 		}
-			// 	},
-			// 	success: function(response){
-			// 		// Successfully updated
-			// 		response = JSON.parse(response);
-			// 		if(response.code != 200){
-			// 			// Updating failed somehow
-			// 			// - this is bad, it means the action we thought we took, we didn't take
-			// 		}
-			// 	}
-			// });
+			Api.update({
+				data: {
+					model: 'Thread',
+					conditions: conditions,
+					multi: true, // edit more than 1? (yes)
+					paths: {
+						"$set" : {
+							"app.AppPkgDevMinimail.done" : 1
+						}
+					}
+				},
+				success: function(response){
+					// Successfully updated
+					response = JSON.parse(response);
+					if(response.code != 200){
+						// Updating failed somehow
+						// - this is bad, it means the action we thought we took, we didn't take
+						alert('Update may have failed');
+					}
+				}
+			});
 
 			// Assume update succeeded
 
@@ -4020,26 +4021,28 @@ App.Views.ThreadOptions = Backbone.View.extend({
 			};
 
 			// Run update command
-			// Api.update({
-			// 	data: {
-			// 		model: 'Thread',
-			// 		conditions: conditions,
-			// 		multi: true, // edit more than 1? (yes)
-			// 		paths: {
-			// 			"$set" : {
-			// 				"app.AppPkgDevMinimail.done" : 1
-			// 			}
-			// 		}
-			// 	},
-			// 	success: function(response){
-			// 		// Successfully updated
-			// 		response = JSON.parse(response);
-			// 		if(response.code != 200){
-			// 			// Updating failed somehow
-			// 			// - this is bad, it means the action we thought we took, we didn't take
-			// 		}
-			// 	}
-			// });
+			Api.update({
+				data: {
+					model: 'Thread',
+					conditions: conditions,
+					paths: {
+						"$set" : {
+							"app.AppPkgDevMinimail.wait_until" : delay_datetime_in_seconds,
+							"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+							"app.AppPkgDevMinimail.done" : 0
+						}
+					}
+				},
+				success: function(response){
+					// Successfully updated
+					response = JSON.parse(response);
+					if(response.code != 200){
+						// Updating failed somehow
+						// - this is bad, it means the action we thought we took, we didn't take
+						alert('Update may have failed');
+					}
+				}
+			});
 
 			// Assume update succeeded
 
@@ -4310,7 +4313,9 @@ App.Views.All = Backbone.View.extend({
 		if(this.$('.all_threads').hasClass('multi-select-mode')){
 			
 			// Already selected?
+			// alert($(elem).attr('class'));
 			if($(elem).hasClass('multi-selected')){
+				
 				// un-selected
 				$(elem).removeClass('multi-selected');
 
@@ -4392,6 +4397,7 @@ App.Views.All = Backbone.View.extend({
 			return false;
 		}
 
+		alert('must be web');
 		this.preview_thread(ev);
 		// this.view_email(ev);
 
@@ -4548,11 +4554,11 @@ App.Views.All = Backbone.View.extend({
 
 		// Draggable
 		$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
-		$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
+		// $(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
 		$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
-		$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
+		// $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
-		$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+		// $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
 
 		return this;
 		
@@ -4792,11 +4798,11 @@ App.Views.LeisureList = Backbone.View.extend({
 
 		// Draggable
 		$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
-		$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
+		// $(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
 		$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
-		$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
+		// $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
-		$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+		// $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
 
 		return this;
 		
