@@ -72,6 +72,10 @@ body.console {
   margin-top: 61px;
 }
 
+.body_container.nudge_down_far {
+  margin-top: 71px;
+}
+
 .has-header .body_container {
   margin-top: 61px;
 }
@@ -389,9 +393,10 @@ body.console {
 
 
 
-/* header */
+/* header and header */
 
-.header {
+
+.footer {
   font-family: Helvetica, Georgia, sans-serif;
   color: #333;
   border-top: 1px solid black;
@@ -412,9 +417,36 @@ body.console {
 
 }
 
-.header.at-top {
+
+.footer_holder {
+  position: relative;
+}
+
+.footer_holder a,
+.footer_holder h1 {
+  position: relative;
+  float: left;
+}
+
+.footer a {
+  text-decoration: none;
+}
+
+
+
+.header {
+
+  font-family: Helvetica, Georgia, sans-serif;
+  color: #333;
+  
+  position: fixed;
   top: 0px;
-  bottom: auto;
+  left: 0px;
+  width: 100%;
+  line-height: 40px;
+
+  z-index: 100;
+
 
   border-top: 0px;
   border-bottom: 1px solid black;
@@ -422,22 +454,9 @@ body.console {
   background: #333;
   background: -webkit-linear-gradient(#111, #333);
   
+  box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;
   -webkit-box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;
 
-}
-
-.header_holder {
-  position: relative;
-}
-
-.header_holder a,
-.header_holder h1 {
-  position: relative;
-  float: left;
-}
-
-.header a {
-  text-decoration: none;
 }
 
 .header .back-btn,
@@ -456,6 +475,8 @@ body.console {
 
 .header h1 {
   display: inline-block;
+
+  color: white;
 
   /*width: 50%;*/
 
@@ -613,7 +634,7 @@ body.console {
   padding: 5px;
   margin: 5px;
   opacity: 0.6;
-  border: 1px solid #eee;
+  /*border: 1px solid #eee;*/
 
   margin-bottom: 5px;
 }
@@ -689,6 +710,9 @@ body.console {
   font-family: Helvetica, Georgia, sans-serif;
   color: #333;
   border-top: 1px solid #333;
+
+  background: #333;
+  background: -moz-linear-gradient(#444, #333);
   background: -webkit-linear-gradient(#444, #333);
   
   position: fixed;
@@ -757,7 +781,9 @@ body.console {
 
   background: #222;
   color: #eee;
-  font-weight: bold;
+  font-weight: 100;
+  font-size: 24px;
+  line-height: 32px;
 
   padding: 18px 10px;
 
@@ -833,7 +859,7 @@ body.console {
 }*/
 
 .search_emails_inside_view .thread:first-child {
-  margin-top: 340px;
+  /*margin-top: 340px;*/
 }
 
 .waiting_for_input {
@@ -1147,21 +1173,21 @@ body.console {
 /* Undecided threads */
 .undecided_thread_inside_view,
 .delayed_thread_inside_view,
-.all_thread_inside_view,
+/*.all_thread_inside_view,*/
 .leisure_list_inside_view,
 .search_inside_view,
 .search_emails_inside_view {
 
-  display: table-cell;
+  /*display: table-cell;
   vertical-align: bottom;
 
-  background: #444;
+  background: #444;*/
 
 }
 
 .undecided_threads,
 .delayed_threads,
-.all_threads,
+/*.all_threads,*/
 .quick_searches,
 .search_emails_thread_results,
 .search_attachments_results,
@@ -1172,8 +1198,45 @@ body.console {
   display: inline-block;
   vertical-align: bottom;*/
 
-  overflow: auto;
+  /*overflow: auto;*/
 
+}
+
+.inbox_zero {
+    text-align: center;
+    padding-bottom: 250px;
+
+    width: 90%;
+    margin: 0pt auto;
+
+    text-shadow: 1px 1px rgba(0,0,0,1);
+}
+
+.inbox_zero span.words {
+
+    font-weight: 100;
+
+    color: white;
+
+    font-size: 22pt;
+    line-height: 28pt;
+}
+
+.inbox_zero span.definition_name {
+
+    color: #b0b0b0;
+    font-weight: normal;
+    font-size: 16pt;
+    line-height: 22pt;
+
+}
+
+.inbox_zero span.definition_words {
+
+    color: #b0b0b0;
+    font-weight: 100;
+    font-size: 16pt;
+    line-height: 22pt;
 }
 
 .top_move {
@@ -1208,6 +1271,7 @@ body.console {
   opacity: .5
 }*/
 
+
 .thread {
   position: relative;
   border-top: 1px solid rgb(170,170,170);
@@ -1223,7 +1287,7 @@ body.console {
 }
 
 .thread:first-child {
-  margin-top: 450px;
+  /*margin-top: 450px;*/
 }
 /*
 .thread:last-child {
@@ -1309,7 +1373,7 @@ body.console {
 }
 
 .thread-preview.previewing {
-  
+
 }
 
 .thread-preview.multi-selected {
@@ -1388,7 +1452,7 @@ body.console {
   overflow: hidden;
   float: left;
 
-  width: 85%;
+  width: 80%;
   max-height:36px;
 
   color: #aaa;
@@ -1408,26 +1472,61 @@ body.console {
 }
 
 .thread-preview .card-bottom .thread_count {
-  width: 25px;
+  width: 50px;
   padding-right: 5px;
   margin-top: 5px;
   text-align: right;
   float: right;
 }
+.thread-preview .card-bottom .thread_note_icon {
+  width: 25px;
+  padding-right: 5px;
+  margin-top: 5px;
+  text-align: right;
+  float: right;
+
+  text-transform: uppercase;
+}
+
+.thread-preview .card-bottom .thread_note {
+  clear: both;
+  color: #82CAFA;
+
+  display: none;
+}
+
+.thread-preview.previewing .card-bottom .thread_note {
+  display: block;
+}
+
+.thread_preview_options_holder {
+  position: relative;
+  z-index: 12;
+}
 
 .thread_preview_options {
-  margin: 0 4px;
-  margin-top: 10px;
 
-  padding: 12px 0;
+  position: absolute;
+  top: -60px;
+  left: 0;
+
+  width: 100%;
+  padding: 10px 0;
 
   text-align: center;
-  background: #222;
+  background: black;
   color: #b1b1b1;
 
-  -webkit-box-shadow: 0px 2px -1px 2px rgba(0, 0, 0, 0.2);
-  box-shadow: 0px 2px -1px 2px rgba(0, 0, 0, 0.2);
+  -webkit-box-shadow: 0px 0px 1px 2px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0px 0px 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 0px 1px 2px rgba(0, 0, 0, 0.2);
 
+}
+
+.thread_preview_options_holder:first-child .thread_preview_options {
+  /*top: 421px;*/
+  position: relative;
+  top: 0;
 }
 
 .thread_preview_options > div {
@@ -1797,7 +1896,15 @@ body.console {
   padding-bottom: 120px;
 }
 
+.common_thread_view .body_container {
+  background: white;
+}
+
 .common_thread_view .thread_container {
+  /*padding: 10px;*/
+}
+
+.common_thread_view .thread_details {
   padding: 10px;
 }
 
@@ -1811,6 +1918,10 @@ body.console {
 .common_thread_view .thread_details .people {
   font-weight: 200;
   margin-top: 20px;
+}
+
+.common_thread_view .emails {
+  padding: 10px;
 }
 
 .common_thread_view .email_sent_alert {
@@ -1908,8 +2019,8 @@ body.console {
 
 }
 
-.common_compose .btn-send,
-.common_thread_reply .btn-send {
+.btn-send,
+.btn-create {
     text-shadow: none;
     color: #222;
     background: #D9E577 !important;
@@ -2269,14 +2380,6 @@ body.console {
   0% {-webkit-transform: scale(0.1, 0.1); opacity: 0.0;}
   50% {opacity: 1.0;}
   100% {-webkit-transform: scale(1.2, 1.2); opacity: 0.0;}
-}
-
-
-.inbox_zero {
-  position: absolute;
-  margin-top: 40%;
-  width: 100%;
-  text-align: center;
 }
 
 .text-center {
