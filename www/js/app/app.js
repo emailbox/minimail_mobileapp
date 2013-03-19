@@ -17,6 +17,10 @@ var App = {
 	Data: 		 {
 		// tmp_contacts: [], // testing contacts
 		online: true,
+		LoggedIn: false, // Logged into minimail servers
+		notifications_queue: [],
+		paused: false,
+		was_paused: false,
 		Keys: {},
 		debug_messages: {},
 		xy: {
@@ -220,6 +224,7 @@ var App = {
 					.then(function(){
 
 						// Logged in on minimail server
+						App.Data.LoggedIn = true;
 
 						// Check login status against Emailbox
 						Api.search({
@@ -451,23 +456,23 @@ var App = {
 				if (device.platform == 'android' || device.platform == 'Android') {
 					// alert('android push');
 
-					$("#app-status-ul").append('<li>registering android</li>');
-					pushNotification.register(function(){
+					pushNotification.register(function(result){
 						// alert('success w/ Push Notifications');
 						App.Utils.Notification.debug.temporary('Push Setup OK'); // not actually ok, not registering, nothing sending to it
+
 					}, function(err){
 						// alert('failed Push Notifications');
 						App.Utils.Notification.debug.temporary('Failed Push Notification Setup');
 						// console.log(err);
 						// alert(err);
-					}, {"senderID":"312360250527","ecb":"onNotificationGCM"});
-					$(document).on('onNotificationGCM',function(){
-						alert('new notification');
+					}, 
+					{
+						"senderID":"312360250527",
+						"ecb":"onNotificationGCM"
 					});
 				} else {
-					// alert('not');
-					$("#app-status-ul").append('<li>registering iOS</li>');
-					pushNotification.register(tokenHandler, errorHandler, {"badge":"true","sound":"true","alert":"true","ecb":"onNotificationAPN"});
+					// // alert('not');
+					// pushNotification.register(tokenHandler, errorHandler, {"badge":"true","sound":"true","alert":"true","ecb":"onNotificationAPN"});
 				}
 			}
 			catch(err) { 
@@ -476,6 +481,60 @@ var App = {
 				// alert(txt); 
 				alert('Push Error');
 			}
+
+			// Pausing (exiting)
+			document.addEventListener("pause", function(){
+				// Mark as Paused
+				// - this prevents Push Notifications from activating all at once when Resuming
+
+				App.Data.paused = true;
+				App.Data.was_paused = true;
+
+			}, false);
+
+			// Resume
+			// - coming back to application
+			document.addEventListener("resume", function(){
+				// Gather existing Push Notifications and see if we should summarize them, or show individually (confirm, etc.)
+				
+				App.Data.paused = false;
+				App.Data.was_paused = true;
+
+				// Run 1 second after returning
+				// - collecting all the Push Notifications into a queue
+				// - enough time for all Push events to be realized
+				setTimeout(function(){
+
+					App.Data.paused = false;
+					App.Data.was_paused = false;
+
+					// Get queue
+					// - more than 1 item in queue?
+					// - different types of items?
+					switch (App.Data.notifications_queue.length){
+						case 0:
+							// No messages
+							break;
+						case 1:
+							// Only a single message, use normal
+							App.Plugins.Minimail.process_push_notification_message(App.Data.notifications_queue.pop());
+							break;
+						default:
+							// Multiple notifications
+							// - get last added
+							alert('Multiple Push Notifications Received. Latest Processed');
+							App.Plugins.Minimail.process_push_notification_message(App.Data.notifications_queue.pop());
+							App.Data.notifications_queue = [];
+							break;
+					}
+					var queue = App.Data.notifications_queue.concat([]);
+
+					// - assuming 1 type of Push Notification only at this time
+
+				},1000);
+
+			}, false);
+
 
 			// Init MENU button on Android (not always there?)
 			document.addEventListener("menubutton", function(){
@@ -500,5 +559,75 @@ var App = {
 	
 };
 
+// GCM = Google Cloud Messag[something]
+function onNotificationGCM(e){
+	
+	App.Utils.Notification.debug.temp('New Notification: ' + e.event);
+
+	switch( e.event ){
+		case 'registered':
+			// Registered with GCM
+			if ( e.regid.length > 0 ) {
+				// Your GCM push server needs to know the regID before it can push to this device
+				// here is where you might want to send it the regID for later use.
+				// alert('registration id: ' + e.regid);
+				App.Utils.Notification.debug.temp('Reg ID:' + e.regid.substr(0,25) + '...');
+
+				// Got the registration ID
+				// - we're assuming this happens before we've done alot of other stuff
+				App.Credentials.android_reg_id = e.regid;
+
+				// Write the key
+				// - see if the user is logged in
+				var i = 0;
+				var pushRegInterval = function(){
+					window.setTimeout(function(){
+						// See if logged in
+						if(App.Data.LoggedIn){
+							// Sweet, logged in, update remote
+							App.Plugins.Minimail.updateAndroidPushRegId(App.Credentials.android_reg_id);
+						} else {
+							// Run again
+							App.Utils.Notification.debug.temp('NLI - try again' + i);
+							i++;
+							pushRegInterval();
+						}
+					},3000);
+				};
+				pushRegInterval();
+
+			}
+		break;
+
+		case 'message':
+			// if this flag is set, this notification happened while we were in the foreground.
+			// you might want to play a sound to get the user's attention, throw up a dialog, etc.
+
+			// alert('message received');
+			// alert(JSON.stringify(e.payload));
+
+			// Capture and then wait for a half-second to see if any other messages are incoming
+			// - don't want to overload the person
+			
+			if(App.Data.was_paused){
+				// Was just paused, add to queue
+				App.Data.notifications_queue.push(e);
+			} else {
+				// Not paused, immediately take action on the item
+				App.Plugins.Minimail.process_push_notification_message(e);
+			}
+
+		break;
+
+		case 'error':
+			alert('GCM error');
+			alert(e.msg);
+		break;
+
+		default:
+			alert('An unknown GCM event has occurred');
+		break;
+	}
+};
 
 jQuery.fn.reverse = [].reverse;
