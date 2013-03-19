@@ -29,6 +29,84 @@ Backbone.View.prototype.garbage = function (view_list) {
 };
 
 
+// Minimail prototypes
+Backbone.View.prototype.resize_fluid_page_elements = function () {
+	// Handles the default page elements resizing
+	// - dynamic height for "body" element
+
+	// Get height of elements on the page
+
+	var that = this;
+
+	// elements to check
+	var elements = [
+		'.header',
+		'.footer',
+		'.footer2'
+	];
+
+	var $bodyContainer;
+
+	// Get this (or parent) body_container
+	if(this.$('.body_container').length > 0){
+		$bodyContainer = this.$('.body_container');
+	} else {
+		$bodyContainer = this.$el.parents('.body_container');
+	}
+
+	if($bodyContainer.length < 1){
+		// Unable to locate .body_container
+		alert('unable to locate body container');
+	}
+
+	var used_height = 0;
+	$.each(elements,function(i, elemClass){
+		if($bodyContainer.parent().find(elemClass + ':not(.nodisplay)').length > 0){
+			used_height += $bodyContainer.parent().find(elemClass).outerHeight();
+		}
+	});
+
+	// Get remaining height
+	// - subtract used_height from xy.win_height
+	var remaining_height = App.Data.xy.win_height - used_height;
+
+	// Update body_container with fixed_height
+
+	// this element or a child of the one we're fixing?
+	$bodyContainer.css('height',remaining_height + 'px');
+	
+	// Update individual elements in body
+	// - margin, etc.
+
+
+};
+
+Backbone.View.prototype.resize_scroller = function () {
+	// Resize the scroller inside this element
+	var that = this;
+
+	// Calculate max-height for scroll
+	// - based on parent
+	var $scroller = this.$('.scroller'),
+
+		// Get fixed_height of element above (usually .body_container.fixed_height)
+		$fixed = $scroller.parents('.fixed_height');
+		max_height = $fixed.height(); // could have it stored as a data-attribute instead?
+
+	
+	if(this.$el.hasClass('reverse_vertical')){
+		this.$el.css('height',max_height + 'px');
+	} else {
+		this.$('.reverse_vertical').css('height',max_height + 'px');
+	}
+	this.$('.scroller').css('max-height',max_height + 'px');
+	this.$('.scroller').css('width',App.Data.xy.win_width + 'px');
+
+	return;
+};
+
+
+
 App.Views.Body = Backbone.View.extend({
 	
 	// el: 'body',
@@ -118,9 +196,11 @@ App.Views.Body = Backbone.View.extend({
 		// Template
 		var template = App.Utils.template('t_body');
 
-
 		// Write HTML
 		$(this.el).html(template());
+
+		// Fix fluid layout
+		this.resize_fluid_page_elements();
 
 		// Load the Undecided View
 		// Backbone.history.loadUrl('undecided');
@@ -1544,6 +1624,10 @@ App.Views.CommonThread = Backbone.View.extend({
 		// Write HTML
 		this.$el.html(template(data));
 
+		// Resize body_container
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
 		return this;
 		
 	},
@@ -2132,6 +2216,10 @@ App.Views.LeisureCreate = Backbone.View.extend({
 
 		// Write HTML
 		this.$el.html(template(data));
+
+		// Resize window
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
 
 		return this;
 
@@ -3480,7 +3568,40 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// filepicker.getFile(function(FPFile){
 		// 	clog(FPFile.url);
 		// });
+	
+
+		// Pretend it is this file:
+		// - https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE
+
+		var file = {
+			url: 'https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE',
+			name: 'fry.png'
+		};
+
+		setTimeout(function(){
+			// Pretend we just loaded the file through Filepicker (currently broken)
+
+			// Add url and little "attachment" icon-file to Files fields
+
+			var url = file.url;
+
+			// Write template
+			var template = App.Utils.template('t_common_file_attachment');
+
+			// Append
+			$('.file_attachments').append(
+				template({
+					url: file.url, 
+					name: file.name
+				})
+			);
+
+		},300);
+
+		return false;
+
 		filepicker.getFile("*/*", function(url, metadata){
+
 			alert("You picked: "+url);
 			window.console.log('picked');
 			window.console.log(metadata);
@@ -3836,12 +3957,13 @@ App.Views.ChooseContact = Backbone.View.extend({
 
 App.Views.ThreadOptions = Backbone.View.extend({
 	
-	className: 'thread_preview_options',
+	className: 'thread_preview_options_holder',
 
 	events: {
 		'click .done' : 'click_done',
 		'click .delay' : 'click_delay',
-		'click .reply' : 'click_reply'
+		'click .reply' : 'click_reply',
+		'click .note' : 'click_note'
 	},
 
 	initialize: function(options) {
@@ -3868,6 +3990,7 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 	},
 
+
 	click_done: function(ev){
 		// Mark older messages as done
 
@@ -3879,77 +4002,156 @@ App.Views.ThreadOptions = Backbone.View.extend({
 		// - must already be in the undecided, etc.
 		var thread_id = this.options.threadid;
 
-		if(this.options.type == 'undecided'){
+		var conditions = {},
+			time_sec = 0; // either last message datetime, or wait_until
 
-			// Build the conditions for the update
-			// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
-			var conditions = {
-				'$or' : [
-					{
-						'$and' : [
-							{
-								// doesn't exist for us, and is unread
-								'app.AppPkgDevMinimail' : {'$exists' : false},
-								'attributes.read.status' : 0
-							}
-						]
-					},{
-						'$and' : [
-							{
-								// exists as acted upon, and is marked as "undecided" still
-								'app.AppPkgDevMinimail' : {'$exists' : true},
-								'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
-								'app.AppPkgDevMinimail.done' : 0
-							}
-						]
-					}
-				]
+		// Get everything "above" this (what you are looking at)
+		// - no longer affects "invisible" elements
+
+		// Get all elements above this one
+		// - and including this one
+
+		var incl_thread_ids = [];
+		$('.thread[data-thread-type="'+ this.options.type +'"]').reverse().each(function(i, threadElem){
+			// Wait for this element to get triggered
+			if(incl_thread_ids.length > 0){
+				// Already found this element
+				incl_thread_ids.push($(threadElem).attr('data-id'));
+			} else if($(threadElem).attr('data-id') == that.options.threadid){
+				incl_thread_ids.push($(threadElem).attr('data-id'));
 			}
-			
-			var time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+		});
 
-			// Add the condition that it must be older
-			conditions['attributes.last_message_datetime_sec'] = {
-				"$lte" :  time_sec // older = less-than-or-equal-to
-			};
+		// Do something to each
+		// $.each(incl_thread_ids,function(i, v){
+		// 	console.log(v);
+		// });
 
-			// Run update command
-			Api.update({
-				data: {
-					model: 'Thread',
-					conditions: conditions,
-					multi: true, // edit more than 1? (yes)
-					paths: {
-						"$set" : {
-							"app.AppPkgDevMinimail.done" : 1
-						}
+
+		// Run update command
+		Api.update({
+			data: {
+				model: 'Thread',
+				conditions: {
+					'_id' : {
+						'$in' : incl_thread_ids
 					}
 				},
-				success: function(response){
-					// Successfully updated
-					response = JSON.parse(response);
-					if(response.code != 200){
-						// Updating failed somehow
-						// - this is bad, it means the action we thought we took, we didn't take
-						alert('Update may have failed');
+				multi: true, // edit more than 1? (yes)
+				paths: {
+					"$set" : {
+						"app.AppPkgDevMinimail.done" : 1
 					}
 				}
-			});
+			},
+			success: function(response){
+				// Successfully updated
+				response = JSON.parse(response);
+				if(response.code != 200){
+					// Updating failed somehow
+					// - this is bad, it means the action we thought we took, we didn't take
+					alert('Update may have failed');
+				}
+			}
+		});
+			
+		that.mass_action('done', this.options.type, incl_thread_ids);
 
-			// Assume update succeeded
-
-			// Mark all the visible ones
-			// - easy to see all the ones above (that haven't already had an action taken on them)
-			that.mass_action('done', this.options.type, time_sec);
-
-		}
-
-		if(this.options.type == 'delayed'){
-			alert('delayed');
-		}
+		return;
 
 
-		return false;
+		// if(this.options.type == 'undecided'){
+		// 	// Undecided
+
+		// 	// Build the conditions for the update
+		// 	// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
+		// 	conditions = {
+		// 		'$or' : [
+		// 			{
+		// 				'$and' : [
+		// 					{
+		// 						// doesn't exist for us, and is unread
+		// 						'app.AppPkgDevMinimail' : {'$exists' : false},
+		// 						'attributes.read.status' : 0
+		// 					}
+		// 				]
+		// 			},{
+		// 				'$and' : [
+		// 					{
+		// 						// exists as acted upon, and is marked as "undecided" still
+		// 						'app.AppPkgDevMinimail' : {'$exists' : true},
+		// 						'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+		// 						'app.AppPkgDevMinimail.done' : 0
+		// 					}
+		// 				]
+		// 			}
+		// 		]
+		// 	};
+
+		// 	// Get time of thread (affecting older threads only)
+		// 	time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+
+		// 	// Add the condition that it must be older
+		// 	conditions['attributes.last_message_datetime_sec'] = {
+		// 		"$lte" :  time_sec // older = less-than-or-equal-to
+		// 	};
+
+		// } else if(this.options.type == 'delayed'){
+
+		// 	// Get time of thread (affecting older threads only)
+		// 	time_sec = App.Data.Store.Thread[this.options.threadid].app.AppPkgDevMinimail.wait_until;
+
+		// 	// Delayed
+		// 	conditions = {
+		// 		'$and' : [
+		// 			{
+		// 				'app.AppPkgDevMinimail.wait_until' : {
+		// 					'$lte' : time_sec
+		// 				}
+		// 			},
+		// 			{
+		// 				'app.AppPkgDevMinimail.done' : {
+		// 					"$ne" : 1
+		// 				}
+		// 			}
+		// 		]
+		// 	};
+		// } else {
+		// 	// Failed finding the correct type
+		// 	alert('Failed finding type');
+		// 	return false;
+		// }
+
+		// // Run update command
+		// Api.update({
+		// 	data: {
+		// 		model: 'Thread',
+		// 		conditions: conditions,
+		// 		multi: true, // edit more than 1? (yes)
+		// 		paths: {
+		// 			"$set" : {
+		// 				"app.AppPkgDevMinimail.done" : 1
+		// 			}
+		// 		}
+		// 	},
+		// 	success: function(response){
+		// 		// Successfully updated
+		// 		response = JSON.parse(response);
+		// 		if(response.code != 200){
+		// 			// Updating failed somehow
+		// 			// - this is bad, it means the action we thought we took, we didn't take
+		// 			alert('Update may have failed');
+		// 		}
+		// 	}
+		// });
+
+		// // Assume update succeeded
+
+		// // Mark all the visible ones
+		// // - easy to see all the ones above (that haven't already had an action taken on them)
+		// that.mass_action('done', this.options.type, time_sec);
+
+		// return false;
 	},
 
 	click_delay: function(ev){
@@ -3986,77 +4188,150 @@ App.Views.ThreadOptions = Backbone.View.extend({
 			return false;
 		}
 
-		if(this.options.type == 'undecided'){
 
-			// Build the conditions for the update
-			// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
-			var conditions = {
-				'$or' : [
-					{
-						'$and' : [
-							{
-								// doesn't exist for us, and is unread
-								'app.AppPkgDevMinimail' : {'$exists' : false},
-								'attributes.read.status' : 0
-							}
-						]
-					},{
-						'$and' : [
-							{
-								// exists as acted upon, and is marked as "undecided" still
-								'app.AppPkgDevMinimail' : {'$exists' : true},
-								'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
-								'app.AppPkgDevMinimail.done' : 0
-							}
-						]
-					}
-				]
+		var incl_thread_ids = [];
+		$('.thread[data-thread-type="'+ this.options.type +'"]').reverse().each(function(i, threadElem){
+			// Wait for this element to get triggered
+			if(incl_thread_ids.length > 0){
+				// Already found this element
+				incl_thread_ids.push($(threadElem).attr('data-id'));
+			} else if($(threadElem).attr('data-id') == that.options.threadid){
+				incl_thread_ids.push($(threadElem).attr('data-id'));
 			}
-			
-			var time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+		});
 
-			// Add the condition that it must be older
-			conditions['attributes.last_message_datetime_sec'] = {
-				"$lte" :  time_sec // older = less-than-or-equal-to
-			};
 
-			// Run update command
-			Api.update({
-				data: {
-					model: 'Thread',
-					conditions: conditions,
-					paths: {
-						"$set" : {
-							"app.AppPkgDevMinimail.wait_until" : delay_datetime_in_seconds,
-							"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
-							"app.AppPkgDevMinimail.done" : 0
+		// Figure out delay in seconds
+		var now_sec = parseInt(new Date().getTime() / 1000);
+		var delay_time = wait.getTime() / 1000;
+		var delay_seconds = parseInt(delay_time - now_sec);
+		var in_seconds = now_sec + delay_seconds;
+
+		// App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
+
+		// Fire event
+		Api.event({
+			data: {
+				event: 'Minimail.wait_until_fired',
+				delay: delay_seconds,
+				obj: {
+					text: "Emails are due"
+				}
+			},
+			success: function(response){
+				response = JSON.parse(response);
+
+				if(response.code != 200){
+					// Failed launching event
+					alert('Failed launching event');
+					dfd.reject(false);
+					return;
+				}
+
+				// Save new delay also
+				Api.update({
+					data: {
+						model: 'Thread',
+						conditions: {
+							'_id' : {
+								'$in' : incl_thread_ids
+							}
+						},
+						paths: {
+							"$set" : {
+								"app.AppPkgDevMinimail.wait_until" : in_seconds,
+								"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+								"app.AppPkgDevMinimail.done" : 0
+							}
+						}
+					},
+					success: function(response){
+						response = JSON.parse(response);
+						if(response.code != 200){
+							// Shoot
+							alert('Failed updating threads!');
 						}
 					}
-				},
-				success: function(response){
-					// Successfully updated
-					response = JSON.parse(response);
-					if(response.code != 200){
-						// Updating failed somehow
-						// - this is bad, it means the action we thought we took, we didn't take
-						alert('Update may have failed');
-					}
-				}
-			});
+				});
 
-			// Assume update succeeded
+			}
+		});
 
-			// Mark all the visible ones
-			// - easy to see all the ones above (that haven't already had an action taken on them)
-			that.mass_action('delay', this.options.type, time_sec, wait, save_text);
 
-		}
+		that.mass_action('delay', this.options.type, incl_thread_ids, wait, save_text);
+		return;
+
+		// if(this.options.type == 'undecided'){
+
+		// 	// Build the conditions for the update
+		// 	// - same conditions as on App.Collections.UndecidedThreads.undecided_conditions
+		// 	var conditions = {
+		// 		'$or' : [
+		// 			{
+		// 				'$and' : [
+		// 					{
+		// 						// doesn't exist for us, and is unread
+		// 						'app.AppPkgDevMinimail' : {'$exists' : false},
+		// 						'attributes.read.status' : 0
+		// 					}
+		// 				]
+		// 			},{
+		// 				'$and' : [
+		// 					{
+		// 						// exists as acted upon, and is marked as "undecided" still
+		// 						'app.AppPkgDevMinimail' : {'$exists' : true},
+		// 						'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+		// 						'app.AppPkgDevMinimail.done' : 0
+		// 					}
+		// 				]
+		// 			}
+		// 		]
+		// 	}
+			
+		// 	var time_sec = App.Data.Store.Thread[this.options.threadid].attributes.last_message_datetime_sec;
+
+		// 	// Add the condition that it must be older
+		// 	conditions['attributes.last_message_datetime_sec'] = {
+		// 		"$lte" :  time_sec // older = less-than-or-equal-to
+		// 	};
+
+		// 	// Run update command
+		// 	Api.update({
+		// 		data: {
+		// 			model: 'Thread',
+		// 			conditions: conditions,
+		// 			paths: {
+		// 				"$set" : {
+		// 					"app.AppPkgDevMinimail.wait_until" : delay_datetime_in_seconds,
+		// 					"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+		// 					"app.AppPkgDevMinimail.done" : 0
+		// 				}
+		// 			}
+		// 		},
+		// 		success: function(response){
+		// 			// Successfully updated
+		// 			response = JSON.parse(response);
+		// 			if(response.code != 200){
+		// 				// Updating failed somehow
+		// 				// - this is bad, it means the action we thought we took, we didn't take
+		// 				alert('Update may have failed');
+		// 			}
+		// 		}
+		// 	});
+
+		// 	// Assume update succeeded
+
+		// 	// Mark all the visible ones
+		// 	// - easy to see all the ones above (that haven't already had an action taken on them)
+		// 	that.mass_action('delay', this.options.type, time_sec, wait, save_text);
+
+		// }
 
 		return false;
 
 	},
 
-	mass_action: function(action, type, seconds, wait, wait_save_text){
+	mass_action: function(action, type, incl_thread_ids, wait, wait_save_text){
 		// Mass animation on previous items
 		// - action: done, delay (with additional info about delay datetime)
 		// - type: undecided or delayed
@@ -4064,13 +4339,20 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 		var that = this;
 
-		seconds = parseInt(seconds);
+		// seconds = parseInt(seconds);
+		// if(!seconds){
+		// 	// Shoot
+		// 	alert('bad seconds in mass_action');
+		// 	return false;
+		// }
 
 		var waitTime = 0;
 		$('.thread[data-thread-type="'+type+'"]').reverse().each(function(i, threadElem){
 
-			var time_sec = parseInt(App.Data.Store.Thread[$(threadElem).attr('data-id')].attributes.last_message_datetime_sec);
-			if(time_sec <= seconds){
+			// Choosing either last_message_datetime_sec or wait_until
+			// - depends on undecided or delayed
+			
+			if(_.contains(incl_thread_ids, $(threadElem).attr('data-id'))){
 				// Affected this one!
 
 				// Slide the .thread-preview and show the Thread
@@ -4171,6 +4453,63 @@ App.Views.ThreadOptions = Backbone.View.extend({
 		return false;
 	},
 
+	click_note: function(ev){
+		// Editing/writing the Note for the Thread
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Display a new subview with the note dialog box?
+		// - want to keep Notes kinda short, right? 
+		// - notes on the computer would
+		// - want to prevent Notes from getting deleted accidentally (they probably contain only important information)
+		// - treat notes as Todo objects? add/remove/edit individual notes? Each line is a different Note? 
+		// - lots of improvements possible, keep it simple for now
+
+		var pre_text = '';
+		try {
+			if(App.Data.Store.Thread[that.options.threadid].app.AppPkgDevMinimail.note){
+				pre_text = App.Data.Store.Thread[that.options.threadid].app.AppPkgDevMinimail.note.toString();
+			}
+		} catch(err){
+			// pass
+		}
+
+		// Prompt box for note
+		var note_text = prompt('Thread Note',pre_text);
+
+		// Update the note
+		if(!note_text){
+			// canceled, not updating
+			return;
+		}
+
+		// Make API call to update
+		Api.update({
+			data: {
+				model: 'Thread',
+				id: that.options.threadid,
+				paths: {
+					"$set" : {
+						"app.AppPkgDevMinimail.note" : note_text
+					}
+				}
+			},
+			success: function(){
+
+			}
+		});
+
+		// Save locally (wrong way to do this, should happen via model/collection)
+		App.Data.Store.Thread[that.options.threadid].app.AppPkgDevMinimail.note = note_text;
+
+		// Update the view
+		// - todo...
+		App.Utils.Notification.toast('Updated Note');
+
+		return false;
+
+	},
+
 	render: function() {
 		var that = this;
 
@@ -4245,7 +4584,7 @@ App.Views.SelectEmailList = Backbone.View.extend({
 
 App.Views.All = Backbone.View.extend({
 	
-	className: 'all_thread_inside_view',
+	className: 'all_thread_inside_view reverse_vertical',
 
 	last_scroll_position: 0,
 
@@ -4257,8 +4596,8 @@ App.Views.All = Backbone.View.extend({
 		// 'click .sender_status a' : 'status_change'
 
 		// 'click .thread-preview' : 'view_email'
-		'shorttap .thread-preview' : 'preview_thread',
-		'longtap .thread-preview' : 'view_email',
+		'shorttap .thread-preview' : 'view_email',
+		'longtap .thread-preview' : 'preview_thread',
 
 		'click .thread-preview' : 'click_view_email'
 
@@ -4374,7 +4713,8 @@ App.Views.All = Backbone.View.extend({
 			that.subViewThreadOptions[subViewKey].render();
 
 			// Write HTML before element
-			$(elem).before(that.subViewThreadOptions[subViewKey].$el);
+			// - inserts a holder that handles positioning
+			$(elem).parent().before(that.subViewThreadOptions[subViewKey].$el);
 
 			// re-scroll to account for display
 			// alert(that.subViewThreadOptions[subViewKey].$el.height());
@@ -4397,9 +4737,9 @@ App.Views.All = Backbone.View.extend({
 			return false;
 		}
 
-		alert('must be web');
-		this.preview_thread(ev);
-		// this.view_email(ev);
+		// alert('must be web');
+		// this.preview_thread(ev);
+		this.view_email(ev);
 
 		// var elem = ev.currentTarget,
 		// 	threadElem = $(elem).parents('.thread');
@@ -4429,31 +4769,41 @@ App.Views.All = Backbone.View.extend({
 
 	view_email: function(ev){
 		// View an individual email thread
-
-		var elem = ev.currentTarget;
-		var threadElem = $(elem).parents('.thread');
+		var that = this,
+			elem = ev.currentTarget,
+			threadElem = $(elem).parents('.thread');
 
 		// In multi-select mode?
-		// if(this.$('.all_threads').hasClass('multi-select-mode')){
-		// 	alert(1);
-		// 	// Already selected?
-		// 	if($(elem).hasClass('multi-selected')){
-		// 		// un-selected
-		// 		$(elem).removeClass('multi-selected');
+		if(this.$('.all_threads').hasClass('multi-select-mode')){
+			
+			// Already selected?
+			// alert($(elem).attr('class'));
+			if($(elem).hasClass('multi-selected')){
+				
+				// un-selected
+				$(elem).removeClass('multi-selected');
 
-		// 		// Anybody else selected?
-		// 		if($('.multi-selected').length < 1){
-		// 			// turn of multi-select mode
-		// 			$(elem).parents('.all_threads').removeClass('multi-select-mode');
-		// 		}
+				// Anybody else selected?
+				if($('.multi-selected').length < 1){
+					// turn of multi-select mode
+					$(elem).parents('.all_threads').removeClass('multi-select-mode');
+				}
 
-		// 	} else {
-		// 		// select row
-		// 		$(elem).addClass('multi-selected');
-		// 	}
+			} else {
+				// select row
+				$(elem).addClass('multi-selected');
+			}
 
-		// 	return false;
-		// }
+			return false;
+		}
+
+		// In Preview mode?
+		if($(elem).hasClass('previewing')){
+			// Call as if longtap were pressed again
+			// alert('is previewing');
+			that.preview_thread(ev);
+			return false;
+		}
 
 		// - probably have some of the info cached already (all relevant headers)
 
@@ -4537,20 +4887,24 @@ App.Views.All = Backbone.View.extend({
 		this.$el.html(template(threads));
 
 		// Change size of window based on display size
-		$('.all_thread_inside_view').css({
-			height: App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-		$('.all_threads').css({
-			"max-height": App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-		$('.all_threads .thread:first-child').css({
-			"margin-top" : App.Data.xy.win_height - (60+75)
-		});
+		// $('.all_thread_inside_view').css({
+		// 	height: App.Data.xy.win_height - 60,
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.all_threads').css({
+		// 	"max-height": App.Data.xy.win_height - 60,
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.all_threads .thread:first-child').css({
+		// 	"margin-top" : App.Data.xy.win_height - (60+75)
+		// });
+		
+		// Resize the scrollable part (.all_threads)
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
 
 		// Scroll to bottom
-		$('.all_threads').scrollTop($(document).height() + App.Data.xy.win_height);
+		this.$('.scroller').scrollTop(10000);
 
 		// Draggable
 		$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
@@ -4559,6 +4913,21 @@ App.Views.All = Backbone.View.extend({
 		// $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
 		// $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+
+		return this;
+		
+	},
+
+	render_zero: function(){
+
+		// Render the loading screen
+		var that = this;
+
+		// Template
+		var template = App.Utils.template('t_all_inboxzero');
+
+		// Write HTML
+		this.$el.html(template());
 
 		return this;
 		
@@ -4573,22 +4942,23 @@ App.Views.All = Backbone.View.extend({
 
 		// Start the refresher for each
 		// After each has finished refreshing, it should tell the list to be recompiled
+
+		// Wait for both to finish, then recombine threads
+
+		var dfdUndecided = $.Deferred(),
+			dfdDelayed = $.Deferred();
+
 		that.undecidedThreadsCollection = new App.Collections.UndecidedThreads();
 		that.undecidedThreadsCollection.fetchUndecided({
 			success: function(threads) {
 				// Does not return models, just JSON data objects
-				clog('back with result');
 					
 				// Store locally
 				App.Utils.Storage.set('undecided_threads_and_emails',threads);
 
-				// Recombine threads
-				that.recombine_threads()
-					.then(function(threads){
+				// Resolve
+				dfdUndecided.resolve();
 
-						// Render new Thread list
-						that.render_threads(threads);
-					});
 			}
 		});
 
@@ -4597,22 +4967,50 @@ App.Views.All = Backbone.View.extend({
 		that.delayedThreadsCollection.fetchDelayed({
 			success: function(threads) {
 				// Does not return models, just JSON data objects
-				clog('back with result');
 					
 				// Store locally
 				App.Utils.Storage.set('delayed_threads_and_emails',threads);
+
+				// Resolve
+				dfdDelayed.resolve();
+
+				// // Recombine threads
+				// that.recombine_threads()
+				// 	.then(function(threads){
+
+				// 		// No threads?
+				// 		if(threads.undecided.length < 1 && threads.delayed.length < 1){
+				// 			// Render Inbox Zero view
+				// 			that.render_zero();
+				// 			return;
+				// 		}
+
+				// 		// Render new Thread list
+				// 		that.render_threads(threads);
+				// 	});
+
+
+			}
+		});
+
+		$.when(dfdUndecided.promise(), dfdDelayed.promise())
+			.then(function(){
 
 				// Recombine threads
 				that.recombine_threads()
 					.then(function(threads){
 
+						// No threads?
+						if(threads.undecided.length < 1 && threads.delayed.length < 1){
+							// Render Inbox Zero view
+							that.render_zero();
+							return;
+						}
+
 						// Render new Thread list
 						that.render_threads(threads);
 					});
-
-
-			}
-		});
+			});
 
 
 	},
@@ -4622,6 +5020,9 @@ App.Views.All = Backbone.View.extend({
 
 		// Render initial body
 		this.render_init();
+
+		// Refresh and render
+		this.refresh_and_render_threads();
 
 		App.Utils.Storage.get('delayed_threads_and_emails')
 			.then(function(val){
@@ -4640,9 +5041,6 @@ App.Views.All = Backbone.View.extend({
 				}
 			});
 
-		// Refresh and render
-		this.refresh_and_render_threads();
-
 
 		// How old is it?
 		// Do we need to do a refresh?
@@ -4656,7 +5054,7 @@ App.Views.All = Backbone.View.extend({
 
 App.Views.LeisureList = Backbone.View.extend({
 	
-	className: 'leisure_list_inside_view',
+	className: 'leisure_list_inside_view reverse_vertical',
 
 	last_scroll_position: 0,
 
@@ -4777,16 +5175,20 @@ App.Views.LeisureList = Backbone.View.extend({
 		// Write HTML
 		this.$el.html(template(lfilters));
 
-		// Change size of window based on display size
-		$('.leisure_list_inside_view').css({
-			height: App.Data.xy.win_height - 60 // 120 w/ footer
-			// width: App.Data.xy.win_width
-		});
+		// // Change size of window based on display size
+		// $('.leisure_list_inside_view').css({
+		// 	height: App.Data.xy.win_height - 60 // 120 w/ footer
+		// 	// width: App.Data.xy.win_width
+		// });
 
-		$('.all_threads').css({
-			"max-height": App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
+		// $('.all_threads').css({
+		// 	"max-height": App.Data.xy.win_height - 60,
+		// 	width: App.Data.xy.win_width
+		// });
+
+		// Resize the scrollable part (.all_threads)
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
 
 		// $('.leisure_list').css({
 		// 	"max-height": $(window).height() - 60,
@@ -4794,15 +5196,16 @@ App.Views.LeisureList = Backbone.View.extend({
 		// });
 
 		// // Scroll to bottom
-		$('.all_threads').scrollTop($(document).height() + 1000); // very bottom
+		// $('.all_threads').scrollTop($(document).height() + 1000); // very bottom
+		this.$('.scroller').scrollTop(10000);
 
-		// Draggable
-		$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
-		// $(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
-		$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
-		// $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
-		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
-		// $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+		// // Draggable
+		// $(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
+		// // $(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
+		// $(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
+		// // $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
+		// $(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
+		// // $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
 
 		return this;
 		
@@ -4841,6 +5244,7 @@ App.Views.LeisureList = Backbone.View.extend({
 		// Refresh and render
 		// this.refresh_and_render_threads();
 
+		// Get stored leisure_list
 		App.Utils.Storage.get('leisure_list_top')
 			.then(function(threads){
 
@@ -5065,6 +5469,10 @@ App.Views.LeisureItem = Backbone.View.extend({
 		// Write HTML
 		this.$el.html(template(data));
 
+		// Resize the scrollable part (.all_threads)
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
 		return this;
 		
 	},
@@ -5183,7 +5591,7 @@ App.Views.LeisureItem = Backbone.View.extend({
 
 App.Views.Search = Backbone.View.extend({
 	
-	className: 'search_inside_view',
+	className: 'search_inside_view reverse_vertical',
 
 	last_scroll_position: 0,
 
@@ -5278,23 +5686,30 @@ App.Views.Search = Backbone.View.extend({
 		this.$el.html(template());
 
 		// Change size of window based on display size
-		$('.search_inside_view').css({
-			height: App.Data.xy.win_height - (60), // footer height = 60
-			width: App.Data.xy.win_width
-		});
-		$('.quick_searches').css({
-			"max-height": App.Data.xy.win_height - (60),  // footer height = 60
-			width: App.Data.xy.win_width
-		});
-		$('.search_inside .search_category:first-child').css({
-			"margin-top" : App.Data.xy.win_height - (60+75)
-		});
+		// $('.search_inside_view').css({
+		// 	height: App.Data.xy.win_height - (60), // footer height = 60
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.quick_searches').css({
+		// 	"max-height": App.Data.xy.win_height - (60),  // footer height = 60
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.search_inside .search_category:first-child').css({
+		// 	"margin-top" : App.Data.xy.win_height - (60+75)
+		// });
 		
 		// Focus on search box
 		// this.$('input').focus();
 
 		// Scroll down
-		$('.quick_searches').scrollTop($('.quick_searches').height());
+		// $('.quick_searches').scrollTop($('.quick_searches').height());
+
+		// Resize windows and scroller panes accordingly
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
+		// scroll to bottom
+		this.$('.scroller').scrollTop(10000);
 
 		return this;
 
@@ -5323,7 +5738,7 @@ App.Views.Search = Backbone.View.extend({
 
 App.Views.SearchEmails = Backbone.View.extend({
 	
-	className: 'search_emails_inside_view',
+	className: 'search_emails_inside_view reverse_vertical',
 
 	last_scroll_position: 0,
 
@@ -5382,7 +5797,7 @@ App.Views.SearchEmails = Backbone.View.extend({
 		var that = this;
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'render_loading_threads');
-
+		
 		_.bindAll(this, 'recently_viewed');
 		_.bindAll(this, 'recently_acted_on');
 		_.bindAll(this, 'sent_emails');
@@ -5392,13 +5807,18 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 	},
 
-	click_prefilter : function(ev){
+	click_prefilter : function(ev, elem2){
 		// What are we filtering by?
 		var that = this;
-		var elem = ev.currentTarget;
+			
+		var elem;
+		if(elem2){
+			elem = elem2;
+		} else {
+			elem = ev.currentTarget;
+		}
 
 		// Get selected element
-
 		$(elem).blur();
 
 		var elem_key = $(elem).find(':selected').val();
@@ -5685,18 +6105,20 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 	scroll_to_bottom: function(){
 
-		// Change size of window based on display size
-		$('.search_emails_thread_results').css({
-			height: App.Data.xy.win_height - (60 + 50), // footer height = 60. search_footer height = 50. critera height = 50
-			width: App.Data.xy.win_width
-		});
-		$('.search_emails_thread_results').css({
-			"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
-			width: App.Data.xy.win_width
-		});
-		$('.search_emails_thread_results .search_result:first-child').css({
-			"margin-top" : App.Data.xy.win_height - (60+75) // 75?
-		});
+		// // Change size of window based on display size
+		// $('.search_emails_thread_results').css({
+		// 	height: App.Data.xy.win_height - (60 + 50), // footer height = 60. search_footer height = 50. critera height = 50
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.search_emails_thread_results').css({
+		// 	"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.search_emails_thread_results .search_result:first-child').css({
+		// 	"margin-top" : App.Data.xy.win_height - (60+75) // 75?
+		// });
+	
+		return;
 
 	},
 
@@ -5713,9 +6135,17 @@ App.Views.SearchEmails = Backbone.View.extend({
 			filter_options: that.filter_options
 		}));
 
+		// Resize the scroller
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
 		// Choose Recent
+		console.log(1);
 		that.$('select').val('recently_viewed');
-		that.$('select').trigger('change');
+		this.click_prefilter(null, that.$('select'));
+		console.log(2);
+		// that.$('select').trigger('change');
+		// that.$('select').blur();
 
 		// // Change size of window based on display size
 		// $('.search_emails_inside_view').css({
@@ -5765,8 +6195,6 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 		// Render initial body
 		this.render_init();
-
-
 
 		// How old is it?
 		// Do we need to do a refresh?
@@ -6158,17 +6586,18 @@ App.Views.SearchAttachments = Backbone.View.extend({
 	scroll_to_bottom: function(){
 		// Re-render window and scroll to bottom
 
-		// Change size of window based on display size
-		$('.search_attachments_results').css({
-			"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
-			width: App.Data.xy.win_width
-		});
-		$('.search_attachments_results .attachment:first-child').css({
-			"margin-top" : App.Data.xy.win_height - (60 + 105) // both footers, attachment height
-		});
+		// // Change size of window based on display size
+		// $('.search_attachments_results').css({
+		// 	"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.search_attachments_results .attachment:first-child').css({
+		// 	"margin-top" : App.Data.xy.win_height - (60 + 105) // both footers, attachment height
+		// });
 
-		$('.search_attachments_results').scrollTop($('.search_attachments_results').height() + 1000);
+		// $('.search_attachments_results').scrollTop($('.search_attachments_results').height() + 1000);
 
+		return;
 	},
 
 
@@ -6188,6 +6617,10 @@ App.Views.SearchAttachments = Backbone.View.extend({
 		that.$('select').val('recent');
 		that.$('select').trigger('change');
 
+		// Resize fluid elements
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
 		return this;
 
 	},
@@ -6200,6 +6633,10 @@ App.Views.SearchAttachments = Backbone.View.extend({
 
 		// Write HTML
 		that.$('.search_emails_thread_results').html(template());
+
+		// Resize windows and scroller panes accordingly
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
 
 	},
 
@@ -6608,15 +7045,15 @@ App.Views.SearchLinks = Backbone.View.extend({
 		// Re-render window and scroll to bottom
 
 		// Change size of window based on display size
-		$('.search_links_results').css({
-			"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
-			width: App.Data.xy.win_width
-		});
-		$('.search_links_results .parsed_link:first-child').css({
-			"margin-top" : App.Data.xy.win_height - (60 + 105) // both footers, attachment height
-		});
+		// $('.search_links_results').css({
+		// 	"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
+		// 	width: App.Data.xy.win_width
+		// });
+		// $('.search_links_results .parsed_link:first-child').css({
+		// 	"margin-top" : App.Data.xy.win_height - (60 + 105) // both footers, attachment height
+		// });
 
-		$('.search_links_results').scrollTop($('.search_links_results').height() + 1000);
+		// $('.search_links_results').scrollTop($('.search_links_results').height() + 1000);
 
 	},
 
@@ -7425,7 +7862,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			}
 		});
 		if(wait == null){
-			alert('Invalid type used');
+			// alert('Invalid type used');
 			this.close();
 			return;
 		}
@@ -7590,7 +8027,7 @@ App.Views.DelayModal = Backbone.View.extend({
 		// Date-time scroller/picker
 		this.dateScroll = this.$("#date").mobiscroll().datetime({
 			display: 'inline',
-			theme: 'wp'
+			theme: 'jqm'
 		});
 
 		return this;
