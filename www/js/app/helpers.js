@@ -888,7 +888,7 @@ Handlebars.registerHelper("attachment_small_preview", function(attachment) {
 
 	try {
 		if(attachment.thumbs.basewidth300){
-			return '<img src="'+ App.Credentials.s3_bucket + attachment.thumbs.basewidth300.path +'" max-width="16" max-height="16" />';
+			return '<img src="'+ attachment.thumbs.basewidth300.path +'" max-width="16" max-height="16" />';
 		}
 	} catch(err){
 		// pass
@@ -1336,6 +1336,16 @@ Handlebars.registerHelper("contactPhotoSmall", function(photos) {
 
 
 
+Handlebars.registerHelper("inbox_zero_words", function() {
+	
+	// Words/phrases to choose from
+	// - html ok
+	var words = ['Nice Work!', 
+				'Great Job!', 
+				'Go Home Email,<br /> You are Drunk']; // get clever
+
+	return words[Math.floor(Math.random()*words.length)];
+});
 
 
 
