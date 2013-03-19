@@ -609,28 +609,28 @@ App.Collections.UndecidedThreads = Backbone.Collection.extend({
 
 	sync: emailbox_sync_collection,
 
-	undecided_conditions: {
-		'$or' : [
-			{
-				'$and' : [
-					{
-						// doesn't exist for us, and is unread
-						'app.AppPkgDevMinimail' : {'$exists' : false},
-						'attributes.read.status' : 0
-					}
-				]
-			},{
-				'$and' : [
-					{
-						// exists as acted upon, and is marked as "undecided" still
-						'app.AppPkgDevMinimail' : {'$exists' : true},
-						'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
-						'app.AppPkgDevMinimail.done' : 0
-					}
-				]
-			}
-		]
-	},
+		undecided_conditions: {
+			'$or' : [
+				{
+					'$and' : [
+						{
+							// doesn't exist for us, and is unread/unseen
+							'app.AppPkgDevMinimail' : {'$exists' : false},
+							'attributes.read.status' : 0
+						}
+					]
+				},{
+					'$and' : [
+						{
+							// exists as acted upon, and is marked as "undecided" still
+							'app.AppPkgDevMinimail' : {'$exists' : true},
+							'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+							'app.AppPkgDevMinimail.done' : 0
+						}
+					]
+				}
+			]
+		},
 
 	fetchUndecided: function(options){
 		var that = this;
