@@ -295,6 +295,7 @@ App.Plugins.Minimail = {
 				event: 'Minimail.wait_until_fired',
 				delay: delay_in_seconds,
 				obj: {
+					threadid: thread_id,
 					text: "An email is due"
 				}
 			},
@@ -309,6 +310,7 @@ App.Plugins.Minimail = {
 
 				// Save new delay also
 				clog('updating');
+				// alert(thread_id);
 				Api.update({
 					data: {
 						model: 'Thread',
@@ -370,7 +372,136 @@ App.Plugins.Minimail = {
 		return dfd.promise();
 	},
 
+	updateAndroidPushRegId: function(android_reg_id){
+		// Update or create AppMinimailSettings
+		// - per-user settings
 
+		var dfd = $.Deferred();
+
+		// See if already exists
+		Api.search({
+			data: {
+				model: 'AppMinimailSettings',
+				conditions: {
+					'_id' : 1
+				},
+				fields: []
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				
+				if(response.code != 200){
+					// Shoot
+					return;
+				}
+
+				// Settings already exist?
+				if(response.data.length < 1){
+					// Not set
+					// - create w/ defaults
+					alert('Settings being created');
+
+					// Default data to save to emailbox
+					var defaultData = {
+						'_id' : 1,
+						android_reg_id: android_reg_id // push.android_reg_id
+					};
+
+					Api.write({
+						data: {
+							model: 'AppMinimailSettings',
+							obj: defaultData
+						},
+						success: function(response){
+							response = JSON.parse(response);
+							if(response.code != 200){
+								// Shoot
+								alert('Settings failed to be created');
+								dfd.resolve(false);
+								return;
+							}
+
+							// Saved ok
+							dfd.resolve(true);
+						}
+					});
+
+				} else {
+					// Settings already exist
+					// - update them
+					// alert(android_reg_id);
+					Api.update({
+						data: {
+							model: 'AppMinimailSettings',
+							id: 1,
+							paths: {
+								'$set' : {
+									android_reg_id: android_reg_id
+								}
+							}
+						},
+						success: function(response){
+							response = JSON.parse(response);
+							if(response.code != 200){
+								// Shoot
+								dfd.resolve(false);
+								return;
+							}
+
+							// Updated ok
+							dfd.resolve(true);
+						}
+					});
+
+				}
+			}
+		});
+
+		// Return promise
+		return dfd.promise();
+
+	},
+
+	process_push_notification_message: function(e){
+		// Processing a single Push Notification
+		// - not meant for handling a bunch in a row
+
+		if (e.foreground) {
+			// Launched 
+			// alert('app in foreground');
+
+			// Go to the Thread?
+			// - load the thread first?
+
+			// Go to thread referenced?
+			// alert(JSON.stringify(e.payload));
+			// alert(e.payload.threadid);
+			if(e.payload.threadid){
+				if(confirm('View Thread?')){
+					// App.Data.Store.Thread[this.threadid] = undefined;
+					Backbone.history.loadUrl('view_thread/' + e.payload.threadid);
+				}
+			}
+
+
+			// // if the notification contains a soundname, play it.
+			// var my_media = new Media("/android_asset/www/"+e.soundname);
+			// my_media.play();
+		} else {    
+			// Launched because the user touched a notification in the notification tray.
+			// alert('app NOT in foreground');
+
+			// Go to thread referenced?
+			if(e.payload.threadid){
+				// if(confirm('View Thread?')){
+					// App.Data.Store.Thread[this.threadid] = undefined;
+					Backbone.history.loadUrl('view_thread/' + e.payload.threadid);
+				// }
+			}
+
+		}
+
+	},
 
 	thread_main: {
 		
@@ -686,7 +817,7 @@ App.Plugins.Minimail = {
 						// 
 						var newTime = new Date().getTime();
 						var elapsed = newTime - parseInt($(that).attr('finger-time'));
-						if(elapsed < 300){
+						if(elapsed < 100){
 							$(that).trigger('shorttap');
 						} else {
 							$(that).trigger('longtap');
