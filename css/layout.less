@@ -1,0 +1,53 @@
+
+
+// Layout Variables
+// -------------------------
+@black:                 #000;
+@grayDarker:            #222;
+
+
+
+
+.header {
+
+}
+
+.body_container {
+
+		background: #444;
+
+}
+
+.body_container .reverse_vertical {
+	// adding elements bottom-to-top
+	// - doesn't actually reverse them, just starts ordering from the bottom. kinda weird
+	//		- needs the next element to have overflow:auto; and a fixed height
+
+	display: table-cell;
+	vertical-align: bottom;
+
+}
+
+.body_container .scroller {
+	overflow: auto;
+	max-height: 510px; // default value
+}
+
+.footer {
+
+}
+
+.footer2 {
+
+}
+
+
+// View background colors/themes
+.leisure_item_view .body_container,
+.common_leisure_create_view .body_container {
+	background: white;
+}
+
+	
+
+
