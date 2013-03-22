@@ -10,18 +10,18 @@
 		minimail
 	</title>
 
-	<!-- Using local development (comment out for build.phonegap.com) -->
+	<!-- Using local development (Android) (comment out for build.phonegap.com) -->
 	<!--
-    <script src="cordova-2.4.0.js"></script>
-    <script src="childbrowser_local.js"></script>
+    <script src="js_main/cordova-2.4.0.js"></script>
+    <script src="js_main/childbrowser_local.js"></script>
 	-->
 
 	<!-- Using build.phonegap.com -->
-    <script src="phonegap.js"></script>
-    <script src="childbrowser.js"></script>
+    <script src="js_main/phonegap.js"></script>
+    <script src="js_main/childbrowser.js"></script>
 
 
-    <script src="PushNotification.js"></script>
+    <script src="js_main/PushNotification.js"></script>
 
 	<!--
 	<link rel="stylesheet/less" type="text/css" href="css/less/bootstrap.less">
@@ -29,9 +29,8 @@
 
 	<script src="https://getemailbox.com/socket.io/socket.io.js"></script>
 
-	<!-- FilePicker -->
-	
-	<script type="text/javascript" src="filepicker.0.0.1.js"></script>
+	<!-- FilePicker (custom, similar/same to github version by brett) -->
+	<script type="text/javascript" src="js_main/filepicker.0.0.1.js"></script>
 	<!--
 	<script type="text/javascript">
 	(function(a){if(window.filepicker){return}var b=a.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===a.location.protocol?"https:":"http:")+"//api.filepicker.io/v1/filepicker.js";var c=a.getElementsByTagName("script")[0];c.parentNode.insertBefore(b,c);var d={};d._queue=[];var e="pick,pickMultiple,pickAndStore,read,write,writeUrl,export,convert,store,storeUrl,remove,stat,setKey,constructWidget,makeDropPane".split(",");var f=function(a,b){return function(){b.push([a,arguments])}};for(var g=0;g<e.length;g++){d[e[g]]=f(e[g],d._queue)}window.filepicker=d})(document); 
