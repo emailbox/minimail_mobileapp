@@ -1,3 +1,5 @@
+More info? nick@getemailbox.com  
+
 ## What is minimail  
 
 Minimail is an open source email client, backed by [Emailbox](https://getemailbox.com), that is customizable using common web languages like HTML, CSS, and Javascript. It runs on Android, and it skips dealing with IMAP or managing the email sending/receiving/parsing hairyness.  
