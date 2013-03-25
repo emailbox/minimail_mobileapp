@@ -479,7 +479,8 @@ var App = {
 				// txt="There was an error on this page.\n\n"; 
 				// txt+="Error description: " + err.message + "\n\n"; 
 				// alert(txt); 
-				alert('Push Error');
+				// alert('Push Error');
+				App.Utils.Notification.debug.temporary('Push Error');
 			}
 
 			// Pausing (exiting)

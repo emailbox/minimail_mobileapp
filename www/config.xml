@@ -2,8 +2,7 @@
 <widget xmlns     = 'http://www.w3.org/ns/widgets'
         xmlns:gap = 'http://phonegap.com/ns/1.0'
         id        = "com.emailbox.minimail"
-        id_ios        = "minimail1"
-        version   = "0.0.1">
+        version   = "0.0.2">
     <name>minimail</name>
 
     <description>
@@ -11,7 +10,7 @@
     </description>
 
     <author href="https://getemailbox.com" email="nick@getemailbox.com">
-        emailbox
+        minimail
     </author>
 
     <feature name="http://api.phonegap.com/1.0/device" />
