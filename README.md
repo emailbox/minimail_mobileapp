@@ -13,7 +13,7 @@ Please fork and submit pull requests!
 Version: 0.1 aka Extreme Alpha  
 It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, create Leisure Filters, and search links/attachments/emails. Push Notifications work only when using Phonegap Build.  
 
-> Important Note: test
+> Important Note: This is a pre-release, pre-stable version of Emailbox, and developers are encouraged to not use their primary email address! 
 
 Priorities include: 
 - Refactor into correct Backbone patterns
