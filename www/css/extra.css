@@ -1777,9 +1777,10 @@ body.console {
 
 .delay_modal .button_panel {
   position: fixed;
-  bottom: 80px;
-  left: 1%;
-  width: 98%;
+  /*bottom: 80px;*/
+  bottom: 0px;
+  left: 0;
+  width: 100%;
 
   background: #444;
   
@@ -1847,6 +1848,12 @@ body.console {
   color: #b1b1b1;
 }
 
+.delay_modal .choose_datetime {
+  color: #EBEBEB;
+
+  padding: 5px;
+}
+
 .delay_modal .choose_datetime #date {
   width: 100%;
 }
@@ -1862,6 +1869,24 @@ body.console {
   
   padding: 10px 0;
 
+}
+
+#calendar .fc-day-header {
+  border-width: 0px;
+  border-bottom-width: 1px;
+}
+
+#calendar .fc-state-highlight {
+  color: #333;
+}
+
+#time .wp .dw,
+#time .wp .dwwb {
+  background: #444;
+}
+
+#time .wp .dwwr {
+  padding: 0px;
 }
 
 
@@ -2091,15 +2116,12 @@ body.console {
 .common_compose textarea {
   width: 95%;
   margin: 0;
-  margin-left: 2.5%;
+  /*margin-left: 2.5%;*/
 
   min-height: 200px;
 
 }
 
-.common_compose .attachments {
-  padding: 0 10px 2.5%;
-}
 
 
 
@@ -2197,10 +2219,14 @@ body.console {
   padding: 10px 10px 2.5%;
 
   width: 95%;
-  margin-left: 2.5%;
+  /*margin-left: 2.5%;*/
 
   /*border-top: 0px;*/
 
+}
+
+.common_compose .attachments {
+  padding: 10px 10px 2.5%;
 }
 
 .compose_attachments {
@@ -2211,6 +2237,16 @@ body.console {
 .compose_attachments img {
   border-radius: 4px;
   -webkit-border-radius: 4px;
+}
+
+.common_compose .file_attachment:first-child {  
+  border-top: 1px solid #eee;
+}
+
+.common_compose .file_attachment {
+  padding: 10px 10px 2.5%;
+  color: #ebebeb;
+  border-bottom: 1px solid #eee;
 }
 
 
