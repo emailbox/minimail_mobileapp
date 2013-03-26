@@ -23,6 +23,8 @@ var App = {
 		was_paused: false,
 		Keys: {},
 		debug_messages: {},
+		backbutton_functions: [],
+		menubutton_functions: [],
 		xy: {
 			win_height: 0, // by default, starts in portrait mode and as orientation changes this will update (portrait only)
 			win_width: 0,
@@ -545,11 +547,18 @@ var App = {
 			// Init BACK button on Android
 			// - disable default first
 			document.addEventListener("backbutton", function(killa){
-				var a = confirm('Close minimail? ');
-				if(a){
-					navigator.app.exitApp();
+				// Any entries in the list?
+				if(App.Data.backbutton_functions.length < 1){
+
+					var a = confirm('Close minimail? ');
+					if(a){
+						navigator.app.exitApp();
+					}
+					return;
+				} else {
+					// Run the highest-bubbled function
+					App.Data.backbutton_functions[0].func();
 				}
-				return;
 			}, false);
 
 
