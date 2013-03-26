@@ -522,7 +522,7 @@ App.Plugins.Minimail = {
 			// alert(JSON.stringify(e.payload));
 			// alert(e.payload.threadid);
 			if(e.payload.threadid){
-				if(confirm('View Thread?')){
+				if(confirm('New Thread. View Thread?')){
 					// App.Data.Store.Thread[this.threadid] = undefined;
 					Backbone.history.loadUrl('view_thread/' + e.payload.threadid);
 				}
@@ -645,8 +645,8 @@ App.Plugins.Minimail = {
 				var y_diff = coords.y - this_y;
 
 				// Add diff to existing diff values
-				$(this).attr('x-total-diff', parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff));
-				$(this).attr('y-total-diff', parseInt($(this).attr('y-total-diff')) + Math.abs(y_diff));
+				$(this).attr('x-total-diff', parseInt($(this).attr('x-total-diff'), 10) + Math.abs(x_diff));
+				$(this).attr('y-total-diff', parseInt($(this).attr('y-total-diff'), 10) + Math.abs(y_diff));
 
 				var $parent_controller = $(this).parents('.all_threads');
 				// Already in multi-select mode?
@@ -832,7 +832,7 @@ App.Plugins.Minimail = {
 							// Save delay
 							var delay_seconds = 60 * 60 * 3; // 3 hours
 							var now = new Date();
-							var now_sec = parseInt(now.getTime() / 1000);
+							var now_sec = parseInt(now.getTime() / 1000, 10);
 							var in_seconds = now_sec + (delay_seconds);//(60*60*3);
 							// var test = new Date(in_seconds * 1000);
 							// clog(test);
@@ -854,14 +854,14 @@ App.Plugins.Minimail = {
 					// - trigger a "shorttap" or "longtap" event on thread-preview
 
 					// Total distance traveled too far?
-					var x_total_diff = parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff);
-					var y_total_diff = parseInt($(this).attr('x-total-diff')) + Math.abs(x_diff);
+					var x_total_diff = parseInt($(this).attr('x-total-diff'), 10) + Math.abs(x_diff);
+					var y_total_diff = parseInt($(this).attr('x-total-diff'), 10) + Math.abs(x_diff);
 					if(x_total_diff < 40 && y_total_diff < 40){
 						// Didn't travel too far
 
 						// 
 						var newTime = new Date().getTime();
-						var elapsed = newTime - parseInt($(that).attr('finger-time'));
+						var elapsed = newTime - parseInt($(that).attr('finger-time'), 10);
 						if(elapsed < 100){
 							$(that).trigger('shorttap');
 						} else {
@@ -1025,7 +1025,7 @@ App.Plugins.Minimail = {
 
 	formatDateForScroll: function(dateobj){
 
-		var hour = parseInt(dateobj.toString('h')),
+		var hour = parseInt(dateobj.toString('h'), 10),
 			ampm = dateobj.toString('t') == 'A' ? 0 : 1;
 
 		// must convert 12 to 0 for hours (expected by mobiscroll)
@@ -1047,11 +1047,32 @@ App.Plugins.Minimail = {
 
 	},
 
+	formatTimeForScroll: function(dateobj){
+
+		var hour = parseInt(dateobj.toString('h'), 10),
+			ampm = dateobj.toString('t') == 'A' ? 0 : 1;
+
+		// must convert 12 to 0 for hours (expected by mobiscroll)
+		if(hour == 12){
+			hour = 0;
+		}
+
+		var tmp = [
+			hour,// hour, 
+			dateobj.toString('m'),// min, 
+			ampm,// ampm
+		];
+
+		// Return formatted array
+		return tmp;
+
+	},
+
 	parseDateFromScroll: function(date_arr){
 		// turn a date_arr into a js date object
 
 		date_arr = _.map(date_arr,function(v){
-			return parseInt(v);
+			return parseInt(v,10);
 		});
 
 		var hours = date_arr[3];
@@ -1068,6 +1089,33 @@ App.Plugins.Minimail = {
 
 		// year, month, day, hours, minutes, seconds, milliseconds
 		var tmp = new Date(date_arr[2],date_arr[0],date_arr[1],hours,date_arr[4],0,0);
+
+		// Return valid Date object
+		return tmp;
+
+	},
+
+	parseTimeFromScroll: function(date_arr){
+		// turn a date_arr into a js date object
+
+		date_arr = _.map(date_arr,function(v){
+			return parseInt(v,10);
+		});
+
+		var hours = date_arr[0];
+
+		// must convert 0 to 12 for hours (output by mobiscroll)
+		// if(hour == 0){
+		// 	hour = 12;
+		// }
+
+		// Handle PM
+		if(date_arr[2] == 1){
+			hours = hours + 12;
+		}
+
+		// year, month, day, hours, minutes, seconds, milliseconds
+		var tmp = new Date(2013,1,0,hours,date_arr[1],0,0);
 
 		// Return valid Date object
 		return tmp;
