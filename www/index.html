@@ -20,8 +20,8 @@
 	
     <script src="phonegap.js"></script>
     <script src="childbrowser.js"></script>
+    <script src="barcodescanner.js"></script>
     <script src="PushNotification.js"></script>
-	
 
 	<!--
 	<link rel="stylesheet/less" type="text/css" href="css/less/bootstrap.less">
@@ -30,7 +30,8 @@
 	<script src="https://getemailbox.com/socket.io/socket.io.js"></script>
 
 	<!-- FilePicker (custom, similar/same to github version by brett) -->
-	<script type="text/javascript" src="js_main/filepicker.0.0.1.js"></script>
+	<!--<script type="text/javascript" src="js_main/filepicker.0.0.1.js"></script>-->
+	<script type="text/javascript" src="js_main/filepicker_new.js"></script>
 	<!--
 	<script type="text/javascript">
 	(function(a){if(window.filepicker){return}var b=a.createElement("script");b.type="text/javascript";b.async=!0;b.src=("https:"===a.location.protocol?"https:":"http:")+"//api.filepicker.io/v1/filepicker.js";var c=a.getElementsByTagName("script")[0];c.parentNode.insertBefore(b,c);var d={};d._queue=[];var e="pick,pickMultiple,pickAndStore,read,write,writeUrl,export,convert,store,storeUrl,remove,stat,setKey,constructWidget,makeDropPane".split(",");var f=function(a,b){return function(){b.push([a,arguments])}};for(var g=0;g<e.length;g++){d[e[g]]=f(e[g],d._queue)}window.filepicker=d})(document); 
@@ -47,6 +48,7 @@
 	<link href="css/layout.css" type="text/css" rel="stylesheet">
 	
 	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
+	<link href="css/fullcalendar.css" type="text/css" rel="stylesheet">
 
 	<script src="js/app/creds.js"></script>
 
@@ -77,6 +79,7 @@
 	<script src="js/libs/jquery.transit.min.js"></script>
 	<script src="js/libs/jquery.scrollTo.min.js"></script>
 	<script src="js/libs/mobiscroll.2.4.4.min.js"></script>
+	<script src="js/libs/fullcalendar.js"></script>
 
 	<!-- FancyBox -->
 	<!--<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
@@ -179,6 +182,10 @@
 
 				<p class="login">
 					<button class="btn btn-info btn-large">Login with Emailbox</button>
+				</p>
+
+				<p class="scan_login">
+					<button class="btn btn-info btn-large">QR Code Login</button>
 				</p>
 
 			</div>
@@ -539,11 +546,10 @@
 			</div>
 
 			<div class="choose_datetime nodisplay">
-				<div id="date" name="date_scroller"></div>
-				<div id="time" name="time_scroller"></div>
 
-				<br />
-				<br />
+
+				<div id="calendar"></div>
+				<div id="time" name="time_scroller" class="text-center"></div>
 
 				<div class="buttons clearfix">
 					<div class="btn btn-cancel">
@@ -553,7 +559,17 @@
 						Delay
 					</div>
 				</div>
+
+				<!--
+				<div id="date" name="date_scroller"></div>
+				<div id="time" name="time_scroller"></div>
+
+				<br />
+				<br />
+
+				-->
 			</div>
+
 
 		</div>
 
@@ -1159,7 +1175,7 @@
 	<script id="t_common_file_attachment" type="text/x-handlebars-template" class="partial">
 
 		<div class="file_attachment" data-url="{{url}}">
-			<i class="icon-file"></i>
+			<i class="icon-file icon-white"></i>
 			&nbsp;
 			<span class="filename">
 				{{name}}
