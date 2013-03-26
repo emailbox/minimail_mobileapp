@@ -3194,7 +3194,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 		'click .remove_address' : 'remove_address',
 
 		'click .add_attachment' : 'add_attachment',
-		'click .add_photo' : 'add_photo'
+		'click .add_photo' : 'add_photo',
+
+		'click .file_attachment' : 'remove_attachment'
 
 	},
 
@@ -3573,6 +3575,8 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// Pretend it is this file:
 		// - https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE
 
+		alert('Attachments broken, substituting Fry');
+
 		var file = {
 			url: 'https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE',
 			name: 'fry.png'
@@ -3599,6 +3603,25 @@ App.Views.CommonCompose = Backbone.View.extend({
 		},300);
 
 		return false;
+
+		
+		filepicker.pick({
+		    // mimetypes: ['image/*', 'text/plain'],
+		    container: 'window',
+		    services:['COMPUTER', 'DROPBOX', 'FACEBOOK', 'GMAIL'],
+		  },
+		  function(FPFile){
+		  	alert('got file');
+		  	console.log(FPFile);
+		    console.log(JSON.stringify(FPFile));
+		  },
+		  function(FPError){
+		  	alert('error');
+		  	console.log(FPError);
+		    console.log(FPError.toString());
+		  }
+		);
+
 
 		filepicker.getFile("*/*", function(url, metadata){
 
@@ -3683,6 +3706,20 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 		}
 
+	},
+
+	remove_attachment: function(ev){
+		// Remove attachment
+		// - should also remove from Filepicker?
+		//   - gets auto-removed after 4 hours
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Remove
+		$(elem).remove();
+
+		// done	
+		return false;
 	},
 
 
@@ -7421,12 +7458,69 @@ App.Views.BodyLogin = Backbone.View.extend({
 	el: 'body',
 
 	events: {
-		'click button' : 'login' // composing new email,
+		'click p.login button' : 'login',
+		'click p.scan_login button' : 'scan_login'
 
 	},
 
 	initialize: function() {
 		_.bindAll(this, 'render');
+
+	},
+
+	scan_login: function(ev){
+		// Testing scan_login
+
+		// alert('testing scanner');
+		window.plugins.barcodeScanner.scan(
+			function (result) { 
+				// Got a barcode
+
+				try {
+					var barcode = result.text.split('+');
+				} catch(err){
+					alert('Failed loading barcode, please try again');
+					return false;
+				}
+
+				if(barcode.length != 2){
+					alert('Failed barcode test. Please try again');
+					return false;
+				}
+
+				// Split into user and access_token
+				var access_token = barcode[0],
+					user_identifier = barcode[1];
+
+				// Set that value to our login value
+
+				// Try logging in with it
+				// - eventually, exchange for an access_token
+
+				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',user_identifier)
+					.then(function(){
+						// Saved user!
+					});
+
+				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',access_token)
+					.then(function(){
+
+						// Reload page, back to #home
+						
+						// clear body
+						$('body').html('');
+
+						// Reload page, back to #home
+						window.location = [location.protocol, '//', location.host, location.pathname].join('');
+					});
+					
+			}, 
+			function (error) { 
+				alert("Scanning failed: " + error); 
+			} 
+		);
+
+		return false;
 
 	},
 
@@ -7509,6 +7603,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 			var params = $.param(p);
 			var call_url = App.Credentials.base_api_url + "/apps/authorize/?" + params;
 
+			// alert('launching childbrowser');
 			window.plugins.childBrowser.showWebPage(call_url,{
 				showLocationBar: false,
 				showAddress: false,
@@ -7532,6 +7627,10 @@ App.Views.BodyLogin = Backbone.View.extend({
 
 				if(parser.hostname == 'getemailbox.com' && parser.pathname == '/testback/'){
 					
+					// window.plugins.childBrowser.close();
+					// alert('closing childbrowser after /testback');
+					// return false;
+
 					// var qs = App.Utils.getUrlVars();
 					var oauthParams = App.Utils.getOAuthParamsInUrl(url);
 
@@ -7841,7 +7940,11 @@ App.Views.DelayModal = Backbone.View.extend({
 	className: 'delay_modal',
 
 	events: {
-		'click .option' : 'click_option',
+		// 'click .option' : 'click_option',
+		'shorttap .option' : 'shorttap_option',
+		'longtap .option' : 'longtap_option',
+		// 'click .option' : 'longtap_option', // enabling will cause double-calendar on mobile
+		
 		'click .overlay' : 'cancel',
 		'blur #pickadate' : 'picked_date',
 
@@ -7851,6 +7954,8 @@ App.Views.DelayModal = Backbone.View.extend({
 
 	initialize: function() {
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'cancel');
 		_.bindAll(this, 'save_delay');
 
 		this.threadView = $(this.options.context).parents('.thread');
@@ -7858,6 +7963,14 @@ App.Views.DelayModal = Backbone.View.extend({
 
 	},
 
+	beforeClose: function(){
+		// Kill back button grabber
+		var that = this;
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return;
+	},
 
 	cancel: function(ev){
 		// Remove overlay
@@ -7876,29 +7989,16 @@ App.Views.DelayModal = Backbone.View.extend({
 		return false;
 	},
 
-
-	click_option: function(ev){
+	shorttap_option: function(ev){
+		
 		// Clicked an option
 		// - take an action on the Thread
-		var that = this;
-		var elem = ev.currentTarget;
+		var that = this,
+			elem = ev.currentTarget;
 
 		// Valid?
 		if($(elem).hasClass('ignore')){
 			return false;
-		}
-
-		// Pick a date?
-		if($(elem).hasClass('pickadate')){
-			// Let pick continue to datepicker
-			// - auto-triggers the datepicker on Android/iOS
-
-			// listen for end of date picker
-			// clog('TRIGGERED');
-			// // $(elem).find('input').trigger('click');
-			// $(elem).find('input').focus();
-			// clog('did it');
-			return;
 		}
 
 		// Get "wait" selected
@@ -7917,7 +8017,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			if(waitType == val.key){
 				// using this one
 				wait = val.wait;
-				// tmp_delay = val;
+				tmp_delay = val;
 			}
 		});
 		if(wait == null){
@@ -7926,37 +8026,250 @@ App.Views.DelayModal = Backbone.View.extend({
 			return;
 		}
 
+		// Delay it
+		// - no option, just using the delay right away
+		that.save_delay(wait, tmp_delay.name);
+
+		return;
+
 		// Date
 		// var arr = this.$("#date").mobiscroll().parseValue(wait);
 		// console.log('hello');
 		
-		// var mobi_inst = $('#date').mobiscroll('getInst');
+		// // var mobi_inst = $('#date').mobiscroll('getInst');
+		// var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		// this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
+
 		var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
-		this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
+		this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
 
 		// Trigger date confirmation
 		window.setTimeout(function(){
 			that.$('.options').addClass('nodisplay');
 			that.$('.choose_datetime').removeClass('nodisplay');
+		
+			// Full calendar
+			$('#calendar').fullCalendar({
+				// put your options and callbacks here
+				// defaultView: 'month',
+				dayClick: function(date) {
+					// Select that date on calendar
+					$('.fc-state-highlight').removeClass('fc-state-highlight');
+					$(this).addClass('fc-state-highlight');
+				}
+			});
+
+			// Add button class (hacky)
+			// $('.fc-button').addClass('btn');
+
+			// // $('.fc-button-today').click();
+			// window.setTimeout(function(){
+			// 	// $('#calendar').fullCalendar('today');
+			// 	// $('.fc-button-today').trigger('click');
+			// 	$('#calendar').fullCalendar('render');
+			// },300);
 		},300);
 
-		// mobi_inst.val(wait.toString());
-		// console.log(1);
-		// console.log(mobi_inst.parseValue(wait));
+		return false;
+	},
 
-		// time
-		// this.$("#time").mobiscroll().time({
-		// 	display: 'inline',
-		// 	theme: 'wp'
-		// });
+	longtap_option: function(ev){
+		
+		// Clicked an option
+		// - take an action on the Thread
+		var that = this,
+			elem = ev.currentTarget;
 
-		// $('#pickadate').click();
+		// Valid?
+		if($(elem).hasClass('ignore')){
+			return false;
+		}
 
-		// Save delay
-		// - triggers other actions
-		// that.save_delay(wait, save_text);
+		// Get "wait" selected
+		var waitType = $(elem).attr('data-type');
+
+		var save_text = $.trim($(elem).text());
+
+		// Get delay options (later today, etc.)
+		var delay_options = App.Plugins.Minimail.getDelayOptions();
+		
+		// Get option from delay_options
+		var wait = null,
+			tmp_delay = null;
+		$.each(delay_options,function(i,val){
+			
+			if(waitType == val.key){
+				// using this one
+				wait = val.wait;
+				tmp_delay = val;
+			}
+		});
+		if(wait == null){
+			// alert('Invalid type used');
+			this.close();
+			return;
+		}
+
+		// Set values for time scroller
+		var parsedScrollValues = App.Plugins.Minimail.formatTimeForScroll(wait);
+		this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
+
+		// Set calender datetime to wait value, track it
+		that.wait_time = wait;
+		that.wait_date = wait.toString('yyyy-MM-dd');
+
+		// Trigger date confirmation
+		window.setTimeout(function(){
+			that.$('.options').addClass('nodisplay');
+			that.$('.choose_datetime').removeClass('nodisplay');
+		
+			// Full calendar
+			$('#calendar').fullCalendar({
+				// put your options and callbacks here
+				// defaultView: 'month',
+				selectable: false,
+				dayClick: function(date) {
+					// Update date we want to use
+					that.wait_date = date.toString('yyyy-MM-dd');
+
+					// Select that date on calendar
+					// - remove any other ones
+					updateCalendarSelection();
+
+				}
+			});
+
+			$('#calendar').find('.fc-button').on('click',function(){
+				// Update selected date if changing months
+				updateCalendarSelection();
+			});
+
+			// Goto correct date with calendar
+			$('#calendar').fullCalendar('gotoDate',wait);
+
+			
+			// Create update calendar function
+			var updateCalendarSelection = function(){
+				$('#calendar td[data-date]').removeClass('fc-state-highlight');
+				$('#calendar td[data-date="'+ that.wait_date +'"]').addClass('fc-state-highlight'); // [data-date="2013-03-27"]
+			}
+
+			// Select the correct datetime
+			updateCalendarSelection();
+
+			// Add button class (hacky)
+			$('.fc-button').addClass('btn');
+
+		},100);
 
 		return false;
+	},
+
+	click_option: function(ev){
+		// // Clicked an option
+		// // - take an action on the Thread
+		// var that = this;
+		// var elem = ev.currentTarget;
+
+		// // Valid?
+		// if($(elem).hasClass('ignore')){
+		// 	return false;
+		// }
+
+		// // Pick a date?
+		// if($(elem).hasClass('pickadate')){
+		// 	// Let pick continue to datepicker
+		// 	// - auto-triggers the datepicker on Android/iOS
+
+		// 	// listen for end of date picker
+		// 	// clog('TRIGGERED');
+		// 	// // $(elem).find('input').trigger('click');
+		// 	// $(elem).find('input').focus();
+		// 	// clog('did it');
+		// 	return;
+		// }
+
+		// // Get "wait" selected
+		// var waitType = $(elem).attr('data-type');
+
+		// var save_text = $.trim($(elem).text());
+
+		// // Get delay options (later today, etc.)
+		// var delay_options = App.Plugins.Minimail.getDelayOptions();
+		
+		// // Get option from delay_options
+		// var wait = null,
+		// 	tmp_delay = null;
+		// $.each(delay_options,function(i,val){
+			
+		// 	if(waitType == val.key){
+		// 		// using this one
+		// 		wait = val.wait;
+		// 		// tmp_delay = val;
+		// 	}
+		// });
+		// if(wait == null){
+		// 	// alert('Invalid type used');
+		// 	this.close();
+		// 	return;
+		// }
+
+		// // Date
+		// // var arr = this.$("#date").mobiscroll().parseValue(wait);
+		// // console.log('hello');
+		
+		// // // var mobi_inst = $('#date').mobiscroll('getInst');
+		// // var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		// // this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
+
+		// var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		// this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
+
+		// // Trigger date confirmation
+		// window.setTimeout(function(){
+		// 	that.$('.options').addClass('nodisplay');
+		// 	that.$('.choose_datetime').removeClass('nodisplay');
+		
+		// 	// Full calendar
+		// 	$('#calendar').fullCalendar({
+		// 		// put your options and callbacks here
+		// 		// defaultView: 'month',
+		// 		dayClick: function(date) {
+		// 			// Select that date on calendar
+		// 			$('.fc-state-highlight').removeClass('fc-state-highlight');
+		// 			$(this).addClass('fc-state-highlight');
+		// 		}
+		// 	});
+
+		// 	// Add button class (hacky)
+		// 	$('.fc-button').addClass('btn');
+
+		// 	// // $('.fc-button-today').click();
+		// 	// window.setTimeout(function(){
+		// 	// 	// $('#calendar').fullCalendar('today');
+		// 	// 	// $('.fc-button-today').trigger('click');
+		// 	// 	$('#calendar').fullCalendar('render');
+		// 	// },300);
+		// },100);
+
+
+		// // mobi_inst.val(wait.toString());
+		// // console.log(1);
+		// // console.log(mobi_inst.parseValue(wait));
+
+		// // time
+		// // this.$("#time").mobiscroll().time({
+		// // 	display: 'inline',
+		// // 	theme: 'wp'
+		// // });
+
+		// // $('#pickadate').click();
+
+		// // Save delay
+		// // - triggers other actions
+		// // that.save_delay(wait, save_text);
+
+		// return false;
 
 	},
 
@@ -7970,6 +8283,9 @@ App.Views.DelayModal = Backbone.View.extend({
 		this.$('.options').removeClass('nodisplay');
 		this.$('.choose_datetime').addClass('nodisplay');
 
+		// No calendar
+		$('#calendar').html('');
+
 		return false;
 	},
 
@@ -7978,8 +8294,15 @@ App.Views.DelayModal = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
-		// Get the datetime from the element
-		var wait = App.Plugins.Minimail.parseDateFromScroll(that.dateScroll.mobiscroll('getValue'));
+		// Get the time from the time scroller
+		var wait_time = App.Plugins.Minimail.parseTimeFromScroll(that.timeScroll.mobiscroll('getValue'));
+
+		// Get the date from the calendar
+		// - stored in View
+		var wait_date = Date.parse(that.wait_date);
+
+		// Merge wait_time and wait_date together to form wait_datetime (complete datetime)
+		var wait = new Date(wait_date.getFullYear(), wait_date.getMonth(), wait_date.getDate(), wait_time.getHours(), wait_time.getMinutes(), wait_time.getSeconds());
 		
 		// var save_text = wait.toString('ddd, MMM d');
 		var save_text = wait.toString('ddd, MMM d') + '<br />' + wait.toString('h:mmtt');
@@ -8030,12 +8353,7 @@ App.Views.DelayModal = Backbone.View.extend({
 
 		// Hide everything else and show the calendar
 
-		// Show the calendar
-		// - with default date selected
-		$( ".calendar" ).datepicker({
-			// defaultDate: 
-		});
-
+		return false;
 	},
 
 	save_delay: function(wait, save_text){
@@ -8068,9 +8386,11 @@ App.Views.DelayModal = Backbone.View.extend({
 	},
 
 	render: function() {
+		var that = this;
 
 		// Remove any previous version
 		$('#delay_modal').remove();
+		$('#calendar').remove(); // if exists
 
 		// Build from template
 		var template = App.Utils.template('t_delay_modal');
@@ -8083,11 +8403,29 @@ App.Views.DelayModal = Backbone.View.extend({
 			delay_options: delay_options
 		}));
 
-		// Date-time scroller/picker
-		this.dateScroll = this.$("#date").mobiscroll().datetime({
+		// // Date-time scroller/picker
+		// this.dateScroll = this.$("#date").mobiscroll().datetime({
+		// 	display: 'inline',
+		// 	theme: 'jqm'
+		// });
+
+		// (only) Time scroller/picker
+		this.timeScroll = this.$("#time").mobiscroll().time({
 			display: 'inline',
-			theme: 'jqm'
+			theme: 'wp',
+			mode: 'mixed',
+			stepMinute: 15,
+			timeFormat: 'h:ii a'
 		});
+
+		// Bind to back button
+		// - bubbles previous ones lower (only 1 at a time allowed to bind to the back button)
+		// - move this to the Backbone.Views (extend it)
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
+
+		// Turn on tap watching
+
+		App.Utils.WatchCustomTap(that.$('.option'));
 
 		return this;
 	}
