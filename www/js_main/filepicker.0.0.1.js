@@ -85,8 +85,9 @@ var filepicker = (function(){
             "?m="+mimetypes.join(",")+
             "&key="+apiKey+
             "&id="+id+
-            "&referrer="+window.location.hostname+
+            "&referrer="+BASE_URL+FINISHED_PATH+
             "&modal=false"+
+            "&container=window" + 
             "&redirect_url="+BASE_URL+FINISHED_PATH+
             (options['services'] ? "&s="+options['services'].join(",") : "")+
             (options['location'] !== undefined ? "&loc="+options['location'] : "")+
@@ -94,6 +95,22 @@ var filepicker = (function(){
             (options['maxsize'] ? "&maxsize="+options['maxsize']: "")+
             (options['persist'] ? "&p="+options['persist'] : "")+
             (options['auth_tokens'] ? "&auth_tokens="+options['auth_tokens'] : "");
+
+    // Newer version
+    // var f = function (b, d, e) {
+    //     return c + "?key=" + a.apikey + 
+    //         "&iframe=" + (b.container != 'window') + 
+    //         (b.services ? "&s=" + b.services.join(",") : "") + 
+    //         (b.openTo !== undefined ? "&loc=" + b.openTo : "") + 
+    //         (b.maxSize ? "&maxsize=" + b.maxSize : "") + 
+    //         (b.signature ? "&signature=" + b.signature : "") + 
+    //         (b.policy ? "&policy=" + b.policy : "") + 
+    //         (b.mobile !== undefined ? "&mobile=" + b.mobile : "") + 
+    //         (b.storeLocation ? "&storeLocation=" + b.storeLocation : "") + 
+    //         (b.storePath ? "&storePath=" + b.storePath : "");
+    // };
+
+
     };
     var constructSaveAsURL = function(fileurl, mimetype, id, options){
         return endpoints.saveas+
@@ -224,9 +241,9 @@ var filepicker = (function(){
         }
 
         window.plugins.childBrowser.showWebPage(url,{
-            showLocationBar: false,
-            showAddress: false,
-            showNavigationBar: false
+            showLocationBar: true,
+            showAddress: true,
+            showNavigationBar: true
         });
         window.plugins.childBrowser.onLocationChange = function(loc){
             //Really cool hack

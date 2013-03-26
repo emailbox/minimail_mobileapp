@@ -8,10 +8,10 @@
                 d = d[e[f]];
             }
             if (typeof c === "function") if (c.isClass) d[e[f]] = c;
-            else d[e[f]] = function () {
-                return c.apply(a, arguments);
-            };
-            else d[e[f]] = c;
+                else d[e[f]] = function () {
+                        return c.apply(a, arguments);
+                };
+                else d[e[f]] = c;
         };
         var c = function (c, d, e) {
             b(c, d, a);
@@ -109,18 +109,17 @@ filepicker.extend("ajax", function () {
                 c.error("Ajax not allowed");
                 return r;
             }
-        }
-        if (p && window.XDomainRequest && !("withCredentials" in r)) return g(b, c);
+        } if (p && window.XDomainRequest && !("withCredentials" in r)) return g(b, c);
         if (c.progress && r.upload) r.upload.addEventListener("progress", function (a) {
-            if (a.lengthComputable) c.progress(Math.round((a.loaded * 95) / a.total));
-        }, false);
+                if (a.lengthComputable) c.progress(Math.round((a.loaded * 95) / a.total));
+            }, false);
         var s = function () {
             if (r.readyState == 4 && !q) {
                 if (c.progress) c.progress(100);
                 if (r.status >= 200 && r.status < 300) {
                     var b = r.responseText;
                     if (c.json) try {
-                        b = a.json.decode(b);
+                            b = a.json.decode(b);
                     } catch (d) {
                         t.call(r, "Invalid json: " + b);
                         return;
@@ -149,12 +148,12 @@ filepicker.extend("ajax", function () {
                 return;
             }
             if (p) if (this.readyState == 4 && this.status === 0) {
-                i("CORS_not_allowed", this.status, this);
-                return;
-            } else {
-                i("CORS_error", this.status, this);
-                return;
-            }
+                    i("CORS_not_allowed", this.status, this);
+                    return;
+                } else {
+                    i("CORS_error", this.status, this);
+                    return;
+                }
             i(a, this.status, this);
         };
         r.onerror = t;
@@ -195,7 +194,7 @@ filepicker.extend("ajax", function () {
             var b = i.responseText;
             if (c.progress) c.progress(100);
             if (c.json) try {
-                b = a.json.decode(b);
+                    b = a.json.decode(b);
             } catch (d) {
                 g("Invalid json: " + b, 200, i);
                 return;
@@ -313,16 +312,18 @@ filepicker.extend("base64", function () {
 filepicker.extend("browser", function () {
     var a = this;
     var b = function () {
-        if (navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/iPad/i)) return true;
-        else return false;
+        return !!(navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/iPad/i));
     };
     var c = function () {
-        if (navigator.userAgent.match(/Android/i)) return true;
-        else return false;
+        return !!navigator.userAgent.match(/Android/i);
+    };
+    var d = function () {
+        return !!navigator.userAgent.match(/MSIE 7\.0/i);
     };
     return {
         isIOS: b,
-        isAndroid: c
+        isAndroid: c,
+        isIE7: d
     };
 });
 filepicker.extend("comm", function () {
@@ -333,7 +334,7 @@ filepicker.extend("comm", function () {
             f();
             var c;
             c = document.createElement("iframe");
-            c.name = b;
+            c.id = c.name = b;
             c.src = a.urls.COMM;
             c.style.display = 'none';
             document.body.appendChild(c);
@@ -341,22 +342,20 @@ filepicker.extend("comm", function () {
     };
     var d = function (b) {
         if (b.origin != a.urls.BASE) return;
-        var c = JSON.parse(b.data);
+        var c = a.json.parse(b.data);
         a.handlers.run(c);
     };
     var e = false;
     var f = function () {
         if (e) return;
-        else e = true;
-        if (window.addEventListener) window.addEventListener("message", d, false);
+        else e = true; if (window.addEventListener) window.addEventListener("message", d, false);
         else if (window.attachEvent) window.attachEvent("onmessage", d);
         else throw new a.FilepickerException("Unsupported browser");
     };
     var g = function () {
         if (window.removeEventListener) window.removeEventListener("message", d, false);
         else if (window.attachEvent) window.detachEvent("onmessage", d);
-        else throw new a.FilepickerException("Unsupported browser");
-        if (!e) return;
+        else throw new a.FilepickerException("Unsupported browser"); if (!e) return;
         else e = false;
         var c = document.getElementsByName(b);
         for (var f = 0; f < c.length; f++) c[f].parentNode.removeChild(c[f]);
@@ -367,6 +366,108 @@ filepicker.extend("comm", function () {
     return {
         openChannel: c,
         closeChannel: g
+    };
+});
+filepicker.extend("comm_fallback", function () {
+    var a = this;
+    var b = "filepicker_comm_iframe";
+    var c = "host_comm_iframe";
+    var d = "";
+    var e = 200;
+    var f = function () {
+        g();
+    };
+    var g = function () {
+        if (window.frames[c] === undefined) {
+            var b;
+            b = document.createElement("iframe");
+            b.id = b.name = c;
+            d = b.src = a.urls.constructHostCommFallback();
+            b.style.display = 'none';
+            var e = function () {
+                d = b.contentWindow.location.href;
+                h();
+            };
+            if (b.attachEvent) b.attachEvent('onload', e);
+            else b.onload = e;
+            document.body.appendChild(b);
+        }
+    };
+    var h = function () {
+        if (window.frames[b] === undefined) {
+            var c;
+            c = document.createElement("iframe");
+            c.id = c.name = b;
+            c.src = a.urls.FP_COMM_FALLBACK + "?host_url=" + encodeURIComponent(d);
+            c.style.display = 'none';
+            document.body.appendChild(c);
+        }
+        m();
+    };
+    var i = false;
+    var j = undefined;
+    var k = "";
+    var l = function () {
+        var d = window.frames[b];
+        if (!d) return;
+        var e = d.frames[c];
+        if (!e) return;
+        var f = e.location.hash;
+        if (f && f.charAt(0) == "#") f = f.substr(1);
+        if (f === k) return;
+        k = f;
+        if (!k) return;
+        var g;
+        try {
+            g = a.json.parse(f);
+        } catch (h) {}
+        if (g) a.handlers.run(g);
+    };
+    var m = function () {
+        if (i) return;
+        else i = true;
+        j = window.setInterval(l, e);
+    };
+    var n = function () {
+        window.clearInterval(j);
+        if (!i) return;
+        else i = false;
+        var a = document.getElementsByName(b);
+        for (var d = 0; d < a.length; d++) a[d].parentNode.removeChild(a[d]);
+        try {
+            delete window.frames[b];
+        } catch (e) {}
+        a = document.getElementsByName(c);
+        for (d = 0; d < a.length; d++) a[d].parentNode.removeChild(a[d]);
+        try {
+            delete window.frames[c];
+        } catch (e) {}
+    };
+    var o = !('postMessage' in window);
+    var p = function (a) {
+        if (a !== o) {
+            o = !! a;
+            if (o) r();
+            else s();
+        }
+    };
+    var q;
+    var r = function () {
+        q = a.comm;
+        a.comm = {
+            openChannel: f,
+            closeChannel: n
+        };
+    };
+    var s = function () {
+        a.comm = q;
+        q = undefined;
+    };
+    if (o) r();
+    return {
+        openChannel: f,
+        closeChannel: n,
+        isEnabled: o
     };
 });
 filepicker.extend("conversions", function () {
@@ -390,16 +491,17 @@ filepicker.extend("conversions", function () {
         text_padding: 'number',
         policy: 'string',
         signature: 'string',
-        storeLocation: 'string'
+        storeLocation: 'string',
+        storePath: 'string'
     };
     var c = function (c) {
         var d;
         for (var e in c) {
             d = false;
             for (var f in b) if (e == f) {
-                d = true;
-                if (b[f].indexOf(a.util.typeOf(c[e])) === -1) throw new a.FilepickerException("Conversion parameter " + e + " is not the right type: " + c[e] + ". Should be a " + b[f]);
-            }
+                    d = true;
+                    if (b[f].indexOf(a.util.typeOf(c[e])) === -1) throw new a.FilepickerException("Conversion parameter " + e + " is not the right type: " + c[e] + ". Should be a " + b[f]);
+                }
             if (!d) throw new a.FilepickerException("Conversion parameter " + e + " is not a valid parameter.");
         }
     };
@@ -409,8 +511,8 @@ filepicker.extend("conversions", function () {
         a.ajax.post(b + '/convert', {
             data: d,
             json: true,
-            success: function (a) {
-                e(a);
+            success: function (b) {
+                e(a.util.standardizeFPFile(b));
             },
             error: function (b, c, d) {
                 if (b == "not_found") f(new a.errors.FPError(141));
@@ -469,11 +571,17 @@ filepicker.extend("dragdrop", function () {
         var k = d.onProgress || function () {};
         var l = d.mimetypes;
         if (!l) if (d.mimetype) l = [d.mimetype];
-        else l = ["*/*"];
+            else l = ["*/*"];
         if (a.util.typeOf(l) == 'string') l = l.split(',');
         var m = d.extensions;
         if (!m) if (d.extension) m = [d.extensions];
         if (a.util.typeOf(m) == 'string') m = m.split(',');
+        var n = {
+            location: d.location,
+            path: d.path,
+            policy: d.policy,
+            signature: d.signature
+        };
         c.addEventListener("dragenter", function (a) {
             f();
             a.stopPropagation();
@@ -508,44 +616,44 @@ filepicker.extend("dragdrop", function () {
             }
             var f = b.dataTransfer.files;
             var g = f.length;
-            if (t(f)) {
+            if (u(f)) {
                 h(f);
-                for (c = 0; c < f.length; c++) a.store(f[c], p(c, g), q, r(c, g));
+                for (c = 0; c < f.length; c++) a.store(f[c], n, q(c, g), r, s(c, g));
             }
         });
-        var n = {};
-        var o = [];
-        var p = function (a, b) {
+        var o = {};
+        var p = [];
+        var q = function (a, b) {
             return function (c) {
                 if (!d.multiple) i([c]);
                 else {
-                    o.push(c);
-                    if (o.length == b) {
-                        i(o);
-                        o = [];
+                    p.push(c);
+                    if (p.length == b) {
+                        i(p);
+                        p = [];
                     } else {
-                        n[a] = 100;
-                        s(b);
+                        o[a] = 100;
+                        t(b);
                     }
                 }
             };
         };
-        var q = function (a) {
+        var r = function (a) {
             j("UploadError", a.toString());
         };
-        var r = function (a, b) {
+        var s = function (a, b) {
             return function (c) {
-                n[a] = c;
-                s(b);
+                o[a] = c;
+                t(b);
             };
         };
-        var s = function (a) {
+        var t = function (a) {
             var b = 0;
-            for (var c in n) b += n[c];
+            for (var c in o) b += o[c];
             var d = b / a;
             k(d);
         };
-        var t = function (b) {
+        var u = function (b) {
             if (b.length > 0) {
                 if (b.length > 1 && !d.multiple) {
                     j("TooManyFiles", "Only one file at a time");
@@ -603,7 +711,7 @@ filepicker.extend("errors", function () {
                 return "FPError " + this.code + ": " + this.message + ". For help, see " + this.moreInfo;
             };
         } else this.toString = function () {
-            return "FPError " + this.code + ". Include filepicker_debug.js for more info";
+                return "FPError " + this.code + ". Include filepicker_debug.js for more info";
         };
         return this;
     };
@@ -627,9 +735,9 @@ filepicker.extend("exporter", function () {
         if (b.mimetype && b.extension) throw a.FilepickerException("Error: Cannot pass in both mimetype and extension parameters to the export function");
         c('service', 'services');
         if (b.services) for (var d = 0; d < b.services.length; d++) {
-            var e = ('' + b.services[d]).replace(" ", "");
-            var f = a.services[e];
-            b.services[d] = (f === undefined ? e : f);
+                var e = ('' + b.services[d]).replace(" ", "");
+                var f = a.services[e];
+                b.services[d] = (f === undefined ? e : f);
         }
         if (b.openTo) b.openTo = a.services[b.openTo] || b.openTo;
         a.util.setDefault(b, 'container', 'modal');
@@ -688,7 +796,7 @@ filepicker.extend("exporter", function () {
                 h(a.errors.FPError(131));
             }
         };
-        if (f.container == 'modal' && a.window.shouldForce()) f.container = 'window';
+        if (f.container == 'modal' && (f.mobile || a.window.shouldForce())) f.container = 'window';
         a.window.open(f.container, a.urls.constructExportUrl(e, f, i), m);
         a.handlers.attach(i, c(k, l));
     };
@@ -779,8 +887,8 @@ filepicker.extend("files", function () {
             data: c,
             processData: false,
             json: true,
-            success: function (a) {
-                e(i(a));
+            success: function (b) {
+                e(a.util.standardizeFPFile(b));
             },
             error: function (b, c, d) {
                 if (b == "not_found") f(new a.errors.FPError(121));
@@ -798,10 +906,10 @@ filepicker.extend("files", function () {
             else if (b == "not_authorized") f(new a.errors.FPError(403));
             else f(new a.errors.FPError(123));
         };
-        var j = function (a) {
-            e(i(a));
+        var i = function (b) {
+            e(a.util.standardizeFPFile(b));
         };
-        l(c, a.urls.constructWriteUrl(b, d), j, h, g);
+        k(c, a.urls.constructWriteUrl(b, d), i, h, g);
     };
     var g = function (b, c, d, e, f, g) {
         var h = function (b, c, d) {
@@ -810,11 +918,11 @@ filepicker.extend("files", function () {
             else if (b == "not_authorized") f(new a.errors.FPError(403));
             else f(new a.errors.FPError(123));
         };
-        var j = function (a) {
-            e(i(a));
+        var i = function (b) {
+            e(a.util.standardizeFPFile(b));
         };
         d.mimetype = c.type;
-        l(c, a.urls.constructWriteUrl(b, d), j, h, g);
+        k(c, a.urls.constructWriteUrl(b, d), i, h, g);
     };
     var h = function (b, c, d, e, f, g) {
         a.ajax.post(a.urls.constructWriteUrl(b, d), {
@@ -822,8 +930,8 @@ filepicker.extend("files", function () {
                 'url': c
             },
             json: true,
-            success: function (a) {
-                e(i(a));
+            success: function (b) {
+                e(a.util.standardizeFPFile(b));
             },
             error: function (b, c, d) {
                 if (b == "not_found") f(new a.errors.FPError(121));
@@ -834,20 +942,10 @@ filepicker.extend("files", function () {
             progress: g
         });
     };
-    var i = function (a) {
-        var b = {};
-        b.url = a.url;
-        b.filename = a.filename || a.name;
-        b.mimetype = a.mimetype || a.type;
-        b.size = a.size;
-        b.key = a.key || a.s3_key;
-        b.isWriteable = !! (a.isWriteable || a.writeable);
-        return b;
-    };
-    var j = function (b, c, d, e, f) {
+    var i = function (b, c, d, e, f) {
         if (b.files) {
             if (b.files.length === 0) e(new a.errors.FPError(115));
-            else k(b.files[0], c, d, e, f);
+            else j(b.files[0], c, d, e, f);
             return;
         }
         a.util.setDefault(c, 'storage', 'S3');
@@ -858,9 +956,9 @@ filepicker.extend("files", function () {
             data: b,
             processData: false,
             json: true,
-            success: function (a) {
+            success: function (c) {
                 b.name = g;
-                d(i(a));
+                d(a.util.standardizeFPFile(c));
             },
             error: function (b, c, d) {
                 if (b == "not_found") e(new a.errors.FPError(121));
@@ -870,7 +968,7 @@ filepicker.extend("files", function () {
             }
         });
     };
-    var k = function (b, c, d, e, f) {
+    var j = function (b, c, d, e, f) {
         a.util.setDefault(c, 'storage', 'S3');
         var g = function (b, c, d) {
             if (b == "not_found") e(new a.errors.FPError(121));
@@ -881,13 +979,13 @@ filepicker.extend("files", function () {
                 e(new a.errors.FPError(123));
             }
         };
-        var h = function (a) {
-            d(i(a));
+        var h = function (b) {
+            d(a.util.standardizeFPFile(b));
         };
         if (!c.filename) c.filename = b.name || b.fileName;
-        l(b, a.urls.constructStoreUrl(c), h, g, f);
+        k(b, a.urls.constructStoreUrl(c), h, g, f);
     };
-    var l = function (b, c, d, e, f) {
+    var k = function (b, c, d, e, f) {
         if (b.files) b = b.files[0];
         var g = !! window.FormData && !! window.XMLHttpRequest;
         if (g) {
@@ -902,13 +1000,13 @@ filepicker.extend("files", function () {
                 progress: f
             });
         } else a.iframeAjax.post(c, {
-            data: b,
-            json: true,
-            success: d,
-            error: e
-        });
+                data: b,
+                json: true,
+                success: d,
+                error: e
+            });
     };
-    var m = function (b, c, d, e, f) {
+    var l = function (b, c, d, e, f) {
         a.util.setDefault(c, 'storage', 'S3');
         a.util.setDefault(c, 'mimetype', 'text/plain');
         a.ajax.post(a.urls.constructStoreUrl(c), {
@@ -918,8 +1016,8 @@ filepicker.extend("files", function () {
             data: b,
             processData: false,
             json: true,
-            success: function (a) {
-                d(i(a));
+            success: function (b) {
+                d(a.util.standardizeFPFile(b));
             },
             error: function (b, c, d) {
                 if (b == "not_found") e(new a.errors.FPError(121));
@@ -930,15 +1028,15 @@ filepicker.extend("files", function () {
             progress: f
         });
     };
-    var n = function (b, c, d, e, f) {
+    var m = function (b, c, d, e, f) {
         a.util.setDefault(c, 'storage', 'S3');
         a.ajax.post(a.urls.constructStoreUrl(c), {
             data: {
                 'url': b
             },
             json: true,
-            success: function (a) {
-                d(i(a));
+            success: function (b) {
+                d(a.util.standardizeFPFile(b));
             },
             error: function (b, c, d) {
                 if (b == "not_found") e(new a.errors.FPError(151));
@@ -949,7 +1047,7 @@ filepicker.extend("files", function () {
             progress: f
         });
     };
-    var o = function (b, c, d, e) {
+    var n = function (b, c, d, e) {
         var f = ['uploaded', 'modified', 'created'];
         if (c.cache !== true) c._cacheBust = a.util.getId();
         a.ajax.get(b + "/metadata", {
@@ -967,7 +1065,7 @@ filepicker.extend("files", function () {
             }
         });
     };
-    var p = function (b, c, d, e) {
+    var o = function (b, c, d, e) {
         c.key = a.apikey;
         a.ajax.post(b + "/remove", {
             data: c,
@@ -990,12 +1088,12 @@ filepicker.extend("files", function () {
         writeFileToFPUrl: g,
         writeFileInputToFPUrl: f,
         writeUrlToFPUrl: h,
-        storeFileInput: j,
-        storeFile: k,
-        storeUrl: n,
-        storeData: m,
-        stat: o,
-        remove: p
+        storeFileInput: i,
+        storeFile: j,
+        storeUrl: m,
+        storeData: l,
+        stat: n,
+        remove: o
     };
 });
 filepicker.extend("handlers", function () {
@@ -1011,9 +1109,9 @@ filepicker.extend("handlers", function () {
         if (!d) return;
         if (c) {
             for (var e = 0; e < d.length; e++) if (d[e] === c) {
-                d.splice(e, 1);
-                break;
-            }
+                    d.splice(e, 1);
+                    break;
+                }
             if (d.length === 0) delete b[a];
         } else delete b[a];
     };
@@ -1063,7 +1161,21 @@ filepicker.extend("iframeAjax", function () {
         e += (e.indexOf('?') >= 0 ? '&' : '?') + '_cacheBust=' + a.util.getId();
         e += "&Content-Type=text%2Fhtml";
         a.comm.openChannel();
-        var g = document.createElement("iframe");
+        var g;
+        try {
+            g = document.createElement('<iframe name="' + b + '">');
+        } catch (h) {
+            g = document.createElement('iframe');
+        }
+        g.id = g.name = b;
+        g.style.display = 'none';
+        var k = function () {
+            d = false;
+        };
+        if (g.attachEvent) {
+            g.attachEvent("onload", k);
+            g.attachEvent("onerror", k);
+        } else g.onerror = g.onload = k;
         g.id = b;
         g.name = b;
         g.style.display = 'none';
@@ -1072,61 +1184,61 @@ filepicker.extend("iframeAjax", function () {
         };
         document.body.appendChild(g);
         a.handlers.attach('upload', i(f));
-        var h = document.createElement("form");
-        h.method = f.method || 'GET';
-        h.action = e;
-        h.target = b;
-        var k = f.data;
-        if (a.util.isFileInputElement(k) || a.util.isFile(k)) h.encoding = h.enctype = "multipart/form-data";
-        document.body.appendChild(h);
-        if (a.util.isFile(k)) {
-            var l = j(k);
-            if (!l) throw a.FilepickerException("Couldn't find corresponding file input.");
-            k = {
-                'fileUpload': l
+        var l = document.createElement("form");
+        l.method = f.method || 'GET';
+        l.action = e;
+        l.target = b;
+        var m = f.data;
+        if (a.util.isFileInputElement(m) || a.util.isFile(m)) l.encoding = l.enctype = "multipart/form-data";
+        document.body.appendChild(l);
+        if (a.util.isFile(m)) {
+            var n = j(m);
+            if (!n) throw a.FilepickerException("Couldn't find corresponding file input.");
+            m = {
+                'fileUpload': n
             };
-        } else if (a.util.isFileInputElement(k)) {
-            var m = k;
-            k = {};
-            k.fileUpload = m;
-        } else if (k && a.util.isElement(k) && k.tagName == "INPUT") {
-            m = k;
-            k = {};
-            k[m.name] = m;
-        } else if (f.processData !== false) k = {
-            'data': k
+        } else if (a.util.isFileInputElement(m)) {
+            var o = m;
+            m = {};
+            m.fileUpload = o;
+        } else if (m && a.util.isElement(m) && m.tagName == "INPUT") {
+            o = m;
+            m = {};
+            m[o.name] = o;
+        } else if (f.processData !== false) m = {
+                'data': m
         };
-        k.format = 'iframe';
-        var n = {};
-        for (var o in k) {
-            var p = k[o];
-            if (a.util.isElement(p) && p.tagName == "INPUT") {
-                n[o] = {
-                    par: p.parentNode,
-                    sib: p.nextSibling,
-                    name: p.name,
-                    input: p,
-                    focused: p == document.activeElement
+        m.format = 'iframe';
+        var p = {};
+        for (var q in m) {
+            var r = m[q];
+            if (a.util.isElement(r) && r.tagName == "INPUT") {
+                p[q] = {
+                    par: r.parentNode,
+                    sib: r.nextSibling,
+                    name: r.name,
+                    input: r,
+                    focused: r == document.activeElement
                 };
-                p.name = o;
-                h.appendChild(p);
+                r.name = q;
+                l.appendChild(r);
             } else {
-                var q = document.createElement("input");
-                q.name = o;
-                q.value = p;
-                h.appendChild(q);
+                var s = document.createElement("input");
+                s.name = q;
+                s.value = r;
+                l.appendChild(s);
             }
         }
         d = true;
         window.setTimeout(function () {
-            h.submit();
-            for (var a in n) {
-                var b = n[a];
+            l.submit();
+            for (var a in p) {
+                var b = p[a];
                 b.par.insertBefore(b.input, b.sib);
                 b.input.name = b.name;
                 if (b.focused) b.input.focus();
             }
-            h.parentNode.removeChild(h);
+            l.parentNode.removeChild(l);
         }, 1);
     };
     var i = function (b) {
@@ -1274,7 +1386,7 @@ filepicker.extend(function () {
         if (g && h.storePath) if (h.storePath.charAt(h.storePath.length - 1) != "/") throw new a.FilepickerException("pickAndStore with multiple files requires a path that ends in '/'");
         var i = e;
         if (!g) i = function (a) {
-            e([a]);
+                e([a]);
         };
         a.picker.createPicker(h, i, f, g);
     };
@@ -1292,9 +1404,9 @@ filepicker.extend(function () {
         f = f || a.errors.handleError;
         g = g || function () {};
         if (typeof b == "string") if (a.util.isFPUrl(b)) a.files.readFromFPUrl(b, c, e, f, g);
-        else a.files.readFromUrl(b, c, e, f, g);
-        else if (a.util.isFileInputElement(b)) if (!b.files) i(b, c, e, f, g);
-        else if (b.files.length === 0) f(new a.errors.FPError(115));
+            else a.files.readFromUrl(b, c, e, f, g);
+            else if (a.util.isFileInputElement(b)) if (!b.files) i(b, c, e, f, g);
+            else if (b.files.length === 0) f(new a.errors.FPError(115));
         else a.files.readFromFile(b.files[0], c, e, f, g);
         else if (a.util.isFile(b)) a.files.readFromFile(b, c, e, f, g);
         else if (b.url) a.files.readFromFPUrl(b.url, c, e, f, g);
@@ -1326,10 +1438,9 @@ filepicker.extend(function () {
         var i;
         if (a.util.isFPUrl(b)) i = b;
         else if (b.url) i = b.url;
-        else throw new a.FilepickerException("Invalid file to write to: " + b + ". Not a filepicker url or FPFile object.");
-        if (typeof c == "string") a.files.writeDataToFPUrl(i, c, e, f, g, h);
+        else throw new a.FilepickerException("Invalid file to write to: " + b + ". Not a filepicker url or FPFile object."); if (typeof c == "string") a.files.writeDataToFPUrl(i, c, e, f, g, h);
         else if (a.util.isFileInputElement(c)) if (!c.files) a.files.writeFileInputToFPUrl(i, c, e, f, g, h);
-        else if (c.files.length === 0) g(new a.errors.FPError(115));
+            else if (c.files.length === 0) g(new a.errors.FPError(115));
         else a.files.writeFileToFPUrl(i, c.files[0], e, f, g, h);
         else if (a.util.isFile(c)) a.files.writeFileToFPUrl(i, c, e, f, g, h);
         else if (c.url) a.files.writeUrlToFPUrl(i, c.url, e, f, g, h);
@@ -1388,7 +1499,7 @@ filepicker.extend(function () {
         g = g || function () {};
         if (typeof b == "string") a.files.storeData(b, c, e, f, g);
         else if (a.util.isFileInputElement(b)) if (!b.files) a.files.storeFileInput(b, c, e, f, g);
-        else if (b.files.length === 0) f(new a.errors.FPError(115));
+            else if (b.files.length === 0) f(new a.errors.FPError(115));
         else a.files.storeFile(b.files[0], c, e, f, g);
         else if (a.util.isFile(b)) a.files.storeFile(b, c, e, f, g);
         else if (b.url) {
@@ -1457,6 +1568,7 @@ filepicker.extend(function () {
         g = g || a.errors.handleError;
         h = h || function () {};
         if (e.location) options.storeLocation = e.location;
+        if (e.path) options.storePath = e.path;
         var i;
         if (a.util.isFPUrl(b)) i = b;
         else if (b.url) {
@@ -1555,7 +1667,9 @@ filepicker.extend("modal", function () {
         j.style.height = l - 32 + 'px';
         j.style.border = "none";
         j.style.position = "relative";
+        j.setAttribute('border', 0);
         j.setAttribute('frameborder', 0);
+        j.setAttribute('frameBorder', 0);
         j.setAttribute('marginwidth', 0);
         j.setAttribute('marginheight', 0);
         j.src = b;
@@ -1591,7 +1705,7 @@ filepicker.extend("modal", function () {
         b.style.right = 'auto';
         var d = a.window.getSize();
         var e = Math.min(d[1] - 40, 500);
-        var f = Math.min(d[0] - 40, 800);
+        var f = Math.max(Math.min(d[0] - 40, 800), 620);
         var g = (d[0] - f - 40) / 2;
         b.style.left = g + "px";
         b.style.height = e + 'px';
@@ -1657,9 +1771,9 @@ filepicker.extend("picker", function () {
         c('mimetype', 'mimetypes');
         c('extension', 'extensions');
         if (b.services) for (var d = 0; d < b.services.length; d++) {
-            var e = ('' + b.services[d]).replace(" ", "");
-            if (a.services[e] !== undefined) e = a.services[e];
-            b.services[d] = e;
+                var e = ('' + b.services[d]).replace(" ", "");
+                if (a.services[e] !== undefined) e = a.services[e];
+                b.services[d] = e;
         }
         if (b.mimetypes && b.extensions) throw a.FilepickerException("Error: Cannot pass in both mimetype and extension parameters to the pick function");
         if (!b.mimetypes && !b.extensions) b.mimetypes = ['*/*'];
@@ -1758,7 +1872,7 @@ filepicker.extend("picker", function () {
                 i(a.errors.FPError(101));
             }
         };
-        if (g.container == 'modal' && a.window.shouldForce()) g.container = 'window';
+        if (g.container == 'modal' && (g.mobile || a.window.shouldForce())) g.container = 'window';
         a.window.open(g.container, a.urls.constructPickUrl(g, k, j), o);
         var p = j ? e(m, n) : c(m, n);
         a.handlers.attach(k, p);
@@ -1791,7 +1905,8 @@ filepicker.extend('services', function () {
         WEBDAV: 16,
         FTP: 17,
         ALFRESCO: 18,
-        BOX: 19
+        BOX: 19,
+        SKYDRIVE: 20
     };
 }, true);
 filepicker.extend('util', function () {
@@ -1853,11 +1968,11 @@ filepicker.extend("urls", function () {
     var d = b + "/dialog/save/";
     var e = b + "/api/store/";
     var f = function (b, d, e) {
-        return c + "?key=" + a.apikey + "&id=" + d + "&referrer=" + window.location.hostname + "&iframe=" + (b.container != 'window') + "&version=" + a.API_VERSION + (b.services ? "&s=" + b.services.join(",") : "") + (e ? "&multi=" + !! e : "") + (b.mimetypes !== undefined ? "&m=" + b.mimetypes.join(",") : "") + (b.extensions !== undefined ? "&ext=" + b.extensions.join(",") : "") + (b.openTo !== undefined ? "&loc=" + b.openTo : "") + (b.maxSize ? "&maxsize=" + b.maxSize : "") + (b.signature ? "&signature=" + b.signature : "") + (b.policy ? "&policy=" + b.policy : "") + (b.storeLocation ? "&storeLocation=" + b.storeLocation : "") + (b.storePath ? "&storePath=" + b.storePath : "");
+        return c + "?key=" + a.apikey + "&id=" + d + "&referrer=" + window.location.hostname + "&iframe=" + (b.container != 'window') + "&version=" + a.API_VERSION + (b.services ? "&s=" + b.services.join(",") : "") + (e ? "&multi=" + !! e : "") + (b.mimetypes !== undefined ? "&m=" + b.mimetypes.join(",") : "") + (b.extensions !== undefined ? "&ext=" + b.extensions.join(",") : "") + (b.openTo !== undefined ? "&loc=" + b.openTo : "") + (b.maxSize ? "&maxsize=" + b.maxSize : "") + (b.signature ? "&signature=" + b.signature : "") + (b.policy ? "&policy=" + b.policy : "") + (b.mobile !== undefined ? "&mobile=" + b.mobile : "") + (b.storeLocation ? "&storeLocation=" + b.storeLocation : "") + (b.storePath ? "&storePath=" + b.storePath : "");
     };
     var g = function (b, c, e) {
         if (b.indexOf("&") >= 0 || b.indexOf("?") >= 0) b = encodeURIComponent(b);
-        return d + "?url=" + b + "&key=" + a.apikey + "&id=" + e + "&referrer=" + window.location.hostname + "&iframe=" + (c.container != 'window') + "&version=" + a.API_VERSION + (c.services ? "&s=" + c.services.join(",") : "") + (c.openTo !== undefined ? "&loc=" + c.openTo : "") + (c.mimetype !== undefined ? "&m=" + c.mimetype : "") + (c.extension !== undefined ? "&ext=" + c.extension : "") + (c.suggestedFilename !== undefined ? "&defaultSaveasName=" + c.suggestedFilename : "") + (c.signature ? "&signature=" + c.signature : "") + (c.policy ? "&policy=" + c.policy : "");
+        return d + "?url=" + b + "&key=" + a.apikey + "&id=" + e + "&referrer=" + window.location.hostname + "&iframe=" + (c.container != 'window') + "&version=" + a.API_VERSION + (c.services ? "&s=" + c.services.join(",") : "") + (c.openTo !== undefined ? "&loc=" + c.openTo : "") + (c.mimetype !== undefined ? "&m=" + c.mimetype : "") + (c.extension !== undefined ? "&ext=" + c.extension : "") + (c.mobile !== undefined ? "&mobile=" + c.mobile : "") + (c.suggestedFilename !== undefined ? "&defaultSaveasName=" + c.suggestedFilename : "") + (c.signature ? "&signature=" + c.signature : "") + (c.policy ? "&policy=" + c.policy : "");
     };
     var h = function (b) {
         return e + b.storage + "?key=" + a.apikey + (b.base64decode ? "&base64decode=true" : "") + (b.mimetype ? "&mimetype=" + b.mimetype : "") + (b.filename ? "&filename=" + b.filename : "") + (b.path ? "&path=" + b.path : "") + (b.signature ? "&signature=" + b.signature : "") + (b.policy ? "&policy=" + b.policy : "");
@@ -1865,16 +1980,22 @@ filepicker.extend("urls", function () {
     var i = function (a, b) {
         return a + "?nonce=fp" + ( !! b.base64decode ? "&base64decode=true" : "") + (b.mimetype ? "&mimetype=" + b.mimetype : "") + (b.signature ? "&signature=" + b.signature : "") + (b.policy ? "&policy=" + b.policy : "");
     };
+    var j = function () {
+        var b = a.util.parseUrl(window.location.href);
+        return b.origin + "/404";
+    };
     return {
         BASE: b,
         COMM: b + "/dialog/comm_iframe/",
+        FP_COMM_FALLBACK: b + "/dialog/comm_hash_iframe/",
         STORE: e,
         PICK: c,
         EXPORT: d,
         constructPickUrl: f,
         constructExportUrl: g,
         constructWriteUrl: i,
-        constructStoreUrl: h
+        constructStoreUrl: h,
+        constructHostCommFallback: j
     };
 });
 filepicker.extend("util", function () {
@@ -1907,8 +2028,8 @@ filepicker.extend("util", function () {
     };
     var i = function (a) {
         if (window.jQuery) window.jQuery(function () {
-            a();
-        });
+                a();
+            });
         else {
             var b = "load";
             if (window.addEventListener) window.addEventListener(b, a, false);
@@ -1928,8 +2049,10 @@ filepicker.extend("util", function () {
     var k = function (a) {
         return function () {
             if (window.console && typeof window.console[a] == "function") try {
-                window.console[a].apply(window.console, arguments);
-            } catch (b) {}
+                    window.console[a].apply(window.console, arguments);
+            } catch (b) {
+                alert(Array.prototype.join.call(arguments, ","));
+            }
         };
     };
     var l = {};
@@ -1938,6 +2061,16 @@ filepicker.extend("util", function () {
     var m = function (a) {
         var b = {};
         for (key in a) b[key] = a[key];
+        return b;
+    };
+    var n = function (a) {
+        var b = {};
+        b.url = a.url;
+        b.filename = a.filename || a.name;
+        b.mimetype = a.mimetype || a.type;
+        b.size = a.size;
+        b.key = a.key || a.s3_key;
+        b.isWriteable = !! (a.isWriteable || a.writeable);
         return b;
     };
     return {
@@ -1951,7 +2084,8 @@ filepicker.extend("util", function () {
         addOnLoad: i,
         isFPUrl: j,
         console: l,
-        clone: m
+        clone: m,
+        standardizeFPFile: n
     };
 });
 filepicker.extend("widgets", function () {
@@ -2012,22 +2146,22 @@ filepicker.extend("widgets", function () {
         if (j) a.setKey(j);
         var k = (d.getAttribute("data-fp-multiple") || d.getAttribute("data-fp-option-multiple") || "false") == "true";
         if (k) e.onclick = function () {
-            e.blur();
-            a.pickMultiple(f, function (a) {
-                var b = [];
-                for (var e = 0; e < a.length; e++) b.push(a[e].url);
-                d.value = b.join();
-                c(d, a);
-            });
-            return false;
+                e.blur();
+                a.pickMultiple(f, function (a) {
+                    var b = [];
+                    for (var e = 0; e < a.length; e++) b.push(a[e].url);
+                    d.value = b.join();
+                    c(d, a);
+                });
+                return false;
         };
         else e.onclick = function () {
-            e.blur();
-            a.pick(f, function (a) {
-                d.value = a.url;
-                c(d, [a]);
-            });
-            return false;
+                e.blur();
+                a.pick(f, function (a) {
+                    d.value = a.url;
+                    c(d, [a]);
+                });
+                return false;
         };
         d.parentNode.insertBefore(e, d);
     };
@@ -2076,30 +2210,29 @@ filepicker.extend("widgets", function () {
         if (o) a.setKey(o);
         var p = (d.getAttribute("data-fp-multiple") || d.getAttribute("data-fp-option-multiple") || "false") == "true";
         if (a.dragdrop.enabled()) h(j, p, k, d);
-        else j.innerHTML = "&nbsp;";
-        if (p) j.onclick = i.onclick = function () {
-            i.blur();
-            a.pickMultiple(k, function (a) {
-                var b = [];
-                var e = [];
-                for (var g = 0; g < a.length; g++) {
-                    b.push(a[g].url);
-                    e.push(a[g].filename);
-                }
-                d.value = b.join();
-                f(d, j, e.join(', '));
-                c(d, a);
-            });
-            return false;
+        else j.innerHTML = "&nbsp;"; if (p) j.onclick = i.onclick = function () {
+                i.blur();
+                a.pickMultiple(k, function (a) {
+                    var b = [];
+                    var e = [];
+                    for (var g = 0; g < a.length; g++) {
+                        b.push(a[g].url);
+                        e.push(a[g].filename);
+                    }
+                    d.value = b.join();
+                    f(d, j, e.join(', '));
+                    c(d, a);
+                });
+                return false;
         };
         else j.onclick = i.onclick = function () {
-            i.blur();
-            a.pick(k, function (a) {
-                d.value = a.url;
-                f(d, j, a.filename);
-                c(d, [a]);
-            });
-            return false;
+                i.blur();
+                a.pick(k, function (a) {
+                    d.value = a.url;
+                    f(d, j, a.filename);
+                    c(d, [a]);
+                });
+                return false;
         };
     };
     var f = function (b, d, e) {
@@ -2297,18 +2430,19 @@ filepicker.extend('window', function () {
         if (!b) b = 'modal';
         if (b == 'modal' && g()) b = 'window';
         if (b == 'window') {
-            var i = window.open(f, c, d);
-            var j = window.setInterval(function () {
-                if (!i || i.closed) {
-                    window.clearInterval(j);
+            var i = c + a.util.getId();
+            var j = window.open(f, i, d);
+            var k = window.setInterval(function () {
+                if (!j || j.closed) {
+                    window.clearInterval(k);
                     h();
                 }
             }, e);
         } else if (b == 'modal') a.modal.generate(f, h);
         else {
-            var k = document.getElementById(b);
-            if (!k) throw new a.FilepickerException("Container '" + b + "' not found. This should either be set to 'window','modal', or the ID of an iframe that is currently in the document.");
-            k.src = f;
+            var l = document.getElementById(b);
+            if (!l) throw new a.FilepickerException("Container '" + b + "' not found. This should either be set to 'window','modal', or the ID of an iframe that is currently in the document.");
+            l.src = f;
         }
     };
     return {
@@ -2330,8 +2464,8 @@ filepicker.extend('window', function () {
     var b;
     var c = a.length;
     if (c) for (var d = 0; d < c; d++) {
-        b = a[d];
-        filepicker[b[0]].apply(filepicker, b[1]);
+            b = a[d];
+            filepicker[b[0]].apply(filepicker, b[1]);
     }
     delete filepicker._queue;
 })();
