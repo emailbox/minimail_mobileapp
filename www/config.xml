@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <widget xmlns     = 'http://www.w3.org/ns/widgets'
         xmlns:gap = 'http://phonegap.com/ns/1.0'
-        id        = "com.emailbox.minimail"
+        id        = "minimail"
         version   = "0.0.2">
     <name>minimail</name>
 
@@ -49,5 +49,6 @@
 	<gap:plugin name="Storage" />
 	<gap:plugin name="GenericPush" />
 	<gap:plugin name="ChildBrowser" />
+    <gap:plugin name="BarcodeScanner" />
 
 </widget>
