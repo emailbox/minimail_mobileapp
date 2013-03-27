@@ -2024,7 +2024,7 @@ App.Views.LeisureCreate = Backbone.View.extend({
 		// - prevent weird characters?
 		// - tell them it is a regex?
 		regex_value = $input.val();
-		regex_value = regex_value.replace(/[#-}]/g, '\\$&'); // escape regex characters from search string: http://stackoverflow.com/questions/6300183/sanitize-string-of-regex-characters-before-regexp-build
+		// regex_value = regex_value.replace(/[#-}]/g, '\\$&'); // escape regex characters from search string: http://stackoverflow.com/questions/6300183/sanitize-string-of-regex-characters-before-regexp-build
 
 		// Empty regex_value?
 		if(regex_value.length < 1){
@@ -2045,7 +2045,7 @@ App.Views.LeisureCreate = Backbone.View.extend({
 		}
 
 		clog('Filter Data');
-		clog(
+		console.log(
 			{
 				"name": Name,
 					"filters": [{
@@ -2055,6 +2055,8 @@ App.Views.LeisureCreate = Backbone.View.extend({
 						"modifiers": "ig"
 					}]
 			});
+
+		// return false;
 
 		// Save new filter!
 
@@ -3204,12 +3206,23 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 	initialize: function(options) {
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'cancel');
 		_.bindAll(this, 'chose_email');
 		_.bindAll(this, 'enable_send_button');
 
 		var that = this;
 		// this.el = this.options.el;
 
+	},
+
+	beforeClose: function(){
+		// Kill back button grabber
+		var that = this;
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return;
 	},
 
 
@@ -3738,6 +3751,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 		// Focus
 		this.$('#subject').focus();
+
+		// Bind to backbutton
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
 
 		return this;
 
@@ -5386,6 +5402,8 @@ App.Views.LeisureItem = Backbone.View.extend({
 
 	initialize: function(options) {
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'go_back');
 		// _.bindAll(this, 'email_sent');
 		// _.bindAll(this, 'refresh_and_render_thread');
 		var that = this;
@@ -5439,6 +5457,15 @@ App.Views.LeisureItem = Backbone.View.extend({
 
 		// }
 
+	},
+
+	beforeClose: function(){
+		// Kill back button grabber
+		var that = this;
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return;
 	},
 
 	set_scroll_position: function(){
@@ -5677,6 +5704,8 @@ App.Views.LeisureItem = Backbone.View.extend({
 			that.refresh_and_render_filter();
 
 		}
+
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.go_back);
 
 		return this;
 
