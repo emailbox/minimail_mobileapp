@@ -2109,7 +2109,7 @@ body.console {
 }
 
 .common_compose .body {
-
+  margin: 10px;
 }
 
 .common_edit_email textarea,
