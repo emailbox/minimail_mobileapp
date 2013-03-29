@@ -3448,11 +3448,10 @@ App.Views.CommonCompose = Backbone.View.extend({
 	},
 
 	send: function(ev){
-		// Validate sending the email
 		// Send the email
-		var that = this;
-
-		var elem = ev.currentTarget;
+		// - Validate sending the email
+		var that = this,
+			elem = ev.currentTarget;
 
 		// Disable buttons
 		$(elem).text('Sending...');
@@ -3471,13 +3470,15 @@ App.Views.CommonCompose = Backbone.View.extend({
 		if(to.length < 1){
 			alert('Please include a recipient!');
 
+			// Re-enable send button
 			that.enable_send_button();
 			return;
 		}
 
+		// Rejoin
 		to = to.join(',');
 
-		// Send return email
+		// Validation data
 		var eventData = {
 			event: 'Email.send.validate',
 			delay: 0,
@@ -3487,9 +3488,20 @@ App.Views.CommonCompose = Backbone.View.extend({
 				Subject: that.$('#subject').val(),
 				Text: that.$('#textbody').val(),
 				headers: {
-				}
+					// nothing to add yet
+				},
+				attachments: []
 			}
 		};
+
+		// Add attachments
+		// - not required
+		that.$('.file_attachment').each(function(idx, fileElem){
+			eventData.obj.attachments.push({
+				_id: $(fileElem).attr('data-file-id'),
+				name: $(fileElem).attr('data-file-name')
+			});
+		});
 
 		// Validate sending
 		Api.event({
@@ -3530,6 +3542,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 					// All good, SEND Email
 					eventData.event = 'Email.send';
 
+					// Add Attachments to Emailbox File API
+					// - doing it here, instead of before sending (in case we just want to delete it?)
+
 					// Log
 					clog('sending composed Email');
 					clog(eventData);
@@ -3556,7 +3571,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 								// Sent successfully! 
 
 								// Add to Email thread?
-								// - no, wait for the Email to be received, and it was be updated
+								// - no, wait for the Email to be received, and it was updated
 
 								that.after_sent();
 
@@ -3588,61 +3603,95 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// Pretend it is this file:
 		// - https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE
 
-		alert('Attachments broken, substituting Fry');
+		// alert('Attachments broken, substituting Fry');
 
-		var file = {
-			url: 'https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE',
-			name: 'fry.png'
-		};
+		// var file = {
+		// 	url: 'https://www.filepicker.io/api/file/5qYoopVTsixCJJiqSWSE',
+		// 	name: 'fry.png'
+		// };
 
-		setTimeout(function(){
-			// Pretend we just loaded the file through Filepicker (currently broken)
+		// setTimeout(function(){
+		// 	// Pretend we just loaded the file through Filepicker (currently broken)
 
-			// Add url and little "attachment" icon-file to Files fields
+		// 	// Add url and little "attachment" icon-file to Files fields
 
-			var url = file.url;
+		// 	var url = file.url;
 
-			// Write template
-			var template = App.Utils.template('t_common_file_attachment');
+		// 	// Write template
+		// 	var template = App.Utils.template('t_common_file_attachment');
 
-			// Append
-			$('.file_attachments').append(
-				template({
-					url: file.url, 
-					name: file.name
-				})
-			);
+		// 	// Append
+		// 	$('.file_attachments').append(
+		// 		template({
+		// 			url: file.url, 
+		// 			name: file.name
+		// 		})
+		// 	);
 
-		},300);
+		// },300);
 
-		return false;
+		// return false;
 
-		
-		filepicker.pick({
-		    // mimetypes: ['image/*', 'text/plain'],
-		    container: 'window',
-		    services:['COMPUTER', 'DROPBOX', 'FACEBOOK', 'GMAIL'],
-		  },
-		  function(FPFile){
-		  	alert('got file');
-		  	console.log(FPFile);
-		    console.log(JSON.stringify(FPFile));
-		  },
-		  function(FPError){
-		  	alert('error');
-		  	console.log(FPError);
-		    console.log(FPError.toString());
-		  }
+		// Launch Filepicker.io (new window, uses ChildBrowser)
+		filepicker.getFile('*/*', {
+				// services: ['DROPBOX','BOX','FACEBOOK','GMAIL'], // broken, causes Filepicker error
+				openTo: 'DROPBOX'
+			},
+			function(fpurl){ // on return
+				// Got an fpurl (or multiple of them?)
+				// alert('got fpurl');
+
+				// Get Metadata
+				$.ajax({
+					url: fpurl + '/metadata',
+					cache: false,
+					json: true,
+					success: function(fpinfo){
+						// Got metadata for the file
+						// - not handling failures well
+						// console.log(fpinfo); // [object Object]
+
+						// Write File to Emailbox
+						Api.write_file({
+							data: {
+								url: fpurl,
+								name: fpinfo.filename
+							},
+							success: function(response){
+								response = JSON.parse(response);
+
+								if(response.code != 200){
+									// Failed writing File
+									alert('Failed writing File');
+									return false;
+								}
+
+								// Uploaded to Emailbox OK
+
+								// Compile Template data
+								var templateData = {
+									url: response.data.access.url,
+									name: response.data.name,
+									_id: response.data._id
+								};
+								console.log('tData');
+								console.log(JSON.stringify(templateData));
+
+								// Write template
+								var template = App.Utils.template('t_common_file_attachment');
+
+								// Append
+								$('.file_attachments').append(
+									template(templateData)
+								);
+
+							}
+						});
+
+					}
+				}); // promise?
+			}
 		);
-
-
-		filepicker.getFile("*/*", function(url, metadata){
-
-			alert("You picked: "+url);
-			window.console.log('picked');
-			window.console.log(metadata);
-			window.console.log(metadata.toString());
-		});
 
 		return false;
 	},
