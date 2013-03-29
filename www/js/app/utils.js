@@ -1087,6 +1087,12 @@ var Api = {
 
 	},
 
+	write_file: function(queryOptions){
+
+		return Api.query('/api/write/file',queryOptions);
+
+	},
+
 	remove: function(queryOptions){
 
 		return Api.query('/api/remove',queryOptions);
