@@ -87,12 +87,15 @@ var filepicker = (function(){
             "&id="+id+
             "&referrer="+BASE_URL+FINISHED_PATH+
             "&modal=false"+
+            // "&multi=true" + 
             "&container=window" + 
+
             "&redirect_url="+BASE_URL+FINISHED_PATH+
             (options['services'] ? "&s="+options['services'].join(",") : "")+
             (options['location'] !== undefined ? "&loc="+options['location'] : "")+
             (options['metadata'] ? "&meta="+options['metadata']: "")+
             (options['maxsize'] ? "&maxsize="+options['maxsize']: "")+
+            (options['openTo'] ? "&openTo="+options['openTo']: "")+
             (options['persist'] ? "&p="+options['persist'] : "")+
             (options['auth_tokens'] ? "&auth_tokens="+options['auth_tokens'] : "");
 
@@ -241,9 +244,9 @@ var filepicker = (function(){
         }
 
         window.plugins.childBrowser.showWebPage(url,{
-            showLocationBar: true,
-            showAddress: true,
-            showNavigationBar: true
+            showLocationBar: false,
+            showAddress: false,
+            showNavigationBar: false
         });
         window.plugins.childBrowser.onLocationChange = function(loc){
             //Really cool hack
@@ -257,6 +260,10 @@ var filepicker = (function(){
                 var args = parser.search.substring(1).split('&');
                 argsParsed = {};
 
+                console.log('args');
+                console.log(args);
+
+
                 //Kindly provided by 'http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript'
                 for (i=0; i < args.length; i++) {
                     arg = unescape(args[i]);
@@ -268,6 +275,9 @@ var filepicker = (function(){
                         argsParsed[kvp[0].trim()] = kvp[1].trim();
                     }
                 }
+                console.log('parsed args');
+                console.log(argsParsed);
+
                 callback(argsParsed);
             }
         };
