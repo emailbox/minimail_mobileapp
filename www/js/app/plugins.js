@@ -592,6 +592,7 @@ App.Plugins.Minimail = {
 					$('.touch_start').removeClass('touch_start');
 
 					$parent_controller.addClass('multi-select-mode');
+					$parent_controller.trigger('multi-change');
 
 					// clog('===firing');
 					return;
