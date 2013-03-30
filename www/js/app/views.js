@@ -2491,6 +2491,7 @@ App.Views.CommonReply = Backbone.View.extend({
 		'click .remove_address' : 'remove_address',
 
 		'click .add_attachment' : 'add_attachment',
+		'click .file_attachment' : 'remove_attachment',
 		'click .add_photo' : 'add_photo'
 
 	},
@@ -2502,6 +2503,7 @@ App.Views.CommonReply = Backbone.View.extend({
 	initialize: function(options) {
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'cancel');
 		var that = this;
 		// this.el = this.options.el;
 
@@ -2553,6 +2555,9 @@ App.Views.CommonReply = Backbone.View.extend({
 		// unbind events
 		this.ev.unbind();
 
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
 		return;
 	},
 
@@ -2568,11 +2573,10 @@ App.Views.CommonReply = Backbone.View.extend({
 	},
 
 
-	cancel: function(ev){
+	cancel: function(){
 		// Going back to mailbox
 		// - highlight the correct row we were on? (v2)
-		var that = this,
-			elem = ev.currentTarget;
+		var that = this;
 
 		// emit a cancel event to the parent
 		this.ev.trigger('cancel');
@@ -2641,6 +2645,7 @@ App.Views.CommonReply = Backbone.View.extend({
 		});
 		to = to.join(',');
 
+
 		// Send return email
 		var eventData = {
 			event: 'Email.send.validate',
@@ -2653,9 +2658,19 @@ App.Views.CommonReply = Backbone.View.extend({
 				headers: {
 					"In-Reply-To" : in_reply,
 					"References" : references.join(',')
-				}
+				},
+				attachments: []
 			}
 		};
+
+		// Add attachments
+		// - not required
+		that.$('.file_attachment').each(function(idx, fileElem){
+			eventData.obj.attachments.push({
+				_id: $(fileElem).attr('data-file-id'),
+				name: $(fileElem).attr('data-file-name')
+			});
+		});
 
 		// Validate sending
 		Api.event({
@@ -2951,17 +2966,83 @@ App.Views.CommonReply = Backbone.View.extend({
 	},
 
 	add_attachment: function(){
+		// Add an attachment
+		
+		// Launch Filepicker.io (new window, uses ChildBrowser)
+		filepicker.getFile('*/*', {
+				// services: ['DROPBOX','BOX','FACEBOOK','GMAIL'], // broken, causes Filepicker error
+				openTo: 'DROPBOX'
+			},
+			function(fpurl){ // on return
+				// Got an fpurl (or multiple of them?)
+				// alert('got fpurl');
 
-		// filepicker.getFile(function(FPFile){
-		// 	clog(FPFile.url);
-		// });
-		filepicker.getFile("*/*", function(url, metadata){
-			alert("You picked: "+url);
-			window.console.log('picked');
-			window.console.log(metadata);
-			window.console.log(metadata.toString());
-		});
+				// Get Metadata
+				$.ajax({
+					url: fpurl + '/metadata',
+					cache: false,
+					json: true,
+					success: function(fpinfo){
+						// Got metadata for the file
+						// - not handling failures well
+						// console.log(fpinfo); // [object Object]
 
+						// Write File to Emailbox
+						Api.write_file({
+							data: {
+								url: fpurl,
+								name: fpinfo.filename
+							},
+							success: function(response){
+								response = JSON.parse(response);
+
+								if(response.code != 200){
+									// Failed writing File
+									alert('Failed writing File');
+									return false;
+								}
+
+								// Uploaded to Emailbox OK
+
+								// Compile Template data
+								var templateData = {
+									url: response.data.access.url,
+									name: response.data.name,
+									_id: response.data._id
+								};
+								console.log('tData');
+								console.log(JSON.stringify(templateData));
+
+								// Write template
+								var template = App.Utils.template('t_common_file_attachment');
+
+								// Append
+								$('.file_attachments').append(
+									template(templateData)
+								);
+
+							}
+						});
+
+					}
+				}); // promise?
+			}
+		);
+
+		return false;
+	},
+
+	remove_attachment: function(ev){
+		// Remove attachment
+		// - should also remove from Filepicker?
+		//   - gets auto-removed after 4 hours
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Remove
+		$(elem).remove();
+
+		// done	
 		return false;
 	},
 
@@ -3174,6 +3255,9 @@ App.Views.CommonReply = Backbone.View.extend({
 			that.render_thread();
 
 		}
+
+		// Bind to backbutton
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
 
 		return this;
 
@@ -4760,6 +4844,10 @@ App.Views.All = Backbone.View.extend({
 		'shorttap .thread-preview' : 'view_email',
 		'longtap .thread-preview' : 'preview_thread',
 
+		'click .multi-deselect' : 'multi_deselect',
+		'click .multi-done' : 'multi_done',
+		'click .multi-delay' : 'multi_delay',
+
 		'click .thread-preview' : 'click_view_email'
 
 	},
@@ -4768,6 +4856,7 @@ App.Views.All = Backbone.View.extend({
 		var that = this;
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'multi_options');
 		_.bindAll(this, 'refresh_and_render_threads');
 		
 		App.Events.bind('new_email',this.refresh_and_render_threads);
@@ -4786,6 +4875,51 @@ App.Views.All = Backbone.View.extend({
 		this.last_scroll_position = this.$('.data-lsp').scrollTop();
 		this.$el.attr('last-scroll-position',this.last_scroll_position);
 
+	},
+
+	multi_options: function(){
+		// Displays multi-select options (if multiple selected)
+		// - or hides them
+		var that = this;
+
+		// On or off?
+		if($('.all_threads').hasClass('multi-select-mode')){
+			// Just turned on
+			$('.multi_select_options').removeClass('no_multi_select');
+		} else {
+			// Turned off
+			$('.multi_select_options').addClass('no_multi_select');
+		}
+
+		
+		return false;
+	},
+
+	multi_deselect: function(ev){
+		// De-select any that are selected
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Remove selected
+		$('.all_threads .multi-selected').removeClass('multi-selected')
+
+		// Remove multi-select mode
+		$('.all_threads').removeClass('multi-select-mode')
+
+		// Call multi-options
+		that.multi_options();
+		
+		return false;
+	},
+
+	multi_done: function(ev){
+
+		return false;
+	},
+
+	multi_delay: function(ev){
+
+		return false;
 	},
 
 	refresh_data: function(){
@@ -4948,6 +5082,7 @@ App.Views.All = Backbone.View.extend({
 				if($('.multi-selected').length < 1){
 					// turn of multi-select mode
 					$(elem).parents('.all_threads').removeClass('multi-select-mode');
+					$('.all_threads').trigger('multi-change');
 				}
 
 			} else {
@@ -5074,6 +5209,10 @@ App.Views.All = Backbone.View.extend({
 		// $(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
 		// $(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+
+		// Multi-select
+		$(".all_threads").on('multi-change',that.multi_options);
+
 
 		return this;
 		
