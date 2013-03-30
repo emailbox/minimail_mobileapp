@@ -1202,6 +1202,40 @@ body.console {
 
 }
 
+/* All Threads */
+.multi_select_options {
+  position: absolute;
+  bottom: 0px;
+
+  text-align: center;
+
+  border-top: 1px solid black;
+  background: #333;
+
+  width: 100%;
+
+  z-index: 10000;
+
+  min-height: 60px;
+
+  -webkit-transition: all .3s ease;
+  -moz-transition: all .3s ease;
+  -o-transition: all .3s ease;
+  -ms-transition: all .3s ease;
+  transition: all .3s ease;
+  
+  opacity: 1;
+}
+
+.multi_select_options button {
+  margin: 10px;
+}
+
+.multi_select_options.no_multi_select {
+  opacity: 0;
+  z-index: 0;
+}
+
 .inbox_zero {
     text-align: center;
     padding-bottom: 250px;
@@ -2239,10 +2273,12 @@ body.console {
   -webkit-border-radius: 4px;
 }
 
+.common_thread_reply .file_attachment:first-child,
 .common_compose .file_attachment:first-child {  
   border-top: 1px solid #eee;
 }
 
+.common_thread_reply .file_attachment,
 .common_compose .file_attachment {
   padding: 10px 10px 2.5%;
   color: #ebebeb;
