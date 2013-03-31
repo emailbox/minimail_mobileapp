@@ -4196,9 +4196,15 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 		// Get all elements above this one
 		// - and including this one
+		// - but not ones that have already been processed
 
 		var incl_thread_ids = [];
 		$('.thread[data-thread-type="'+ this.options.type +'"]').reverse().each(function(i, threadElem){
+			if($(threadElem).hasClass('tripped')){
+				// Already tripped, don't use this one
+				return;
+			}
+
 			// Wait for this element to get triggered
 			if(incl_thread_ids.length > 0){
 				// Already found this element
@@ -4409,6 +4415,10 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 		var incl_thread_ids = [];
 		$('.thread[data-thread-type="'+ this.options.type +'"]').reverse().each(function(i, threadElem){
+			if($(threadElem).hasClass('tripped')){
+				// Already tripped, don't use this one
+				return;
+			}
 			// Wait for this element to get triggered
 			if(incl_thread_ids.length > 0){
 				// Already found this element
@@ -4856,7 +4866,9 @@ App.Views.All = Backbone.View.extend({
 		var that = this;
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'mass_action');
 		_.bindAll(this, 'multi_options');
+		_.bindAll(this, 'after_delay_modal');
 		_.bindAll(this, 'refresh_and_render_threads');
 		
 		App.Events.bind('new_email',this.refresh_and_render_threads);
@@ -4897,8 +4909,7 @@ App.Views.All = Backbone.View.extend({
 
 	multi_deselect: function(ev){
 		// De-select any that are selected
-		var that = this,
-			elem = ev.currentTarget;
+		var that = this;
 
 		// Remove selected
 		$('.all_threads .multi-selected').removeClass('multi-selected')
@@ -4908,18 +4919,247 @@ App.Views.All = Backbone.View.extend({
 
 		// Call multi-options
 		that.multi_options();
-		
+
 		return false;
 	},
 
 	multi_done: function(ev){
+		// Mark all selected as Done
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Get all selected
+		// - get Thread._id
+		// - make sure to not select ones that are already processed
+
+		// Get all elements above this one
+		// - and including this one
+		// - but not ones that have already been processed (wouldn't anyways)
+
+		var incl_thread_ids = [];
+		$('.multi-selected').each(function(i, threadElem){
+			// Wait for this element to get triggered
+			var $threadParent = $(threadElem).parent();
+			incl_thread_ids.push($threadParent.attr('data-id'));
+			// if(incl_thread_ids.length > 0){
+			// 	// Already found this element
+			// 	incl_thread_ids.push($(threadElem).attr('data-id'));
+			// } else if($(threadElem).attr('data-id') == that.options.threadid){
+			// 	incl_thread_ids.push($(threadElem).attr('data-id'));
+			// }
+		});
+
+		// Make sure some are included
+		if(!incl_thread_ids || incl_thread_ids.length < 1){
+			alert('None Selected');
+			return false;
+		}
+		
+		// Run update command
+		Api.update({
+			data: {
+				model: 'Thread',
+				conditions: {
+					'_id' : {
+						'$in' : incl_thread_ids
+					}
+				},
+				multi: true, // edit more than 1? (yes)
+				paths: {
+					"$set" : {
+						"app.AppPkgDevMinimail.done" : 1
+					}
+				}
+			},
+			success: function(response){
+				// Successfully updated
+				response = JSON.parse(response);
+				if(response.code != 200){
+					// Updating failed somehow
+					// - this is bad, it means the action we thought we took, we didn't take
+					alert('Update may have failed');
+				}
+			}
+		});
+
+		
+		// Fire event to modify move Email/Thread to Archive (it will be brought back later when wait_until is fired)
+		_.each(incl_thread_ids, function(tmp_thread_id){
+			
+			Api.event({
+				data: {
+					event: 'Thread.action',
+					obj: {
+						'_id' : tmp_thread_id, // allowed to pass a thread_id here
+						'action' : 'archive'
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+
+					if(response.code != 200){
+						// Failed launching event
+						alert('Failed launching Thread.action2');
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+
+		});
+
+
+		// Instead, emit an event that is handled by the server for 
+		
+		// Take mass action
+		that.mass_action('done', incl_thread_ids);
+
+		// De-select
+		this.multi_deselect();
 
 		return false;
 	},
 
 	multi_delay: function(ev){
+		// Delay older messages
+		// - displayes DelayModal
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Hide multi-options
+		$('.multi_select_options').addClass('nodisplay');
+
+		// Display delay_modal Subview
+		var subView = new App.Views.DelayModal({
+			context: that,
+			threadid: that.threadid,
+			onComplete: that.after_delay_modal
+		});
+		$('body').append(subView.$el);
+		subView.render();
 
 		return false;
+
+	},
+
+	after_delay_modal: function(wait, save_text){
+
+		var that = this;
+
+		// Show multi-options
+		$('.multi_select_options').removeClass('nodisplay');
+
+		// Return if a null value was sent through by DelayModal
+		if(!wait){
+			return false;
+		}
+
+		var incl_thread_ids = [];
+		$('.multi-selected').each(function(i, threadElem){
+			// Wait for this element to get triggered
+			var $threadParent = $(threadElem).parent();
+			incl_thread_ids.push($threadParent.attr('data-id'));
+		});
+
+		// Make sure some are included
+		if(!incl_thread_ids || incl_thread_ids.length < 1){
+			alert('None Selected');
+			return false;
+		}
+
+		// Figure out delay in seconds
+		var now_sec = parseInt(new Date().getTime() / 1000);
+		var delay_time = wait.getTime() / 1000;
+		var delay_seconds = parseInt(delay_time - now_sec);
+		var in_seconds = now_sec + delay_seconds;
+
+		// App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
+
+		// Fire event to be run in the future
+		Api.event({
+			data: {
+				event: 'Minimail.wait_until_fired',
+				delay: delay_seconds,
+				obj: {
+					text: "Emails are due"
+				}
+			},
+			success: function(response){
+				response = JSON.parse(response);
+
+				if(response.code != 200){
+					// Failed launching event
+					alert('Failed launching event');
+					dfd.reject(false);
+					return;
+				}
+
+				// Save new delay also
+				Api.update({
+					data: {
+						model: 'Thread',
+						conditions: {
+							'_id' : {
+								'$in' : incl_thread_ids
+							}
+						},
+						paths: {
+							"$set" : {
+								"app.AppPkgDevMinimail.wait_until" : in_seconds,
+								"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+								"app.AppPkgDevMinimail.done" : 0
+							}
+						}
+					},
+					success: function(response){
+						response = JSON.parse(response);
+						if(response.code != 200){
+							// Shoot
+							alert('Failed updating threads!');
+						}
+					}
+				});
+
+			}
+		});
+
+
+		// Fire event to modify move Email/Thread to Archive (it will be brought back later when wait_until is fired)
+		_.each(incl_thread_ids, function(tmp_thread_id){
+
+			Api.event({
+				data: {
+					event: 'Thread.action',
+					obj: {
+						'_id' : tmp_thread_id, // allowed to pass a thread_id here
+						'action' : 'archive'
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+
+					if(response.code != 200){
+						// Failed launching event
+						alert('Failed launching Thread.action2');
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+
+		});
+
+		// Take mass action
+		that.mass_action('delay', incl_thread_ids, wait, save_text);
+
+		// De-select
+		this.multi_deselect();
+
+		return false;
+
 	},
 
 	refresh_data: function(){
@@ -5033,8 +5273,8 @@ App.Views.All = Backbone.View.extend({
 		}
 
 		// alert('must be web');
-		// this.preview_thread(ev);
-		this.view_email(ev);
+		this.preview_thread(ev);
+		// this.view_email(ev);
 
 		// var elem = ev.currentTarget,
 		// 	threadElem = $(elem).parents('.thread');
@@ -5114,6 +5354,85 @@ App.Views.All = Backbone.View.extend({
 		Backbone.history.loadUrl('view_thread/' + id + '/undecided');
 
 		return false;
+
+	},
+
+	mass_action: function(action, incl_thread_ids, wait, wait_save_text){
+		// Mass animation on previous items
+		// - action: done, delay (with additional info about delay datetime)
+		// - type: undecided or delayed
+		// - seconds: time in seconds to mark against older
+
+
+		// "type" no longer used because ids are specified
+
+		var that = this;
+
+		// seconds = parseInt(seconds);
+		// if(!seconds){
+		// 	// Shoot
+		// 	alert('bad seconds in mass_action');
+		// 	return false;
+		// }
+
+		var waitTime = 0;
+		$('.thread').each(function(i, threadElem){
+
+			// Choosing either last_message_datetime_sec or wait_until
+			// - depends on undecided or delayed
+			
+			if(_.contains(incl_thread_ids, $(threadElem).attr('data-id'))){
+				// Affected this one!
+
+				// Slide the .thread-preview and show the Thread
+				// - sliding based on type (delayed, undecided)
+				var previewElem = $(threadElem).find('.thread-preview');
+
+				// Slide depending on undecided/done
+				if(action == 'done'){
+					// Slide RIGHT for "done"
+
+					$(previewElem).delay(waitTime).animate({
+						left: $(threadElem).width(),
+						opacity: 0
+					},{
+						duration: 500,
+						complete: function(){
+							// $(this).parents('.thread').slideUp();
+							$(previewElem).removeClass('touch_start');
+						}
+					});
+
+					// Add classes for done
+					$(threadElem).addClass('tripped dragright');
+
+				} else if(action == 'delay') {
+					// Slide LEFT for delay
+
+					$(previewElem).delay(waitTime).animate({
+						right: $(threadElem).width(),
+						opacity: 0
+					},{
+						duration: 500,
+						complete: function(){
+							// $(this).parents('.thread').slideUp();
+							$(previewElem).removeClass('touch_start');
+						}
+					});
+
+					// Add classes for delay
+					$(threadElem).addClass('tripped dragleft');
+
+					// Add text
+					$(threadElem).find('.thread-bg-time p').html(wait_save_text);
+
+				}
+
+				waitTime += 100;
+
+			}
+
+		});
 
 	},
 
