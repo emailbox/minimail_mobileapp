@@ -837,6 +837,10 @@ body.console {
   height: 34px;
 }
 
+input.prefilters_select[readonly] {
+  color: #eee !important; /* Doesn't work. Looks like it doesn't change on FF, but does on phone */
+}
+
 /*.search_footer .prefilters_select:before {
   content: "\00BB \0020";
 }*/
@@ -1223,7 +1227,7 @@ body.console {
   -o-transition: all .3s ease;
   -ms-transition: all .3s ease;
   transition: all .3s ease;
-  
+
   opacity: 1;
 }
 
