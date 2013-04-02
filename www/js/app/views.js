@@ -6771,13 +6771,22 @@ App.Views.SearchEmails = Backbone.View.extend({
 		this.resize_fluid_page_elements();
 		this.resize_scroller();
 
-		// Choose Recent
-		console.log(1);
-		that.$('select').val('recently_viewed');
-		this.click_prefilter(null, that.$('select'));
-		console.log(2);
 		// that.$('select').trigger('change');
 		// that.$('select').blur();
+
+		// Choose Recent
+		that.$('select').val('recently_viewed');
+		this.click_prefilter(null, that.$('select'));
+
+		// Enable mobiscroll select (modal is cleanest)
+		that.$('.prefilters_select').mobiscroll().select({
+			theme: 'android-ics',
+			display: 'bubble',
+			mode: 'mixed',
+			inputClass: 'prefilters_select'
+		});
+
+
 
 		// // Change size of window based on display size
 		// $('.search_emails_inside_view').css({
@@ -7177,18 +7186,21 @@ App.Views.SearchAttachments = Backbone.View.extend({
 		var that = this;
 		var elem = ev.currentTarget;
 
-		// Get Thread id
+		// Get url path to attachment
 		var path = $(elem).attr('data-path');
 
-		// Open path
-		window.open(App.Credentials.s3_bucket + path);
+		// Open attachment in new View
+		// - subView
+		App.Utils.Notification.toast('Loading in ChildBrowser (should load in a new View, with options for )');
+		if(usePg){
+			window.plugins.childBrowser.showWebPage(path,{
+				showLocationBar: false,
+				showAddress: false,
+				showNavigationBar: false
+			});
+		}
+		// window.open(App.Credentials.s3_bucket + path);
 		return false;
-
-		// window.open();
-
-		// Set last scroll position
-		this.last_scroll_position = $('.threads_holder').scrollTop();
-		this.$el.parents('.main_body').attr('last-scroll-position',this.last_scroll_position);
 
 		// Launch view for that Thread
 		Backbone.history.loadUrl('view_thread/' + id + '/searching');
@@ -7248,6 +7260,14 @@ App.Views.SearchAttachments = Backbone.View.extend({
 		// Choose Recent
 		that.$('select').val('recent');
 		that.$('select').trigger('change');
+
+		// Enable mobiscroll select (modal is cleanest)
+		that.$('.prefilters_select').mobiscroll().select({
+			theme: 'android-ics',
+			display: 'bubble',
+			mode: 'mixed',
+			inputClass: 'prefilters_select'
+		});
 
 		// Resize fluid elements
 		this.resize_fluid_page_elements();
@@ -7332,9 +7352,9 @@ App.Views.SearchLinks = Backbone.View.extend({
 		'change .prefilters_select' : 'click_prefilter',
 		'click .form-search .submit' : 'search',
 		'click .show_search' : 'show_search',
-		'click .form-search .cancel' : 'hide_search'
+		'click .form-search .cancel' : 'hide_search',
 
-		// 'click .thread' : 'view_thread'
+		'click .parsed_link' : 'view_link'
 
 	},
 
@@ -7629,64 +7649,24 @@ App.Views.SearchLinks = Backbone.View.extend({
 
 	},
 
-	view_attachment: function(ev){
-		// Show an attachment
-		// - different saving options?
-		// - filepicker.io!
+	view_link: function(ev){
+		// Open a window with the link in it
+		// - should instead open up a new View with info about the link (copy, visit, etc.)
+		var that = this,
+			elem = ev.currentTarget;
 
-		// Shows the view for the attachment
-		alert('showing attachment view');
+		// Get link
+		var url = $(elem).attr('data-link');
+
+		// Launch window
+		// var ref = window.open(url, '_blank', 'location=yes');
+		navigator.app.loadUrl(url, { openExternal:true });
+
 		return false;
-		
-		var that = this;
-		var elem = ev.currentTarget;
-
-		// Get Thread id
-		var id = $(elem).attr('data-id');
-
-		// Set last scroll position
-		this.last_scroll_position = $('.threads_holder').scrollTop();
-		this.$el.parents('.main_body').attr('last-scroll-position',this.last_scroll_position);
-
-		// Launch view for that Thread
-		Backbone.history.loadUrl('view_thread/' + id + '/searching');
-
-	},
-
-	view_thread: function(ev){
-		// Show an attachment
-		// - different saving options?
-		// - filepicker.io!
-		
-		var that = this;
-		var elem = ev.currentTarget;
-
-		// Get Thread id
-		var id = $(elem).attr('data-id');
-
-		// Set last scroll position
-		this.last_scroll_position = $('.threads_holder').scrollTop();
-		this.$el.parents('.main_body').attr('last-scroll-position',this.last_scroll_position);
-
-		// Launch view for that Thread
-		Backbone.history.loadUrl('view_thread/' + id + '/searching');
 
 	},
 
 	scroll_to_bottom: function(){
-		// Re-render window and scroll to bottom
-
-		// Change size of window based on display size
-		// $('.search_links_results').css({
-		// 	"max-height": App.Data.xy.win_height - (60 + 50),  // footer height = 60. search_footer height = 50. critera height = 50
-		// 	width: App.Data.xy.win_width
-		// });
-		// $('.search_links_results .parsed_link:first-child').css({
-		// 	"margin-top" : App.Data.xy.win_height - (60 + 105) // both footers, attachment height
-		// });
-
-		// $('.search_links_results').scrollTop($('.search_links_results').height() + 1000);
-
 	},
 
 
@@ -7705,6 +7685,14 @@ App.Views.SearchLinks = Backbone.View.extend({
 		// Choose Recent
 		that.$('select').val('recent');
 		that.$('select').trigger('change');
+
+		// Enable mobiscroll select (modal is cleanest)
+		that.$('.prefilters_select').mobiscroll().select({
+			theme: 'android-ics',
+			display: 'bubble',
+			mode: 'mixed',
+			inputClass: 'prefilters_select'
+		});
 
 		return this;
 
@@ -8604,7 +8592,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			// 	// $('.fc-button-today').trigger('click');
 			// 	$('#calendar').fullCalendar('render');
 			// },300);
-		},300);
+		},100);
 
 		return false;
 	},
