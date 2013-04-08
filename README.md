@@ -82,10 +82,10 @@ I want minimail to be a jumping off point for developers and designers to easily
 Minimail will eventually be a paid product/service, somewhere in the neighborhood of $10/mo per person. There are no plans for a free version, but some affiliate-like program will encourage developers to fork-build-host, then do marketing and collect revenue. 
 
 ### Lock-in, and Who Owns My Data?  
-All your data is available, at any time, so you can easily export anything out of your Emailbox datastore. 
-You will have the option of hosting your own data. 
-Emailbox won't be doing any data-mining without your express permission. (See the Pricing question above) 
-Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client is simple. 
+All your data is available, at any time, so you can easily export anything out of your Emailbox datastore.  
+You will have the option of hosting your own data.  
+Emailbox has no plans to do any data mining, and if those plans change existing users will not be switched over without express permission.  
+Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client is simple.  
 
 
 
