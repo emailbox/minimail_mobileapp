@@ -23,11 +23,11 @@ App.Utils = {
 				// Remove an item from the list of debug messages
 				// - likely finished the network action
 
-				clog('remove');
+				// clog('remove');
 				if(App.Data.debug_messages[key]){
 					delete App.Data.debug_messages[key];
 				}
-				clog(App.Data.debug_messages);
+				// clog(App.Data.debug_messages);
 
 				App.Events.trigger('debug_messages_update',true);
 
@@ -80,7 +80,11 @@ App.Utils = {
 	Storage: {
 		// Always use a promise
 
-		get: function(key){
+		get: function(key, namespace){
+			namespace = (namespace != undefined) ? namespace + '_' : false || '_';
+			// console.log('using ns');
+			// console.log(namespace);
+			key = key.toString();
 
 			var dfd = $.Deferred();
 
@@ -108,9 +112,9 @@ App.Utils = {
 				// - switch Phonegap/cordova to Database instead of localStorage?
 				// - persistent? 
 				// var dbShell = window.openDatabase('minimail', "1.0", database_displayname, "Minimail", 1000000);
-
+				
 				setTimeout(function(){
-					var value = window.localStorage.getItem(key);
+					var value = window.localStorage.getItem(namespace + key);
 
 					try {
 						value = JSON.parse(value);
@@ -124,9 +128,11 @@ App.Utils = {
 				},1);
 
 			} else {
-
+				
 				setTimeout(function(){
-					var value = localStorage.getItem(key);
+					// window.console.info('key');
+					// window.console.log(namespace + key);
+					var value = localStorage.getItem(namespace + key);
 
 					try {
 						value = JSON.parse(value);
@@ -145,7 +151,9 @@ App.Utils = {
 
 		},
 
-		set: function(key, value){
+		set: function(key, value, namespace){
+			namespace = (namespace != undefined) ? namespace + '_' : false || '_';
+			key = key.toString();
 
 			var dfd = $.Deferred();
 
@@ -166,7 +174,7 @@ App.Utils = {
 			} else if(usePg){
 
 				setTimeout(function(){
-					var tmp = window.localStorage.setItem(key,JSON.stringify(value));
+					var tmp = window.localStorage.setItem(namespace + key,JSON.stringify(value));
 					// App.Events.trigger('saveAppDataStore');
 					dfd.resolve(tmp);
 
@@ -175,7 +183,7 @@ App.Utils = {
 			} else {
 				
 				setTimeout(function(){
-					var tmp = localStorage.setItem(key,JSON.stringify(value));
+					var tmp = localStorage.setItem(namespace + key,JSON.stringify(value));
 					// App.Events.trigger('saveAppDataStore');
 					dfd.resolve(tmp);
 
