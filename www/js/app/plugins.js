@@ -583,19 +583,21 @@ App.Plugins.Minimail = {
 			} else {
 
 				// Are two fingers being used?
-				if(e.originalEvent.touches.length > 1){
-					// multi-finger
+				if(usePg){
+					if(e.originalEvent.touches.length > 1){
+						// multi-finger
 
-					// add touch to all events
-					$(this).addClass('touch_start');
-					$('.touch_start').addClass('multi-selected');
-					$('.touch_start').removeClass('touch_start');
+						// add touch to all events
+						$(this).addClass('touch_start');
+						$('.touch_start').addClass('multi-selected');
+						$('.touch_start').removeClass('touch_start');
 
-					$parent_controller.addClass('multi-select-mode');
-					$parent_controller.trigger('multi-change');
+						$parent_controller.addClass('multi-select-mode');
+						$parent_controller.trigger('multi-change');
 
-					// clog('===firing');
-					return;
+						// clog('===firing');
+						return;
+					}
 				}
 			}
 
