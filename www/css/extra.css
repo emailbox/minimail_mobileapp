@@ -666,6 +666,24 @@ body.console {
 
 /* Base footer menu */
   
+
+.footer h1 {
+  display: inline-block;
+
+  color: white;
+
+  /*width: 50%;*/
+
+  line-height: 50px;
+  font-size:24px;
+
+  text-align: left;
+
+  font-weight: 200;
+  
+  padding-left: 5px;
+}
+
 .base_footer_menu {
   padding: 10px 0;
 }
@@ -2509,6 +2527,54 @@ input.prefilters_select[readonly] {
 
   width: 100%;
 }
+
+
+
+/* Settings */
+
+.view_settings {
+
+}
+
+.view_settings .setting {
+  padding: 10px;
+
+  border-bottom: 1px solid #222;
+}
+
+.view_settings .setting .photo {
+  float: left;
+  /*width: 50px;*/
+  width: 1px;
+  height: 50px;
+  padding-left: 5px;
+  
+}
+
+.view_settings .setting .name_and_info {
+  float: left;
+  width: 280px;
+  /*padding-left: 20px;*/
+  padding-left: 0px;
+}
+
+.view_settings .setting .display_setting {
+  font-size: 18pt;
+  line-height: 20pt;
+  font-weight: 100;
+  color: #eee;
+
+  width: 100%;
+}
+
+.view_settings .setting .display_note {
+  color: #b0b0b0;
+  font-size: 14pt;
+  line-height: 16pt;
+
+  width: 100%;
+}
+
 
 
 
