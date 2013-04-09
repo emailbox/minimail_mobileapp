@@ -39,14 +39,14 @@ Handlebars.registerHelper("ifTypeCond", function(val1, val2, options) {
 // {{#each_with_index records}}
 //  <li class="legend_item{{index}}"><span></span>{{Name}}</li>
 // {{/each_with_index}}
-Handlebars.registerHelper("each_with_index", function(array, fn) {
+Handlebars.registerHelper("each_with_index", function(array, options) {
   var total = array.length;
   var buffer = "";
 
   $.each(array,function(i,v){
   	var item = v;
   	item.index = i;
-  	buffer += fn(item);
+  	buffer += options.fn(item);
   });
 
   return buffer;
@@ -1085,7 +1085,7 @@ Handlebars.registerHelper("thread_participants_pretty", function(emails) {
 	// Return (pretty) names of participants
 
 	var all_names = [];
-	$.each(emails,function(j,email){
+	_.each(emails,function(email, j){
 
 		// Received or Sent?
 		var email_address = '';
@@ -1094,18 +1094,18 @@ Handlebars.registerHelper("thread_participants_pretty", function(emails) {
 		var to_search = ['From','To','Reply-To'];
 
 		var names = [];
-		$.each(to_search,function(i,search_val){
+		_.each(to_search,function(search_val, i){
 			var tmp = search_val + '_Parsed';
 			if(typeof email.original.headers[tmp] == 'undefined'){
 				return;
 			}
 			// Parse search values
-			$.each(email.original.headers[tmp],function(k,person){
+			_.each(email.original.headers[tmp],function(person, k){
 				var name = person[0];
 				var email = person[1];
 
 				var tmp_isme = false;
-				$.each(App.Data.UserEmailAccounts.accounts,function(l,acct){
+				_.each(App.Data.UserEmailAccounts.toJSON(),function(acct, l){
 					if(acct.email == email){
 						tmp_isme = true;
 					}
@@ -1150,19 +1150,19 @@ Handlebars.registerHelper("email_participants_pretty", function(email) {
 	var to_search = ['From','To','Reply-To'];
 
 	var names = [];
-	$.each(to_search,function(i,search_val){
+	_.each(to_search,function(search_val, i){
 		var tmp = search_val + '_Parsed';
 		if(typeof email.original.headers[tmp] == 'undefined'){
 			return;
 		}
 		// Parse search values
-		$.each(email.original.headers[tmp],function(k,person){
+		_.each(email.original.headers[tmp],function(person, k){
 			try {
 				var name = person[0];
 				var email = person[1];
 
 				var tmp_isme = false;
-				$.each(App.Data.UserEmailAccounts.accounts,function(l,acct){
+				_.each(App.Data.UserEmailAccounts.accounts,function(acct, l){
 					if(acct.email == email){
 						tmp_isme = true;
 					}
@@ -1219,18 +1219,18 @@ Handlebars.registerHelper("thread_from_pretty", function(email) {
 	// Doesn't matter, just summarize everybody
 	var to_search = ['From'];
 
-	$.each(to_search,function(i,search_val){
+	_.each(to_search,function(search_val, i){
 		var tmp = search_val + '_Parsed';
 		if(typeof email.original.headers[tmp] == 'undefined'){
 			return;
 		}
 		// Parse search values
-		$.each(email.original.headers[tmp],function(k,person){
+		_.each(email.original.headers[tmp],function(person, k){
 			var name = person[0];
 			var email = person[1];
 
 			var tmp_isme = false;
-			$.each(App.Data.UserEmailAccounts.accounts,function(l,acct){
+			_.each(App.Data.UserEmailAccounts.accounts,function(acct, l){
 				if(acct.email == email){
 					tmp_isme = true;
 				}
@@ -1309,7 +1309,7 @@ Handlebars.registerHelper("contactPhotoSmall", function(photos) {
 
 	var photo_url = false;
 
-	$.each(photos,function(i,photo){
+	_.each(photos,function(photo, i){
 		if(photo_url !== false){
 			// Already got photo
 			return;
@@ -1322,7 +1322,7 @@ Handlebars.registerHelper("contactPhotoSmall", function(photos) {
 
 	// Check Twitter
 	if(photo_url !== false){
-		$.each(photos,function(i,photo){
+		_.each(photos,function(photo, i){
 			if(photo.typeId == 'twitter'){
 				photo_url = photo.url;
 			}
