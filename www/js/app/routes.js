@@ -13,6 +13,7 @@ App.Router = Backbone.Router.extend({
 		'all' : 'all',
 		'leisure' : 'leisure',
 
+
 		'compose' : 'compose',
 
 		// View email/thread
@@ -44,8 +45,9 @@ App.Router = Backbone.Router.extend({
 
 		'intro' : 'intro',
 
-		'confirm_logout' : 'confirm_logout',
+		'settings' : 'settings',
 
+		'confirm_logout' : 'confirm_logout',
 		'logout' : 'logout'
 		
 	},
@@ -375,6 +377,24 @@ App.Router = Backbone.Router.extend({
 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
 		}
 
+
+	}, 
+
+	settings: function(){
+		
+		// // Confirm they want to open settings
+		// var c = confirm('Go to Settings?');
+		// if(!c){
+		// 	return;
+		// }
+
+		var page = new App.Views.Settings();
+		// Hide other .main_body
+		$('.main_body').addClass('nodisplay');
+
+		// Add to page
+		$('body').append(page.$el);
+		App.router.showView('settings',page); // don't want to delete 'undecided' view because we go back to it and want to save position
 
 	}
 
