@@ -33,6 +33,32 @@ App.Collections.Emails = Backbone.Collection.extend({
 
 	},
 
+	fetch_by_thread_id: function(options){
+		
+		return this.fetch({
+			data: {
+				model: 'Email',
+				conditions: {
+					"attributes.thread_id" : {
+						'$in' : options.ids
+					}
+				},
+				fields : [
+							'app.AppPkgDevMinimail',
+							'common',
+							'attributes',
+							'original.headers'
+							],
+				limit : 200
+				
+			},
+			success: function(email_models){
+				if(options.success) options.success(email_models);
+			}
+		});
+
+	},
+
 	fetch_by_id_full: function(options){
 		
 		return this.fetch({
@@ -194,6 +220,46 @@ App.Collections.Emails = Backbone.Collection.extend({
 
 	}
 
+
+});
+
+// This is completely based off of App.Collections.UndecidedThreads
+App.Collections.EmailsFull = Backbone.Collection.extend({
+
+	model: App.Models.EmailFull,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'EmailFull'),
+
+	comparator: function( EmailFull ) {
+		return EmailFull.toJSON().common.date_sec; // sorting by date received
+	},
+
+	fetch_by_thread_id: function(options){
+		
+		return this.fetch({
+			cachePrefix: options.cachePrefix || null,
+			data: {
+				model: 'Email',
+				conditions: {
+					"attributes.thread_id" : {
+						'$in' : options.ids
+					}
+				},
+				fields : [
+							// 'app.AppPkgDevMinimail',
+							// 'common',
+							// 'attributes',
+							// 'original.headers'
+							],
+				limit : 200
+				
+			},
+			success: function(email_models){
+				if(options.success) options.success(email_models);
+			}
+		});
+
+	}
 
 });
 
@@ -605,141 +671,51 @@ App.Collections.Links = Backbone.Collection.extend({
 
 App.Collections.UndecidedThreads = Backbone.Collection.extend({
 
-	model: App.Models.Thread,
+	model: App.Models.ThreadIds,
 
-	sync: emailbox_sync_collection,
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'undecided1'),
 
-		undecided_conditions: {
-			'$or' : [
-				{
-					'$and' : [
-						{
-							// doesn't exist for us, and is unread/unseen
-							'app.AppPkgDevMinimail' : {'$exists' : false},
-							'attributes.read.status' : 0
-						}
-					]
-				},{
-					'$and' : [
-						{
-							// exists as acted upon, and is marked as "undecided" still
-							'app.AppPkgDevMinimail' : {'$exists' : true},
-							'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
-							'app.AppPkgDevMinimail.done' : 0
-						}
-					]
-				}
-			]
-		},
+	comparator: function( Thread ) {
+		return Thread.toJSON().attributes.last_message_datetime_sec;
+	},
+
+	undecided_conditions: {
+		'$or' : [
+			{
+				'$and' : [
+					{
+						// doesn't exist for us, and is unread/unseen
+						'app.AppPkgDevMinimail' : {'$exists' : false},
+						'attributes.read.status' : 0
+					}
+				]
+			},{
+				'$and' : [
+					{
+						// exists as acted upon, and is marked as "undecided" still
+						'app.AppPkgDevMinimail' : {'$exists' : true},
+						'app.AppPkgDevMinimail.wait_until' : {"$exists" : false},
+						'app.AppPkgDevMinimail.done' : 0
+					}
+				]
+			}
+		]
+	},
 
 	fetchUndecided: function(options){
 		var that = this;
 
-		// Return "undecided emails"
-		// - the "?" emails
-
-		// - Must be "unread"
-		// - must be past "wait_until" time
-
+		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
 		return this.fetch({
 			data: {
 				model: 'Thread',
 				conditions: that.undecided_conditions,
-				fields: [], // all fields
+				fields: ['_id','attributes.last_message_datetime_sec'], // only the ID field + sorting field
 				limit: 10,
 				sort: {
 					'attributes.last_message_datetime_sec' : -1
 				}
-			},
-			error: function(error){
-				console.log('=error e2');
-			},
-			success: function(threads_models){
-				// Have an array of Threads Models
-
-				// Extract out Thread._id's so that we can get the Emails that correspond
-				// var thread_ids = _.map(response.data,function(v){
-				// 	return v.Thread._id;
-				// })
-				
-				
-				// Map
-				var thread_ids = [];
-				var threads_obj = {};
-				threads_models.each(function(thread_model){
-					// var Thread = model.get('_id');
-
-					var _id = thread_model.get('_id');
-					var Thread = _.clone(thread_model.attributes);
-
-					thread_ids.push(_id);
-					threads_obj[_id] = {Thread: Thread,
-										Email: []};
-				});
-				// $.each(response.data,function(i,thread){
-				// 	thread_ids.push(thread.Thread._id);
-				// 	threads_obj[thread.Thread._id] = {Thread: thread.Thread,
-				// 								Email: []};
-				// });
-	
-				// console.log('more');
-				// console.log(thread_ids);
-				// console.log(threads_obj);
-				// return false;
-
-				// Fetch and merge emails
-
-				var emails = new App.Collections.Emails();
-				emails.fetch_by_id({
-					ids: thread_ids,
-					success: function(emails_models){
-						// have collection of emails
-
-						// emails_models.each(function(model){
-							
-						// });
-
-						// Sort emails
-						var tmp_emails_models = App.Utils.sortBy({
-							arr: emails_models.toJSON(),
-							path: 'common.date_sec',
-							direction: 'asc',
-							type: 'num'
-						});
-
-						$.each(tmp_emails_models,function(i,email){
-							// Add to the Thread object
-							threads_obj[email.attributes.thread_id].Email.push(email);
-						});
-
-						threads_obj = App.Utils.sortBy({
-							arr: threads_obj,
-							path: 'Thread.attributes.last_message_datetime',
-							direction: 'desc',
-							type: 'date'
-						});
-						
-						// Remove empty Threads
-						var tmp = [];
-						threads_obj = _.filter(threads_obj,function(v){
-							if(v.Email.length < 1){
-								return false;
-							}
-							return true;
-						});
-
-						// Return undecided threads and Email data
-						// dfd.resolve(threads_obj);
-
-						if(options.success){
-							options.success(threads_obj);
-						}
-
-					}
-				});
-
 			}
-		
 		});
 
 	}
@@ -747,13 +723,16 @@ App.Collections.UndecidedThreads = Backbone.Collection.extend({
 
 });
 
-
 // This is completely based off of App.Collections.UndecidedThreads
 App.Collections.DelayedThreads = Backbone.Collection.extend({
 
-	model: App.Models.Thread,
+	model: App.Models.ThreadIds,
 
-	sync: emailbox_sync_collection,
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'delayed1'),
+
+	comparator: function( Thread ) {
+		return -1 * Thread.toJSON().app.AppPkgDevMinimail.wait_until;
+	},
 
 	fetchDelayed: function(options){
 		var that = this;
@@ -768,6 +747,7 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 		var now = new Date();
 		var now_sec = parseInt(now.getTime() / 1000);
 
+		// Fetch from emailbox
 		return this.fetch({
 			data: {
 				model: 'Thread',
@@ -785,94 +765,18 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 						}
 					]
 				},
-				fields: [], // all fields
+				fields: ['_id','app.AppPkgDevMinimail.wait_until'], // id + seconds
 				limit: 10,
 				sort: {
 					'app.AppPkgDevMinimail.wait_until' : -1
 				}
-			},
-			error: function(error){
-				console.log('=error e2');
-			},
-			success: function(threads_models){
-				// Have an array of Threads Models
-
-				// Extract out Thread._id's so that we can get the Emails that correspond
-				// var thread_ids = _.map(response.data,function(v){
-				// 	return v.Thread._id;
-				// })
-				
-				
-				// Map
-				var thread_ids = [];
-				var threads_obj = {};
-				threads_models.each(function(thread_model){
-					// var Thread = model.get('_id');
-
-					var _id = thread_model.get('_id');
-					var Thread = _.clone(thread_model.attributes);
-
-					thread_ids.push(_id);
-					threads_obj[_id] = {Thread: Thread,
-										Email: []};
-				});
-
-				// Fetch and merge emails
-
-				var emails = new App.Collections.Emails();
-				emails.fetch_by_id({
-					ids: thread_ids,
-					success: function(emails_models){
-						// have collection of emails
-
-						// emails_models.each(function(model){
-							
-						// });
-
-						// Sort emails
-						var tmp_emails_models = App.Utils.sortBy({
-							arr: emails_models.toJSON(),
-							path: 'common.date_sec',
-							direction: 'asc',
-							type: 'num'
-						});
-
-						$.each(tmp_emails_models,function(i,email){
-							// Add to the Thread object
-							threads_obj[email.attributes.thread_id].Email.push(email);
-						});
-
-						threads_obj = App.Utils.sortBy({
-							arr: threads_obj,
-							path: 'Thread.attributes.last_message_datetime',
-							direction: 'desc',
-							type: 'date'
-						});
-						
-						// Remove empty Threads
-						var tmp = [];
-						threads_obj = _.filter(threads_obj,function(v){
-							if(v.Email.length < 1){
-								return false;
-							}
-							return true;
-						});
-
-						// Return undecided threads and Email data
-						// dfd.resolve(threads_obj);
-
-						if(options.success){
-							options.success(threads_obj);
-						}
-
-					}
-				});
-
 			}
-		
 		});
 
-	}
+		// Return fetch call (not actual results)
+		// return models;
+
+	},
 
 });
 
@@ -1126,7 +1030,7 @@ App.Collections.AppMinimailLeisureFilter = Backbone.Collection.extend({
 									// console.log('err 32498');
 									console.log(err); // TypeError: Cannot read property 'Thread' of undefined
 									console.log(lf._id);
-									console.log(JSON.stringify(filter_obj));
+									// console.log(JSON.stringify(filter_obj));
 								}
 							});
 						});
@@ -1172,10 +1076,43 @@ App.Collections.AppMinimailLeisureFilter = Backbone.Collection.extend({
 });
 
 
+App.Collections.UserEmailAccounts = Backbone.Collection.extend({
+
+	model: App.Models.UserEmailAccount,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'UserEmailAccounts'),
+
+	// comparator: function( Thread ) {
+	// 	return -1 * Thread.toJSON().app.AppPkgDevMinimail.wait_until;
+	// },
+
+	fetchAll: function(options){
+		var that = this;
+
+		// Fetch from emailbox
+		return this.fetch({
+			data: {
+				model: 'UserEmailAccount',
+				conditions: {},
+				fields: [], // id + seconds
+				limit: 10,
+				sort: {
+					'name' : -1
+				}
+			}
+		});
+
+	},
+
+});
+
+
 
 function emailbox_sync_collection(method, model, options) {
 
-	console.log('backbone sync overwritten');
+	// console.log('backbone collection sync overwritten');
+
+	var dfd = $.Deferred();
 
 	options || (options = {});
 
@@ -1190,11 +1127,17 @@ function emailbox_sync_collection(method, model, options) {
 			break;
 
 		case 'read':
-			// request = gapi.client.tasks[model.url].list(options.data);
-			// Backbone.gapiRequest(request, method, model, options);
-			console.log('sync reading');
-			console.log(options);
-			console.log(model); // or collection
+			// read/search request
+			// console.log('sync reading');
+			// console.log(options);
+			// console.log(model); // or collection
+			// console.log(model.model.prototype.fields);
+
+			// Caching is enabled on a per-collection basis
+			if(options.cacheType != null){
+				// Check the cache
+
+			}
 
 			Api.search({
 				data: options.data,
@@ -1205,46 +1148,57 @@ function emailbox_sync_collection(method, model, options) {
 					if(response.code != 200){
 						console.log('=error');
 						if(options.error) options.error(this,response);
+						dfd.reject();
 						return;
 					}
-					if(options.success){
-						// console.log('Calling success');
+					// console.log('Calling success');
 
-						// data or patch?
-						if(response.patch){
-							options.success(this, response.patch);
-						} else {
-							// console.log('d');
-							// console.log(response.data);
+					// data or patch?
+					if(response.patch){
+						// not written patch-handling yet
+						options.success(this, response.patch);
+					} else {
+						// console.log('d');
+						// console.log(response.data);
 
-							// Return data without the 'Model' lead
-							var tmp = [];
-							var tmp = _.map(response.data,function(v){
-								return v[options.data.model];
-							});
+						// Return data without the 'Model' lead
+						var tmp = [];
+						var tmp = _.map(response.data,function(v){
+							return v[options.data.model];
+						});
 
-							// Merge local values with new ones
-							_.each(tmp,function(model_values, iterator){
-								// Local value exist?
-								if(App.Data.Store[options.data.model][model_values._id] == undefined){
-									// Set it
-									App.Data.Store[options.data.model][model_values._id] = model_values;
+						// Merge local values with new ones
+						// _.each(tmp,function(model_values, iterator){
+						// 	// Local value exist?
+						// 	if(App.Data.Store[options.data.model][model_values._id] == undefined){
+						// 		// Set it
+						// 		App.Data.Store[options.data.model][model_values._id] = model_values;
 
-								} else {
-									App.Data.Store[options.data.model][model_values._id] = $.extend(true, App.Data.Store[options.data.model][model_values._id], model_values);
-								}
-							});
+						// 	} else {
+						// 		App.Data.Store[options.data.model][model_values._id] = $.extend(true, App.Data.Store[options.data.model][model_values._id], model_values);
+						// 	}
+						// });
 
+						window.setTimeout(function(){
 							// Store App.Data.Store into localStorage/prefs!
-							App.Events.trigger('saveAppDataStore',true);
+							// App.Events.trigger('saveAppDataStore',true);
 
-							options.success(tmp);
-						}
+							// Resolve
+							dfd.resolve(tmp);
+
+							// Fire success function
+							if(options.success){
+								options.success(tmp);
+							}
+						},100);
 					}
+				
 				}
 			});
 
 			break;
 	}
+
+	return dfd.promise();
 
 }
