@@ -1,12 +1,16 @@
+Preview Video: [https://www.youtube.com/watch?v=ffkQQiBacl8](https://www.youtube.com/watch?v=ffkQQiBacl8) 
+
 ![image](https://s3.amazonaws.com/emailboxv1/phone_table1.png)
 
-More info? nick@getemailbox.com  
+If you're curious about minimail and want to get involved, send me an email: nick@getemailbox.com  
 
 ## What is minimail  
 
-Minimail is an open source email client, backed by [Emailbox](https://getemailbox.com), that is customizable using common web languages like HTML, CSS, and Javascript. It runs on Android, and it skips dealing with IMAP or managing the email sending/receiving/parsing hairyness.  
+Minimail is an open source email client, made possible by [Emailbox](https://getemailbox.com), that is customizable using common web languages like HTML, CSS, and Javascript. It runs on Android and iOS (waiting on PhoneGap Windows Phone support), and it skips dealing with IMAP or managing the email sending/receiving/parsing hairyness.  
 
-To try it out, just choose Option 1 (below) and you don't even have to write any code!. Or, you can just browse through the code on GitHub. If you want to run the server component as well, see "Server-side" below.  
+> **minimail is currently in an open developer preview. Some features are missing, and many things will change. The database is wiped frequently. Don't use this for production. If you do start using it, you'll probably want to email nick@getemailbox.com and say "hello"**
+
+To try it out, just follow the instructions below and you don't even have to write any code!. Or, you can just browse through the code on GitHub. If you want to run the server component as well, see "Server-side" below.  
 
 Please fork and submit pull requests!  
 
@@ -25,17 +29,13 @@ Priorities include:
 
 If you encounter an issue not already on GitHub Issues for this repository, please add it with as much info as possible! 
 
-
-## WHAT ABOUT SECURITY!?  
-Don't use your main-email, work-email, or even affair-email with minimail. Not yet at least. Emailbox (the heavy-lifting backend behind minimail) isn't ready to safeguard your most important emails. Eventually you'll be able to do all kinds of own-my-data-and-encrypt-everything stuff, but for now, please only use a throw-away or junk account with minimail. 
-
 ## Contents of this Repository  
 Source for the minimail mobile email client for Android. The app works in conjunction with a server-side component (receiving and sending emails, Push Notifications, leisure filters) and the Emailbox API (https://getemailbox.com/docs).  
 
 ## Requirements to run:  
 - Android Phone running 2.2+ (CSS not optimized for Tablets) 
 
-## Option 1: Build with PhoneGap Build (nothing to install)  
+## Build Option 1: Hello PhoneGap Build (nothing to install)  
 1. Fork this repo (optional)
 1. Sign up for Adobe PhoneGap Build: http://build.phonegap.com/plans/free 
 1. Create a new project in PhoneGap Build using your forked GitHub URL (or just the https url for this repo)  
@@ -76,7 +76,20 @@ By default the basic minimail server is used. If you want to run your own server
 Yes, is it that obvious? I'm fully aware that I'm using Models/Collections about as well as a baby with scissors, and I'll be refactoring it before any stable release.  
 
 ### What is the plan for minimail?  
-I want minimail to be a jumping off point for developers and designers to easily create their own personalized email clients. Minimail is a reference application, so you can see how it handles Contacts, Push Notifications, File Uploads, and more, do a Pull Request, and then improve upon the design or experience. Eventually, you'll be able to offer that experience to other email users, and collect revenue.  
+I want minimail to be a jumping off point for developers and designers to easily create their own personalized email clients. Minimail is a reference application, so you can see how it handles Contacts, Push Notifications, File Uploads, and more, do a Pull Request, and then improve upon the design or user experience. 
+
+### Pricing and revenue-sharing thoughts? 
+Minimail will eventually be a paid product/service, somewhere in the neighborhood of $10/mo per person. There are no plans for a free version, but some affiliate-like program will encourage developers to fork-build-host, then do marketing and collect revenue. 
+
+### Lock-in, and Who Owns My Data?  
+All your data is available, at any time, so you can easily export anything out of your Emailbox datastore.  
+You will have the option of hosting your own data.  
+Emailbox has no plans to do any data mining or selling of any kind of data and, if those plans change, existing users will not be switched over without them giving express permission to minimail/emailbox.  
+Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client is simple.  
+
+
+
+
 
 
 
