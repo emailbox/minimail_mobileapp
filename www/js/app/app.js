@@ -3,7 +3,7 @@
 var debugging_mode = true;
 var clog = function(v){
 	if(debugging_mode){
-		window.console.log(v);
+		// window.console.log(v);
 	}
 };
 
@@ -31,6 +31,8 @@ var App = {
 			mode: 'portrait' // landscape
 		},
 		Store: { // a temporary data store
+
+			ModelCache: {},
 
 			// Models on server
 			Thread: {},
@@ -110,8 +112,8 @@ var App = {
 				if(store != null){
 					// Make sure all the default keys exist
 					App.Data.Store = $.extend(App.Data.Store,store);
-					console.log('AppDataStore');
-					console.log(App.Data.Store);
+					// console.log('AppDataStore');
+					// console.log(App.Data.Store);
 				} else {
 					console.log('null AppDataStore');
 				}
@@ -216,186 +218,26 @@ var App = {
 					return;
 				}
 
-
 				// Validate credentials with minimail server and emailbox 
 				// - make an api request to load my email address
 
 				var dfd = $.Deferred();
 
+				// Logged in on minimail server
+				App.Data.LoggedIn = true;
+
 				App.Plugins.Minimail.login()
 					.then(function(){
-
-						// Logged in on minimail server
-						App.Data.LoggedIn = true;
-
-						// Check login status against Emailbox
-						Api.search({
-							data: {
-								model: 'UserGmailAccounts',
-								fields: [],
-								conditions: {},
-								limit: 1
-							},
-							success: function(res){
-								
-								var res = JSON.parse(res);
-								if(res.code != 200){
-									dfd.reject();
-									
-									App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',null)
-										.then(function(){
-											App.Credentials.access_token = null;
-											Backbone.history.loadUrl('body_login')
-										});
-										return;
-								}
-
-								var loginData = {
-									access_token: App.Credentials.access_token
-								};
-
-								// Set EmailAccountData
-								App.Data.UserEmailAccounts = res.data[0].UserGmailAccounts;
-								App.Data.UserEmailAccounts_Quick = _.map(App.Data.UserEmailAccounts.accounts,function(acct){
-									return acct.email;
-								});
-
-								Api.Event.start_listening();
-								Backbone.history.loadUrl('body');
-								
-								// CSS ()
-								// - local or debug version of CSS
-
-								// Listen for debugCss to be turned on/off remotely
-								Api.Event.on({
-									event: 'AppMinimailDebugCss.turn'
-								},function(result){
-									// Get local version of CSS
-									if(result.data == 'on'){
-										App.Utils.Notification.toast('Turning ON Debug CSS and restarting');
-										window.setTimeout(function(){
-											$.ajax({
-												url: 'css/extra.css',
-												cache: false,
-												success: function(cssText){
-													// App.Plugins.Minimail.update_remote('both');
-													App.Utils.Storage.set('cssDebugOn',cssText)
-														.then(function(){
-															App.Utils.reloadApp();
-														});
-
-												}
-											});
-										},500);
-
-									} else if(result.data == 'off'){
-										App.Utils.Notification.toast('Turning OFF Debug CSS and restarting');
-										window.setTimeout(function(){
-											App.Utils.Storage.set('cssDebugOn',null)
-												.then(function(){
-													App.Utils.reloadApp();
-												});
-										},500);
-									}
-								});
-								
-								// Load any existing and start listeners if we're using debug css
-								App.Utils.Storage.get('cssDebugOn')
-									.then(function(cssDebugText){
-										if(cssDebugText != undefined && cssDebugText != null){
-											// - start listener for new changes to Css.debug
-											
-											App.Utils.Notification.toast('Using debugCSS');
-
-											// Update any remote versions
-											// - by using an emitted event
-
-											// Update remote CSS
-											App.Plugins.Minimail.update_remote('both');
-
-											// Listen for changes to css triggered by remote (web)
-											Api.Event.on({
-												event: 'AppMinimailDebugCss.web_update'
-											},function(result){
-												// alert('update to css from remote');
-
-												// Update the CSS in the page
-												// - contains the new CSS
-												App.Utils.Notification.debug.temporary('Updating local CSS from remote');
-												App.Utils.Notification.toast('Updating local CSS from remote');
-												
-												$('#NormalCSS').remove();
-												$('#DebugCSS').remove();
-												console.log('Event RESULT');
-												console.log(result);
-												console.log(result.css);
-
-												App.Utils.Storage.set('cssDebugOn',result.css)
-
-												$('head').append('<style id="DebugCSS" type="text/css">'+result.data.css+'</style>');
-
-											});
-
-											// Listen for requests for newest HTML triggered by remote (web)
-											Api.Event.on({
-												event: 'AppMinimailDebugHtml.request_refresh'
-											},function(result){
-												// alert('update to css from remote');
-
-												// Get and emit HTML
-												Api.event({
-													data: {
-														event: 'AppMinimailDebugHtml.phone_update',
-														obj: {
-															html: $('body').html()
-														}
-													},
-													success: function(response){
-														response = JSON.parse(response);
-														console.log('PHONE RESPONSE');
-														console.log(response);
-													}
-												});
-
-											});
-
-										}
-									});
-
-								// Api.count({
-								// 	data: {
-								// 		model: 'Email',
-								// 		conditions: {
-
-								// 		}
-								// 	},
-								// 	success: function(res){
-								// 		var res = JSON.parse(res);
-								// 		if(res.code != 200){
-								// 			// error
-								// 			console.log(res);
-								// 			return;
-								// 		}
-
-								// 		// How many emails have we processed?
-								// 		if(res.data < 100){
-								// 			// Backbone.history.loadUrl('intro');
-								// 			var page = new App.Views.Modal.Intro();
-								// 			page.render();
-
-								// 		}
-								// 	}
-								// });
-
-							}
-						});
-
+						// Good, logged into minimail
 					}) // end .then
 					.fail(function(){
+						// Failed Minimail login
+						// - already started the process of opening windows, so we put the breaks on that, then totally log the person out
 
-						console.log('Failed');
+						console.log('Failed Minimail login');
 
 						// localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',null);
+						// 
 						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', null)
 							.then(function(){
 								App.Credentials.access_token = null;
@@ -403,6 +245,203 @@ var App = {
 							});
 
 					});
+
+
+					// Get our Email Accounts
+					App.Data.UserEmailAccounts = new App.Collections.UserEmailAccounts();
+
+					App.Data.UserEmailAccounts.on('reset',function(accounts){
+						accounts.each(EmailAccountAdd, this);
+					}, this);
+
+					App.Data.UserEmailAccounts.on('add',function(account){
+						EmailAccountAdd(account);
+					}, this);
+
+					App.Data.UserEmailAccounts.on('remove',function(account){
+						// Shit, should not be removing anything, ever
+						console.error('Should never be removing from the email account');
+					}, this);
+
+					App.Data.UserEmailAccounts.on('change',function(accounts){
+						console.log('eh, got a change on the Email Account, maybe the name changed?');
+					}, this);
+
+					function EmailAccountAdd(account){
+						// Accepts an UserEmailAccount
+						// - separate because both reset and add need it
+						App.Data.UserEmailAccounts_Quick = _.map(App.Data.UserEmailAccounts.toJSON(),function(acct){
+							return acct.email;
+						});
+					}
+
+					// Fetch all email accounts
+					App.Data.UserEmailAccounts.fetchAll();
+
+					// Load login
+					Api.Event.start_listening();
+					Backbone.history.loadUrl('body');
+
+					// Api.search({
+					// 	data: {
+					// 		model: 'UserGmailAccounts',
+					// 		fields: [],
+					// 		conditions: {},
+					// 		limit: 1
+					// 	},
+					// 	success: function(res){
+							
+					// 		var res = JSON.parse(res);
+					// 		if(res.code != 200){
+					// 			dfd.reject();
+								
+					// 			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',null)
+					// 				.then(function(){
+					// 					App.Credentials.access_token = null;
+					// 					Backbone.history.loadUrl('body_login')
+					// 				});
+					// 				return;
+					// 		}
+
+					// 		var loginData = {
+					// 			access_token: App.Credentials.access_token
+					// 		};
+
+					// 		// Set EmailAccountData
+					// 		App.Data.UserEmailAccounts = res.data[0].UserGmailAccounts;
+					// 		App.Data.UserEmailAccounts_Quick = _.map(App.Data.UserEmailAccounts.accounts,function(acct){
+					// 			return acct.email;
+					// 		});
+
+					// 		Api.Event.start_listening();
+					// 		Backbone.history.loadUrl('body');
+							
+					// 		// CSS ()
+					// 		// - local or debug version of CSS
+
+					// 		// Listen for debugCss to be turned on/off remotely
+					// 		Api.Event.on({
+					// 			event: 'AppMinimailDebugCss.turn'
+					// 		},function(result){
+					// 			// Get local version of CSS
+					// 			if(result.data == 'on'){
+					// 				App.Utils.Notification.toast('Turning ON Debug CSS and restarting');
+					// 				window.setTimeout(function(){
+					// 					$.ajax({
+					// 						url: 'css/extra.css',
+					// 						cache: false,
+					// 						success: function(cssText){
+					// 							// App.Plugins.Minimail.update_remote('both');
+					// 							App.Utils.Storage.set('cssDebugOn',cssText)
+					// 								.then(function(){
+					// 									App.Utils.reloadApp();
+					// 								});
+
+					// 						}
+					// 					});
+					// 				},500);
+
+					// 			} else if(result.data == 'off'){
+					// 				App.Utils.Notification.toast('Turning OFF Debug CSS and restarting');
+					// 				window.setTimeout(function(){
+					// 					App.Utils.Storage.set('cssDebugOn',null)
+					// 						.then(function(){
+					// 							App.Utils.reloadApp();
+					// 						});
+					// 				},500);
+					// 			}
+					// 		});
+							
+					// 		// Load any existing and start listeners if we're using debug css
+					// 		App.Utils.Storage.get('cssDebugOn')
+					// 			.then(function(cssDebugText){
+					// 				if(cssDebugText != undefined && cssDebugText != null){
+					// 					// - start listener for new changes to Css.debug
+										
+					// 					App.Utils.Notification.toast('Using debugCSS');
+
+					// 					// Update any remote versions
+					// 					// - by using an emitted event
+
+					// 					// Update remote CSS
+					// 					App.Plugins.Minimail.update_remote('both');
+
+					// 					// Listen for changes to css triggered by remote (web)
+					// 					Api.Event.on({
+					// 						event: 'AppMinimailDebugCss.web_update'
+					// 					},function(result){
+					// 						// alert('update to css from remote');
+
+					// 						// Update the CSS in the page
+					// 						// - contains the new CSS
+					// 						App.Utils.Notification.debug.temporary('Updating local CSS from remote');
+					// 						App.Utils.Notification.toast('Updating local CSS from remote');
+											
+					// 						$('#NormalCSS').remove();
+					// 						$('#DebugCSS').remove();
+					// 						console.log('Event RESULT');
+					// 						console.log(result);
+					// 						console.log(result.css);
+
+					// 						App.Utils.Storage.set('cssDebugOn',result.css)
+
+					// 						$('head').append('<style id="DebugCSS" type="text/css">'+result.data.css+'</style>');
+
+					// 					});
+
+					// 					// Listen for requests for newest HTML triggered by remote (web)
+					// 					Api.Event.on({
+					// 						event: 'AppMinimailDebugHtml.request_refresh'
+					// 					},function(result){
+					// 						// alert('update to css from remote');
+
+					// 						// Get and emit HTML
+					// 						Api.event({
+					// 							data: {
+					// 								event: 'AppMinimailDebugHtml.phone_update',
+					// 								obj: {
+					// 									html: $('body').html()
+					// 								}
+					// 							},
+					// 							success: function(response){
+					// 								response = JSON.parse(response);
+					// 								console.log('PHONE RESPONSE');
+					// 								console.log(response);
+					// 							}
+					// 						});
+
+					// 					});
+
+					// 				}
+					// 			});
+
+					// 		// Api.count({
+					// 		// 	data: {
+					// 		// 		model: 'Email',
+					// 		// 		conditions: {
+
+					// 		// 		}
+					// 		// 	},
+					// 		// 	success: function(res){
+					// 		// 		var res = JSON.parse(res);
+					// 		// 		if(res.code != 200){
+					// 		// 			// error
+					// 		// 			console.log(res);
+					// 		// 			return;
+					// 		// 		}
+
+					// 		// 		// How many emails have we processed?
+					// 		// 		if(res.data < 100){
+					// 		// 			// Backbone.history.loadUrl('intro');
+					// 		// 			var page = new App.Views.Modal.Intro();
+					// 		// 			page.render();
+
+					// 		// 		}
+					// 		// 	}
+					// 		// });
+
+					// 	}
+					// });
 
 			});
 
@@ -413,7 +452,8 @@ var App = {
 
 			// Init MENU button on Android (not always there?)
 			forge.event.menuPressed.addListener(function(){
-				Backbone.history.loadUrl('confirm_logout');
+				// Backbone.history.loadUrl('confirm_settings');
+				Backbone.history.loadUrl('settings');
 			});
 		
 			// Init BACK button on Android
@@ -541,7 +581,8 @@ var App = {
 
 			// Init MENU button on Android (not always there?)
 			document.addEventListener("menubutton", function(){
-				Backbone.history.loadUrl('confirm_logout');
+				// Backbone.history.loadUrl('confirm_logout');
+				Backbone.history.loadUrl('settings');
 			}, false);
 		
 			// Init BACK button on Android
@@ -641,3 +682,4 @@ function onNotificationGCM(e){
 };
 
 jQuery.fn.reverse = [].reverse;
+$.whenall = function(arr) { return $.when.apply($, arr); };
