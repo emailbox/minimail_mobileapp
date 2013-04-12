@@ -288,7 +288,6 @@ App.Plugins.Minimail = {
 		// clog(delay_datetime.toString());
 		// clog(delay_datetime_sec);
 
-
 		// Fire event
 		Api.event({
 			data: {
@@ -302,6 +301,8 @@ App.Plugins.Minimail = {
 			success: function(response){
 				response = JSON.parse(response);
 
+				// console.log(JSON.stringify(response));
+
 				if(response.code != 200){
 					// Failed launching event
 					dfd.reject(false);
@@ -309,8 +310,7 @@ App.Plugins.Minimail = {
 				}
 
 				// Save new delay also
-				clog('updating');
-				// alert(thread_id);
+				
 				Api.update({
 					data: {
 						model: 'Thread',
