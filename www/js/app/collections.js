@@ -1,6 +1,91 @@
 App.Collections = {};
 
 
+
+
+App.Collections.EmailSearches = Backbone.Collection.extend({
+
+	model: App.Models.EmailIds,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'EmailSearches'),
+
+	fetch_for_search: function(options){
+		// Fetch emails for a certain Thread._id
+		// - updates App.Data.Store.Email
+
+		// Parse the search query
+		// - support everything on: http://support.google.com/mail/bin/answer.py?hl=en&answer=7190
+		// - better searching? 
+
+		// options.text
+
+		var text = options.text;
+
+		// Parse out the from:name and has:attachment at this step, end up with ANDs
+		// - todo
+
+		var and_fields = {}; // todo...
+
+		// escape regex characters
+		// text = text.replace(/[#-}]/g, '\\$&'); // escape regex characters from search string
+		text = text.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+
+		// Normal fields to search for text
+		filter_fields = [
+			'original.ParsedData.0.Data',
+			// 'original.HtmlBody',
+			'original.HtmlTextSearchable', // - strip html (for searching HTML views)
+			'original.headers.Subject',
+			'original.headers.From',
+			'original.headers.To',
+			'original.headers.Reply-To',
+			'original.attachments.name' // array
+		];
+
+		var tmp = [];
+		$.each(filter_fields,function(k,val){
+			var d = {};
+			d[val] = {
+				"$regex" : '(' + text + ')',
+				"$options" : 'ig'
+			};
+			tmp.push(d);
+		});
+
+		var search_conditions = {
+			"$and" : [
+				{
+					"$or" : tmp
+				},
+				{
+					"app.AppPkgDevMinimail.leisure_filters._id": {
+						"$exists": false // Not a leisure filter
+					}
+				}
+			]
+		}
+
+		// Create cachePrefix (better than creating it in the View)
+		// - unique cache for each search
+		options.collectionCachePrefix = App.Utils.MD5(JSON.stringify(search_conditions));
+		console.log('ccp: ' + options.collectionCachePrefix);
+
+		return this.fetch({
+			options: options,
+			data: {
+				model: 'Email',
+				conditions: search_conditions,
+				fields : ['_id'],
+				limit : 20,
+				sort: {"_id" : -1} // most recently received (better way of sorting?)
+				
+			}
+		});
+
+	}
+});
+
+
 App.Collections.Emails = Backbone.Collection.extend({
 
 	model: App.Models.Email,
@@ -707,6 +792,7 @@ App.Collections.UndecidedThreads = Backbone.Collection.extend({
 
 		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
 		return this.fetch({
+			options: options,
 			data: {
 				model: 'Thread',
 				conditions: that.undecided_conditions,
@@ -743,12 +829,12 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 		// - Must be "unread"
 		// - must be past "wait_until" time
 
-
 		var now = new Date();
 		var now_sec = parseInt(now.getTime() / 1000);
 
 		// Fetch from emailbox
 		return this.fetch({
+			options: options,
 			data: {
 				model: 'Thread',
 				conditions: {
@@ -1107,6 +1193,18 @@ App.Collections.UserEmailAccounts = Backbone.Collection.extend({
 });
 
 
+// Contacts
+// - caches contacts
+// - uses local contact manager
+// - should also be updated in the background on occasion
+App.Collections.Contacts = Backbone.Collection.extend({
+
+	model: App.Models.Contact,
+	sync: Backbone.cachingSync(contacts_sync_collection, 'Contacts', 'id'),
+	custom_cache_id: true
+});
+
+
 
 function emailbox_sync_collection(method, model, options) {
 
@@ -1155,7 +1253,7 @@ function emailbox_sync_collection(method, model, options) {
 
 					// data or patch?
 					if(response.patch){
-						// not written patch-handling yet
+						// not written patch-handling yet for collections
 						options.success(this, response.patch);
 					} else {
 						// console.log('d');
@@ -1202,3 +1300,142 @@ function emailbox_sync_collection(method, model, options) {
 	return dfd.promise();
 
 }
+
+
+function contacts_sync_collection(method, model, options) {
+
+	// console.log('backbone collection sync overwritten');
+
+	var dfd = $.Deferred();
+
+	options || (options = {});
+
+	switch (method) {
+		case 'create':
+			break;
+
+		case 'update':
+			break;
+
+		case 'delete':
+			break;
+
+		case 'read':
+			// read/search request
+			// console.log('sync reading');
+			// console.log(options);
+			// console.log(model); // or collection
+			// console.log(model.model.prototype.fields);
+
+			var contactFields = ["id","displayName","name","emails","photos"];
+			var contactFindOptions = {
+				// filter: searchCritera,
+				multiple: true
+			};
+
+			// Go get data
+			navigator.contacts.find(contactFields, function(all_contacts){
+				// Filter contacts who have no email address
+				var contacts_with_email = [];
+				$.each(all_contacts,function(i,contact){
+					try {
+						if(contact.emails.length > 0){
+							contacts_with_email.push(contact);
+						}
+					} catch (err){
+
+					}
+				});
+
+				// console.log('with email');
+				// console.log(JSON.stringify(contacts_with_email.splice(0,2)));
+
+				// alert(contacts_with_email.length);
+
+				// Parse and sort
+				var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
+				// contacts_parsed = contacts_parsed.splice(0,25);
+
+				// Resolve
+				dfd.resolve(contacts_parsed);
+
+				// console.info('contacts_parsed');
+				// console.log(JSON.stringify(contacts_parsed.splice(0,5)));
+				// Continue with success
+				options.success(contacts_parsed);
+
+			}, function(err){
+				// Err with contacts
+				alert('Error with contacts');
+			}, contactFindOptions);
+
+
+			break;
+	}
+
+	return dfd.promise();
+
+}
+
+
+function parse_and_sort_contacts(contacts){
+
+	contacts = _.map(contacts,function(contact){
+		var data = {
+			id: contact.id, 
+			name: contact.displayName,
+			email: '',
+			photo: ''
+		};
+
+		if(contact.emails.length < 1){
+			return [];
+		}
+
+		var tmp_return = [];
+
+		_.each(contact.emails,function(email, index){
+			var tmp_data = _.clone(data);
+
+			// Set display to email value, if displayName doesn't exist
+			if(!contact.displayName){
+				tmp_data.name = email.value;
+			}
+
+			// Set photo value
+			try {
+				if(contact.photos.length > 0){
+					data.photo = contact.photos[0].value; // url to content://com...
+					// alert(data.photo);
+				}
+			} catch(err){
+				console.log('shoot, photo failed');
+				// console.log(err);
+			}
+
+			// Set email value
+			tmp_data.email = email.value;
+
+			tmp_return.push(tmp_data);
+		})
+
+		return tmp_return;
+
+	});
+	contacts = _.reduce(contacts,function(contact,next){
+		return contact.concat(next);
+	});
+	contacts = _.compact(contacts);
+	contacts = _.uniq(contacts);
+
+	// Sort
+	contacts = App.Utils.sortBy({
+		arr: contacts,
+		path: 'email',
+		direction: 'desc', // desc
+		type: 'string'
+	});
+
+	return contacts;
+
+};
