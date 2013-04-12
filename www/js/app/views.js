@@ -1415,9 +1415,14 @@ App.Views.CommonThread = Backbone.View.extend({
 
 
 	beforeClose: function(){
-		// unbind events
+		// unbind events manually
+		var that = this;
+		
 		App.Events.off('email_sent',this.email_sent);
 		App.Events.off('thread_updated',this.refresh_and_render_thread);
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
 	},
 
 	set_scroll_position: function(){
@@ -1708,6 +1713,9 @@ App.Views.CommonThread = Backbone.View.extend({
 			this.$el.html(template());
 
 		}
+
+		// Bind to backbutton
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.go_back);
 
 		return this;
 
@@ -3907,59 +3915,97 @@ App.Views.ChooseContact = Backbone.View.extend({
 		// - should be treated as a Collection of Contact Models
 
 		if(usePg){
-			var contactFields = ["id","displayName","name","emails","photos"];
-			var contactFindOptions = {
-				// filter: searchCritera,
-				multiple: true
-			};
 
-			// Data already exists locally?
-			// - go get new data
+			// Collect from Collection.Contacts
 
-			navigator.contacts.find(contactFields, function(all_contacts){
-				// Filter contacts who have no email address
-				var contacts_with_email = [];
-				$.each(all_contacts,function(i,contact){
-					try {
-						if(contact.emails.length > 0){
-							contacts_with_email.push(contact);
-						}
-					} catch (err){
+			// If Rendered, continue rendering
+			this.contacts = new App.Collections.Contacts();
 
-					}
-				});
+			this.contacts.on('reset',function(contacts){
+				// alert('reset');
+			}, this);
+			this.contacts.on('sync',function(contacts){
+				// Render template with all contacts
+				// - ignoring additions/subtractions until next load
+				// - not using 'add' or 'remove' at all
 
-				// alert(contacts_with_email.length);
-
-				// Parse and sort
-				var contacts_parsed = that.parse_and_sort(contacts_with_email);
-
-				// Re-render if empty
-				if(!App.Data.Store.Contacts.length){
-					// No data
-					// Update local store
-					App.Data.Store.Contacts = contacts_with_email;
-					App.Data.Store.ContactsParsed = contacts_parsed;
-					// Re-render
-					alert('rerender');
-					that.render();
-				} else {
-					// Update local store
-					App.Data.Store.Contacts = contacts_with_email;
-					App.Data.Store.ContactsParsed = contacts_parsed;
+				if(contacts.length < 1){
+					// Nothing to render
+					return;
 				}
 
-				// Api.event({
-				// 	data: {
-				// 		event: 'Render.test3',
-				// 		obj: contacts_with_email.splice(0,100)
-				// 	}
-				// });
+				// Template
+				var template = App.Utils.template('t_choose_contacts');
 
-			}, function(err){
-				// Err with contacts
-				alert('Error with contacts');
-			}, contactFindOptions);
+				// Write HTML
+				if(!that._rendered){
+					that.$el.html(template({
+						contacts: contacts.toJSON()
+					}));
+				}
+
+			});
+
+			this.contacts.on('all', function(event){
+				// console.log('triggered: ' + event);
+			}, this);
+
+			// Trigger data
+			this.contacts.fetch();
+
+			// var contactFields = ["id","displayName","name","emails","photos"];
+			// var contactFindOptions = {
+			// 	// filter: searchCritera,
+			// 	multiple: true
+			// };
+
+			// // Data already exists locally?
+			// // - go get new data
+
+			// navigator.contacts.find(contactFields, function(all_contacts){
+			// 	// Filter contacts who have no email address
+			// 	var contacts_with_email = [];
+			// 	$.each(all_contacts,function(i,contact){
+			// 		try {
+			// 			if(contact.emails.length > 0){
+			// 				contacts_with_email.push(contact);
+			// 			}
+			// 		} catch (err){
+
+			// 		}
+			// 	});
+
+			// 	// alert(contacts_with_email.length);
+
+			// 	// Parse and sort
+			// 	var contacts_parsed = that.parse_and_sort(contacts_with_email);
+
+			// 	// Re-render if empty
+			// 	if(!App.Data.Store.Contacts.length){
+			// 		// No data
+			// 		// Update local store
+			// 		App.Data.Store.Contacts = contacts_with_email;
+			// 		App.Data.Store.ContactsParsed = contacts_parsed;
+			// 		// Re-render
+			// 		alert('rerender');
+			// 		that.render();
+			// 	} else {
+			// 		// Update local store
+			// 		App.Data.Store.Contacts = contacts_with_email;
+			// 		App.Data.Store.ContactsParsed = contacts_parsed;
+			// 	}
+
+			// 	// Api.event({
+			// 	// 	data: {
+			// 	// 		event: 'Render.test3',
+			// 	// 		obj: contacts_with_email.splice(0,100)
+			// 	// 	}
+			// 	// });
+
+			// }, function(err){
+			// 	// Err with contacts
+			// 	alert('Error with contacts');
+			// }, contactFindOptions);
 
 		} else if(useForge) {
 
@@ -3976,6 +4022,15 @@ App.Views.ChooseContact = Backbone.View.extend({
 
 		}
 
+	},
+
+	beforeClose: function(){
+		// Kill back button grabber
+		var that = this;
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return;
 	},
 
 	cancel: function(ev){
@@ -4022,109 +4077,57 @@ App.Views.ChooseContact = Backbone.View.extend({
 
 	},
 
-	parse_and_sort: function(contacts){
-
-		contacts = _.map(contacts,function(contact){
-			var data = {
-				name: contact.displayName,
-				email: '',
-				photo: ''
-			};
-
-			if(contact.emails.length < 1){
-				return [];
-			}
-
-			var tmp_return = [];
-
-			_.each(contact.emails,function(email, index){
-				var tmp_data = _.clone(data);
-
-				// Set display to email value, if displayName doesn't exist
-				if(!contact.displayName){
-					tmp_data.name = email.value;
-				}
-
-				// Set photo value
-				try {
-					if(contact.photos.length > 0){
-						data.photo = contact.photos[0].value; // url to content://com...
-						// alert(data.photo);
-					}
-				} catch(err){
-					console.log('shoot');
-				}
-
-				// Set email value
-				tmp_data.email = email.value;
-
-				tmp_return.push(tmp_data);
-			})
-
-			return tmp_return;
-
-		});
-		contacts = _.reduce(contacts,function(contact,next){
-			return contact.concat(next);
-		});
-		contacts = _.compact(contacts);
-		contacts = _.uniq(contacts);
-
-		// Sort
-		contacts = App.Utils.sortBy({
-			arr: contacts,
-			path: 'email',
-			direction: 'desc', // desc
-			type: 'string'
-		});
-
-		return contacts;
-
-	},
-
 	render: function() {
 		var that = this;
-		// Data
-		// var data = this.options.accounts.UserGmailAccounts;
 
-		// Should start the updater for accounts
-		// - have a separate view for Accounts?
-
-		// console.log(JSON.stringify(this.options.contacts[0]));
-		// Api.event({
-		// 	data: {
-		// 		event: 'Render.test',
-		// 		obj: this.options.contacts.splice(0,10)
-		// 	}
-		// });
-
-		// Sort/organize contacts
-
-		// Get into list of contacts and emails
-		// - displaying 1 contact and 1 email per line
-
-		// Empty App.Data.Store.Contacts?
-		// - never got them before
-		if(App.Data.Store.ContactsParsed.length < 1){
-
-			// Template
-			var template = App.Utils.template('t_common_loading');
-
-			// Write HTML
-			this.$el.html(template());
-
-			// Don't continue displaying
-			return
-
+		if(this._rendered){
+			return this;
 		}
 
-		// Template
-		var template = App.Utils.template('t_choose_contacts');
+		// Template (loading)
+		var template = App.Utils.template('t_common_loading');
 
 		// Write HTML
-		this.$el.html(template({
-			contacts: App.Data.Store.ContactsParsed
-		}));
+		this.$el.html(template());
+
+		// Back button
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
+
+		// // Data
+		// // var data = this.options.accounts.UserGmailAccounts;
+
+		// // Should start the updater for accounts
+		// // - have a separate view for Accounts?
+
+		// // console.log(JSON.stringify(this.options.contacts[0]));
+		// // Api.event({
+		// // 	data: {
+		// // 		event: 'Render.test',
+		// // 		obj: this.options.contacts.splice(0,10)
+		// // 	}
+		// // });
+
+		// // Sort/organize contacts
+
+		// // Get into list of contacts and emails
+		// // - displaying 1 contact and 1 email per line
+
+		// // Empty App.Data.Store.Contacts?
+		// // - never got them before
+		// if(App.Data.Store.ContactsParsed.length < 1){
+
+		// 	// Don't continue displaying
+		// 	return
+
+		// }
+
+		// // Template
+		// var template = App.Utils.template('t_choose_contacts');
+
+		// // Write HTML
+		// this.$el.html(template({
+		// 	contacts: App.Data.Store.ContactsParsed
+		// }));
 
 		return this;
 	}
@@ -4865,6 +4868,9 @@ App.Views.All = Backbone.View.extend({
 			delayed: [],
 			undecided: []
 		};
+		// removal containers
+		// - for when "refresh" is called
+		this._waitingToRemove = [];
 
 		// Set up delayed thread caching mechanism
 		var delayContext = {
@@ -4915,6 +4921,8 @@ App.Views.All = Backbone.View.extend({
 			that.undecidedCollection.fetchUndecided();
 		});
 
+		// Listen fo refresh
+		this.on('refresh',this.refresh, this);
 
 		// // Collection for Undecided
 		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
@@ -4954,6 +4962,32 @@ App.Views.All = Backbone.View.extend({
 
 	},
 
+	refresh: function(){
+		var that = this;
+		// Asked to refresh the page
+		// - clear any missing elements, add any that need to be added
+		// - it should look nice while adding/removing! 
+
+		that.delayedCollection.fetchDelayed();
+		that.undecidedCollection.fetchUndecided();
+
+		// go through "waiting_to_remove"
+		_.each(this._waitingToRemove, function(elem, i){
+			// Remove Thread's subView
+
+			// Get subview to remove
+			that._subViews[elem[0]] = _(that._subViews[elem[0]]).without(elem[1]);
+
+			// Listen for transition end before removing the element entirely
+			$(elem[1].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				$(elem[1].el).remove();
+			});
+			$(elem[1].el).addClass('closing_nicely');
+
+		});
+
+	},
+
 	reset_delayed_threads: function(threads, options){
 		var that = this; // not the view, passing context to 'add'
 
@@ -4964,7 +4998,7 @@ App.Views.All = Backbone.View.extend({
 		// - passes individual Thread model
 		that.delayedCollection.each(that.add_delayed_thread, this);
 
-		console.info('reset dleayed');
+		console.info('reset delayed');
 
 	},
 
@@ -4972,11 +5006,18 @@ App.Views.All = Backbone.View.extend({
 		var that = this; // not the view, passing context to 'add'
 
 		// Should remove all existing views?
-		// - yes?
+		// - yes? todo because it doesn't really get called in that way
 
 		// Add each Thread object
 		// - passes individual Thread model
 		that.undecidedCollection.each(that.add_delayed_thread, this);
+
+		if(that.undecidedCollection.length < 1){
+			// None!
+			// - display the "no new threads left!" box
+		}
+
+		console.info('reset undecided');
 
 	},
 
@@ -4985,6 +5026,8 @@ App.Views.All = Backbone.View.extend({
 
 		// Empty?
 		if(that.delayedCollection.length == 0 && that.undecidedCollection.length == 0){
+			// alert('both zero');
+
 			that.check_inbox_zero();
 		}
 
@@ -5039,7 +5082,8 @@ App.Views.All = Backbone.View.extend({
 			var dv = new App.Views.SubCommonThread({
 				model : thread,
 				threadType: this.threadType,
-				idx_in_collection: idx
+				idx_in_collection: idx,
+				fadein: true
 			});
 
 			// Add to views
@@ -5089,6 +5133,12 @@ App.Views.All = Backbone.View.extend({
 					} else {
 						// No other ones, just append it (lowest on the list)
 						// console.info('no other ones');
+
+						// Is the structure already set up?
+						if(!that.$('.all_threads').length){
+							that.render_structure();
+						}
+
 						that.$('.all_threads').append(dv.render().el);
 					}
 				} else {
@@ -5102,8 +5152,14 @@ App.Views.All = Backbone.View.extend({
 						that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
 
 					} else {
-						// No other ones, just append it (lowest on the list)
+						// No other ones, just prepend it (highest on the list)
 						// console.info('no other ones');
+
+						// Is the structure already set up?
+						if(!that.$('.all_threads').length){
+							that.render_structure();
+						}
+
 						that.$('.all_threads').prepend(dv.render().el);
 					}
 
@@ -5201,11 +5257,20 @@ App.Views.All = Backbone.View.extend({
 		console.log('remove_delayed_thread');
 
 		var viewToRemove = _(that._subViews[this.threadType]).select(function(cv) { return cv.model === model; })[0];
-		that._subViews[this.threadType] = _(that._subViews[this.threadType]).without(viewToRemove);
+		// that._subViews[this.threadType] = _(that._subViews[this.threadType]).without(viewToRemove);
 
-		if(that._rendered && viewToRemove){
-			$(viewToRemove.el).remove();
-		}
+		// Change the view's opacity:
+		// - or change based on whatever happened to it?
+		// - also depends on if it was a remote change, right? 
+		$(viewToRemove.el).css('opacity', 0.2);
+
+		// don't actually remove it?
+		// - only remove it when refresh is called
+		that._waitingToRemove.push([this.threadType, viewToRemove]);
+
+		// if(that._rendered && viewToRemove){
+		// 	$(viewToRemove.el).remove();
+		// }
 	},
 
 	change_delayed_thread: function(model){
@@ -5248,28 +5313,28 @@ App.Views.All = Backbone.View.extend({
 	},
 
 	addDelayed: function(delayedThread){
-		var that = this;
+		// var that = this;
 
-		alert('bad addDelayed');
-		console.log('Adding 1 to Collection');
-		console.log(delayedThread.toJSON());
-		var dv = new App.Views.SubCommonThread({
-			model : delayedThread,
-			threadType: 'delayed'
-		});
+		// alert('bad addDelayed');
+		// console.log('Adding 1 to Collection');
+		// console.log(delayedThread.toJSON());
+		// var dv = new App.Views.SubCommonThread({
+		// 	model : delayedThread,
+		// 	threadType: 'delayed'
+		// });
 
 	 	
-		// And add it to the collection so that it's easy to reuse.
-		this._subViews[this.threadType].push(dv);
+		// // And add it to the collection so that it's easy to reuse.
+		// this._subViews[this.threadType].push(dv);
 		
-		// this._delayedViews.push(dv);
+		// // this._delayedViews.push(dv);
 	 
-		// If the view has been rendered, then
-		// we immediately append the rendered donut.
-		if(this._rendered){
-			that.$('.all_threads').append(dv.render().el);
-		}
-		console.log('is rendered?');
+		// // If the view has been rendered, then
+		// // we immediately append the rendered donut.
+		// if(this._rendered){
+		// 	that.$('.all_threads').append(dv.render().el);
+		// }
+		// console.log('is rendered?');
 
 	},
 
@@ -5630,9 +5695,14 @@ App.Views.All = Backbone.View.extend({
 
 	},
 	render_zero: function(){
-
-		// Render the loading screen
+		// Render the "inbox zero" screen
 		var that = this;
+
+		// Already rendered?
+		// - happens when refreshing pretty often
+		if(this.$('.inbox_zero').length > 0){
+			return this;
+		}
 
 		// Template
 		var template = App.Utils.template('t_all_inboxzero');
@@ -5723,7 +5793,6 @@ App.Views.All = Backbone.View.extend({
 					});
 			});
 
-
 	},
 
 	render: function() {
@@ -5794,6 +5863,61 @@ App.Views.All = Backbone.View.extend({
 	}
 });
 
+App.Views.SubSearchesEmail = Backbone.View.extend({
+	
+	events: {
+
+	},
+
+	initialize: function(options) {
+		var that = this;
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'render_full');
+
+		// Fade in?
+		// if(this.options.fadein){
+		// 	this.el.className = this.className + ' fade-in';
+		// }
+
+		// Have model?
+		if(!this.model){
+			console.log('==Missing model');
+		} else {
+			// console.log('model OK');
+		}
+
+		// Wait for trigger
+		this.on('render_full',this.render_full, this);
+
+	},
+
+	render_full: function(){
+		// Have the full one now
+		var that = this;
+
+		// Template
+		var template = App.Utils.template('t_search_emails_email_results_item');
+		
+		this.$el.html(template(this.model.EmailFull.toJSON()));
+
+		return this;
+	},
+
+	render: function(){
+		// Rendering a placeholder
+		var that = this;
+
+		// Template
+		var template = App.Utils.template('t_search_emails_email_results_item_loading');
+		// console.log(template());
+
+		this.$el.html(template());
+		return this;
+	}
+
+});
+
+
 App.Views.SubCommonThread = Backbone.View.extend({
 	
 	className: 'thread no_text_select',
@@ -5811,6 +5935,11 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'after_delay_modal');
 
+		// Fade in?
+		if(this.options.fadein){
+			this.el.className = this.className + ' fade-in';
+		}
+
 		// Have model?
 		if(!this.model){
 			console.log('==Missing model');
@@ -5820,7 +5949,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 	},
 
 	after_delay_modal: function(wait, save_text){
-
+		
 		var that = this;
 
 		// Show multi-options
@@ -5863,6 +5992,8 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			},
 			success: function(response){
 				response = JSON.parse(response);
+
+				console.log(JSON.stringify(response));
 
 				if(response.code != 200){
 					// Failed launching event
@@ -7038,6 +7169,7 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 	},
 
+	_searchEmailSubViews: [],
 	search: function(ev){
 		// Search was clicked
 		var that = this;
@@ -7056,37 +7188,103 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 		// Get those threads and display them?
 		// - not checking cache at all?
-		var EmailCollection = new App.Collections.Emails();
-		EmailCollection.fetch_for_search({
+		var EmailSearches = new App.Collections.EmailSearches();
+		EmailSearches.fetch_for_search({
 			text: search_input, // handles: AND, OR, has:attachment, etc.
-			success: function(emails){
-
-				// Returns a list of Emails
-				// - use those for the display
-				emails = emails.toJSON();
-
-				// Merge together by Thread?
-				// - todo...
-
-				// Sort by date
-				emails = App.Utils.sortBy({
-					arr: emails,
-					path: 'common.date',
-					direction: 'desc',
-					type: 'date'
-				});
-
-				// Template
-				var template = App.Utils.template('t_search_emails_email_results');
-
-				// Write HTML
-				that.$('.search_emails_thread_results').html(template(emails));
-
-				// Scroll to bottom
-				$('.search_emails_thread_results').scrollTop($('.search_emails_thread_results').height() + 1000);
-
-			}
 		});
+
+		// Handle search results and getting the actual emails
+		var EmailSearchesAdd = function(EmailObj){
+			// Get the EmailFull
+			// - checks cache too
+
+			// Render the view in the correct place (append)
+			// - contains a "nodisplay" until the Model arrives
+
+			// Create the View
+			var dv = new App.Views.SubSearchesEmail({
+				model : EmailObj,
+				// idx_in_collection: idx,
+				fadein: false
+			});
+
+			// Render
+			// - not cleaning these up! todo...
+			$('.search_emails_thread_results').append(dv.render().$el);
+
+			// Add to this subView tracker
+			that._searchEmailSubViews.push(dv);
+
+			// console.log('EmailObj');
+			// console.log(EmailObj.toJSON());
+
+			// Create new Model for EmailFull
+			EmailObj.EmailFull = new App.Models.EmailFull({
+				_id: EmailObj.toJSON()['_id'],
+				id: EmailObj.toJSON()['_id']
+			});
+
+			// Wait for EmailFull to be populated ("change" is fired?)
+			EmailObj.EmailFull.on('change',function(EmailFull){
+				// Got the EmailFull
+				// console.log('Got EmailFull');
+				// console.log(EmailFull);
+				// console.log(EmailFull.toJSON());
+
+				// Render this EmailObj Views
+				// - already rendered, just need to remove the "nodisplay" from the view
+				dv.trigger('render_full');
+
+			}, this);
+
+			// console.log('pre-fetch');
+			// console.log(EmailObj.EmailFull.toJSON());
+			EmailObj.EmailFull.fetchFull();
+
+		};
+
+		// Handle search results and getting the actual emails
+		EmailSearches.on('reset',function(EmailSearches){
+			// Only called once
+
+			console.warn('reset');
+			// that.$('.search_emails_thread_results').html();
+
+			// Iterate over "add"
+			EmailSearches.each(EmailSearchesAdd, this);
+		}, this);
+
+		EmailSearches.on('add', EmailSearchesAdd, this);
+
+
+		// 	success: function(emails){
+
+		// 		// Returns a list of Emails
+		// 		// - use those for the display
+		// 		emails = emails.toJSON();
+
+		// 		// Merge together by Thread?
+		// 		// - todo...
+
+		// 		// Sort by date
+		// 		emails = App.Utils.sortBy({
+		// 			arr: emails,
+		// 			path: 'common.date',
+		// 			direction: 'desc',
+		// 			type: 'date'
+		// 		});
+
+		// 		// Template
+		// 		var template = App.Utils.template('t_search_emails_email_results');
+
+		// 		// Write HTML
+		// 		that.$('.search_emails_thread_results').html(template(emails));
+
+		// 		// Scroll to bottom
+		// 		$('.search_emails_thread_results').scrollTop($('.search_emails_thread_results').height() + 1000);
+
+		// 	}
+		// });
 
 		return false;
 	},
@@ -8959,6 +9157,50 @@ App.Views.Toast = Backbone.View.extend({
 				$(this).remove();
 			});
 		},3000);
+
+		return this;
+	}
+
+});
+
+
+App.Views.OnlineStatus = Backbone.View.extend({
+	
+	className: 'online-status nodisplay',
+
+	events: {},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+
+		// Render it
+
+		// display is on or off
+
+		this.on('online',this.show,this);
+		this.on('offline',this.hide,this);
+	},
+
+	show: function(){
+		this.$el.removeClass('nodisplay');
+	},
+
+	hide: function(){
+		// Add nodisplay
+		this.$el.addClass('nodisplay');
+	},
+
+	render: function() {
+
+		// Add to page
+
+		// Build from template
+		var template = App.Utils.template('t_online_status');
+
+		// Write HTML
+		// - to body
+		this.$el.html(template());
+		$('body').append(this.$el);
 
 		return this;
 	}
