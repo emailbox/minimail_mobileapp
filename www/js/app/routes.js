@@ -52,20 +52,44 @@ App.Router = Backbone.Router.extend({
 		
 	},
 
-	showView: function(hash,view,notRemove){
+	showView: function(hash, view, view_key){
 		// Used to discard zombies
-		// console.log('hash: '+hash);
+		
 		if (!this.currentView){
 			this.currentView = {};
 		}
 		if (this.currentView && this.currentView[hash]){
-			if(notRemove){
-				this.currentView[hash].close(true);
-			} else {
-				this.currentView[hash].close();
-			}
+			this.currentView[hash].view.close();
 		}
-		this.currentView[hash] = view.render();
+		this.currentView[hash] = {
+			key: view_key, // usually undefined
+			view: view.render()
+		}
+	},
+
+	getView: function(hash, view_key){
+		// Returns boolean
+
+		// Any view?
+		if (!this.currentView){
+			return false;
+		}
+
+		// Is this the current view already? (just clicking refresh)
+		if(this.currentView[hash] && this.currentView[hash].key == view_key && view_key){
+			return true;
+		}
+
+		return false;
+
+	},
+
+	emitView: function(hash, event){
+		// Returns boolean
+
+		// Is this the current view already? (just clicking refresh)
+		this.currentView[hash].view.trigger(event);
+
 	},
 
 
@@ -141,9 +165,17 @@ App.Router = Backbone.Router.extend({
 
 
 	all: function(){
+		// Display the "inbox" (our version of an inbox)
+
+		// Already displaying all?
+		// - just refresh
+		if(App.router.getView('main_view', 'all')){
+			App.router.emitView('main_view', 'refresh');
+			return;
+		}
 		var page = new App.Views.All();
 		$('.body_container').html(page.$el);
-		App.router.showView('main_view',page);
+		App.router.showView('main_view',page, 'all');
 	},
 
 
