@@ -51,6 +51,9 @@ var App = {
 			ContactsParsed: [],
 			Contact: {},
 			Link: {}
+		},
+		GlobalViews: {
+			OnlineStatus: null
 		}
 	},
 	Credentials: tmp_credentials,
@@ -315,130 +318,130 @@ var App = {
 
 					// 		Api.Event.start_listening();
 					// 		Backbone.history.loadUrl('body');
-							
-					// 		// CSS ()
-					// 		// - local or debug version of CSS
+					
+					// CSS ()
+					// - local or debug version of CSS
 
-					// 		// Listen for debugCss to be turned on/off remotely
-					// 		Api.Event.on({
-					// 			event: 'AppMinimailDebugCss.turn'
-					// 		},function(result){
-					// 			// Get local version of CSS
-					// 			if(result.data == 'on'){
-					// 				App.Utils.Notification.toast('Turning ON Debug CSS and restarting');
-					// 				window.setTimeout(function(){
-					// 					$.ajax({
-					// 						url: 'css/extra.css',
-					// 						cache: false,
-					// 						success: function(cssText){
-					// 							// App.Plugins.Minimail.update_remote('both');
-					// 							App.Utils.Storage.set('cssDebugOn',cssText)
-					// 								.then(function(){
-					// 									App.Utils.reloadApp();
-					// 								});
+					// Listen for debugCss to be turned on/off remotely
+					Api.Event.on({
+						event: 'AppMinimailDebugCss.turn'
+					},function(result){
+						// Get local version of CSS
+						if(result.data == 'on'){
+							App.Utils.Notification.toast('Turning ON Debug CSS and restarting');
+							window.setTimeout(function(){
+								$.ajax({
+									url: 'css/extra.css',
+									cache: false,
+									success: function(cssText){
+										// App.Plugins.Minimail.update_remote('both');
+										App.Utils.Storage.set('cssDebugOn',cssText)
+											.then(function(){
+												App.Utils.reloadApp();
+											});
 
-					// 						}
-					// 					});
-					// 				},500);
+									}
+								});
+							},500);
 
-					// 			} else if(result.data == 'off'){
-					// 				App.Utils.Notification.toast('Turning OFF Debug CSS and restarting');
-					// 				window.setTimeout(function(){
-					// 					App.Utils.Storage.set('cssDebugOn',null)
-					// 						.then(function(){
-					// 							App.Utils.reloadApp();
-					// 						});
-					// 				},500);
-					// 			}
-					// 		});
-							
-					// 		// Load any existing and start listeners if we're using debug css
-					// 		App.Utils.Storage.get('cssDebugOn')
-					// 			.then(function(cssDebugText){
-					// 				if(cssDebugText != undefined && cssDebugText != null){
-					// 					// - start listener for new changes to Css.debug
-										
-					// 					App.Utils.Notification.toast('Using debugCSS');
+						} else if(result.data == 'off'){
+							App.Utils.Notification.toast('Turning OFF Debug CSS and restarting');
+							window.setTimeout(function(){
+								App.Utils.Storage.set('cssDebugOn',null)
+									.then(function(){
+										App.Utils.reloadApp();
+									});
+							},500);
+						}
+					});
+					
+					// Load any existing and start listeners if we're using debug css
+					App.Utils.Storage.get('cssDebugOn')
+						.then(function(cssDebugText){
+							if(cssDebugText != undefined && cssDebugText != null){
+								// - start listener for new changes to Css.debug
+								
+								App.Utils.Notification.toast('Using debugCSS');
 
-					// 					// Update any remote versions
-					// 					// - by using an emitted event
+								// Update any remote versions
+								// - by using an emitted event
 
-					// 					// Update remote CSS
-					// 					App.Plugins.Minimail.update_remote('both');
+								// Update remote CSS
+								App.Plugins.Minimail.update_remote('both');
 
-					// 					// Listen for changes to css triggered by remote (web)
-					// 					Api.Event.on({
-					// 						event: 'AppMinimailDebugCss.web_update'
-					// 					},function(result){
-					// 						// alert('update to css from remote');
+								// Listen for changes to css triggered by remote (web)
+								Api.Event.on({
+									event: 'AppMinimailDebugCss.web_update'
+								},function(result){
+									// alert('update to css from remote');
 
-					// 						// Update the CSS in the page
-					// 						// - contains the new CSS
-					// 						App.Utils.Notification.debug.temporary('Updating local CSS from remote');
-					// 						App.Utils.Notification.toast('Updating local CSS from remote');
-											
-					// 						$('#NormalCSS').remove();
-					// 						$('#DebugCSS').remove();
-					// 						console.log('Event RESULT');
-					// 						console.log(result);
-					// 						console.log(result.css);
+									// Update the CSS in the page
+									// - contains the new CSS
+									App.Utils.Notification.debug.temporary('Updating local CSS from remote');
+									App.Utils.Notification.toast('Updating local CSS from remote');
+									
+									$('#NormalCSS').remove();
+									$('#DebugCSS').remove();
+									console.log('Event RESULT');
+									console.log(result);
+									console.log(result.css);
 
-					// 						App.Utils.Storage.set('cssDebugOn',result.css)
+									App.Utils.Storage.set('cssDebugOn',result.css)
 
-					// 						$('head').append('<style id="DebugCSS" type="text/css">'+result.data.css+'</style>');
+									$('head').append('<style id="DebugCSS" type="text/css">'+result.data.css+'</style>');
 
-					// 					});
+								});
 
-					// 					// Listen for requests for newest HTML triggered by remote (web)
-					// 					Api.Event.on({
-					// 						event: 'AppMinimailDebugHtml.request_refresh'
-					// 					},function(result){
-					// 						// alert('update to css from remote');
+								// Listen for requests for newest HTML triggered by remote (web)
+								Api.Event.on({
+									event: 'AppMinimailDebugHtml.request_refresh'
+								},function(result){
+									// alert('update to css from remote');
 
-					// 						// Get and emit HTML
-					// 						Api.event({
-					// 							data: {
-					// 								event: 'AppMinimailDebugHtml.phone_update',
-					// 								obj: {
-					// 									html: $('body').html()
-					// 								}
-					// 							},
-					// 							success: function(response){
-					// 								response = JSON.parse(response);
-					// 								console.log('PHONE RESPONSE');
-					// 								console.log(response);
-					// 							}
-					// 						});
+									// Get and emit HTML
+									Api.event({
+										data: {
+											event: 'AppMinimailDebugHtml.phone_update',
+											obj: {
+												html: $('body').html()
+											}
+										},
+										success: function(response){
+											response = JSON.parse(response);
+											console.log('PHONE RESPONSE');
+											console.log(response);
+										}
+									});
 
-					// 					});
+								});
 
-					// 				}
-					// 			});
+							}
+						});
 
-					// 		// Api.count({
-					// 		// 	data: {
-					// 		// 		model: 'Email',
-					// 		// 		conditions: {
+					// Api.count({
+					// 	data: {
+					// 		model: 'Email',
+					// 		conditions: {
 
-					// 		// 		}
-					// 		// 	},
-					// 		// 	success: function(res){
-					// 		// 		var res = JSON.parse(res);
-					// 		// 		if(res.code != 200){
-					// 		// 			// error
-					// 		// 			console.log(res);
-					// 		// 			return;
-					// 		// 		}
+					// 		}
+					// 	},
+					// 	success: function(res){
+					// 		var res = JSON.parse(res);
+					// 		if(res.code != 200){
+					// 			// error
+					// 			console.log(res);
+					// 			return;
+					// 		}
 
-					// 		// 		// How many emails have we processed?
-					// 		// 		if(res.data < 100){
-					// 		// 			// Backbone.history.loadUrl('intro');
-					// 		// 			var page = new App.Views.Modal.Intro();
-					// 		// 			page.render();
+					// 		// How many emails have we processed?
+					// 		if(res.data < 100){
+					// 			// Backbone.history.loadUrl('intro');
+					// 			var page = new App.Views.Modal.Intro();
+					// 			page.render();
 
-					// 		// 		}
-					// 		// 	}
-					// 		// });
+					// 		}
+					// 	}
+					// });
 
 					// 	}
 					// });
@@ -600,6 +603,28 @@ var App = {
 					// Run the highest-bubbled function
 					App.Data.backbutton_functions[0].func();
 				}
+			}, false);
+
+			// Online/Offline state
+
+			//Create the View
+			// - render too
+			App.Data.GlobalViews.OnlineStatus = new App.Views.OnlineStatus();
+			App.Data.GlobalViews.OnlineStatus.render();
+
+			// Online
+			// - remove "not online"
+			document.addEventListener("online", function(){
+				// Am now online
+				// - emit an event?
+				App.Data.GlobalViews.OnlineStatus.trigger('online');
+
+			}, false);
+			document.addEventListener("offline", function(){
+				// Am now online
+				// - emit an event?
+				App.Data.GlobalViews.OnlineStatus.trigger('offline');
+
 			}, false);
 
 
