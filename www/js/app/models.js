@@ -28,6 +28,20 @@ App.Models.ThreadIds = App.Models.EmailBoxModel.extend({
 });
 
 
+
+App.Models.EmailIds = App.Models.EmailBoxModel.extend({
+	
+	// Returns Thread._ids
+	// - special kind of caching
+	// cacheType: 'ids'
+
+	modelName: 'Email',
+	internalModelName: 'EmailIds',
+	fields: ['_id']
+
+});
+
+
 App.Models.ThreadFull = App.Models.EmailBoxModel.extend({
 	
 	sync: Backbone.cachingSync(emailbox_sync_model, 'ThreadFull'),
@@ -89,7 +103,23 @@ App.Models.EmailFull = App.Models.EmailBoxModel.extend({
 
 	modelName: 'Email',
 	internalModelName: 'EmailFull',
-	sync: Backbone.cachingSync(emailbox_sync_model, 'EmailFull')
+	sync: Backbone.cachingSync(emailbox_sync_model, 'EmailFull'),
+
+	fetchFull: function(options){
+		// console.log('fetch ThreadFull');
+		// console.log(options);
+		// console.log(this.get('id'));
+		return this.fetch({
+			data: {
+				model: 'Email',
+				conditions: {
+					'_id' : this.id
+				},
+				fields: [],
+				limit: 1
+			}
+		});
+	}
 
 });
 
@@ -117,14 +147,22 @@ App.Models.Link = Backbone.Model.extend({
 });
 
 
-
-App.Models.AppMinimailLeisureFilter = App.Models.EmailBoxModel.extend({
-
-	hasMany: {
-		Thread: App.Models.Thread
-	}
+// Local contacts only
+App.Models.Contact = App.Models.EmailBoxModel.extend({
 
 });
+
+
+App.Models.EmailBoxModel = Backbone.Model.extend({
+
+	modelName: '',
+	internalModelName: '',
+	idAttribute: '_id',
+	cacheType: null,
+	fields: ['_id']
+
+});
+
 
 function emailbox_sync_model(method, model, options) {
 
