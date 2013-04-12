@@ -24,11 +24,17 @@
     // Parameters are: `wrapped` the original sync function you are wrapping,
     // `ns`, the namespace you want your Store to have,
     // `default_ttl`, a default time-to-live for the cache in minutes.
-    var cachingSync = function (wrapped, ns, default_ttl) {
+    var cachingSync = function (wrapped, base_ns, _id_or_id, default_ttl) {
 
+        // _id_or_id handls mongo vs normal OK
+
+        _id_or_id = _id_or_id || '_id'; // default is mongodb
+        console.log(ns + ' id: ' + _id_or_id);
+
+        var ns = base_ns + '_v12';
         // Create the `Burry.Store`
-        var burry = new Burry.Store(ns + '_v1', default_ttl);
-        ns = ns + '_v12';
+        var burry = new Burry.Store(ns, default_ttl);
+        // var ns = base_ns + '_v12';
 
         // var CacheStore = new App.Utils.CacheStore(ns + '_v10'); // todo..
 
@@ -41,6 +47,10 @@
             // console.log(model.id);
 
             var d = $.Deferred();
+
+            // console.log('model.id');
+            // console.log(model.id);
+            // console.log(model.toJSON());
 
             App.Utils.Storage.get(model.id, ns)
                 .then(function(item){
@@ -94,10 +104,21 @@
                 // console.warn(id_ns);
             }
 
+            // Collection namespace?
+            // - for ids
+            if(options.options && options.options.collectionCachePrefix){
+                id_ns = id_ns + '_' + options.options.collectionCachePrefix;
+            }
+            // console.log('id_ns: ' + id_ns);
+            // console.log(options);
+
             App.Utils.Storage.get('__ids__', id_ns)
                 .then(function(ids){
 
                     var wp;
+
+                    // console.log(ns + ': ' + ids.length);
+                    // console.log(ns + ': ' + );
 
                     // Mimic a normal .fetch using the "wrapped" function that was passed in
                     // - fires before even checking the cache
@@ -112,7 +133,7 @@
                         // iterate over returned models
                         _.each(models, function (model) { 
                             // Cache model
-                            App.Utils.Storage.set(model._id, model, ns);
+                            App.Utils.Storage.set(model[_id_or_id], model, ns);
                             // burry.set(model._id, model); 
                         });
 
@@ -132,10 +153,40 @@
                             // console.log('Issuing set');
                             // console.log(collection);
 
-                            collection.set(models); // new in Backbone 1.0.0                    
+                            // if(options.silent){
+                            //     collection.set(models, {
+                            //         silent: true // prevent event emittance
+                            //     }); // new in Backbone 1.0.0               
+                            // } else {
+                                collection.set(models); // new in Backbone 1.0.0               
+                            // }
 
                         }
-                        App.Utils.Storage.set('__ids__', _.pluck(collection.models, 'id'), id_ns);
+                        // console.log('__ids__: ' + ns);
+                        // console.log(JSON.stringify(collection.models));
+                        var ids;
+                        if(collection.custom_cache_id){
+                            console.warn('custom cache id');
+                            _ids_ = _.map(collection.models,function(tmp_model){
+                                var tmp = JSON.parse(JSON.stringify(tmp_model)); // contacts were causing the _.pluck to fuck up and quit working
+                                return tmp.id;
+                            });
+                            App.Utils.Storage.set('__ids__', _ids_, id_ns); //  _.pluck(collection.models, 'id'),
+                        } else {
+                            // App.Utils.Storage.set('__ids__', _ids_, id_ns); //  _.pluck(collection.models, 'id'),
+
+                            // See if it is null (meaning it probably broke)
+                            _ids_ = _.pluck(collection.models, 'id');
+                            if(_ids_.length > 0){
+                                // Test for null
+                                if(_ids_[0] == null){
+                                    // Shit
+                                    console.warn('Saving a turrible model id');
+                                }
+                            }
+                            App.Utils.Storage.set('__ids__', _ids_ , id_ns); //  _.pluck(collection.models, 'id'),
+                        }
+
                         // burry.set('__ids__', _.pluck(collection.models, 'id'));
                     });
 
@@ -148,17 +199,22 @@
                             // Resolve with an array of models
                             // console.log('namespace');
                             // console.log(ns);
-                            var resolve = _.map(ids, function (id) {
-                                // var json = burry.get(id);
-                                // console.log('id');
-                                // console.log(id);
-                                return App.Utils.Storage.get(id, ns);
-                                //     .then(function(json){
-                                //         json.id = json._id; // right???? maybe json.get('id') ?
-                                //     });
-                                // json.id = id;
-                                // return json;
-                            });
+                            try {
+                                var resolve = _.map(ids, function (id) {
+                                    // var json = burry.get(id);
+                                    // console.log('id');
+                                    // console.log(id);
+                                    return App.Utils.Storage.get(id, ns);
+                                    //     .then(function(json){
+                                    //         json.id = json._id; // right???? maybe json.get('id') ?
+                                    //     });
+                                    // json.id = id;
+                                    // return json;
+                                });
+                            } catch(err){
+                                throw "Fucking error"
+                                return;
+                            }
 
                             // console.info('resolve');
                             // console.log(resolve);
@@ -166,28 +222,33 @@
                             // Resolve
                             // console.log('resolve');
                             // console.log(resolve.length);
-                            $.whenall(resolve)
-                                .done(function(){
-                                    // Done?
-                                    var alldata = _.map(arguments,function(json){
-                                        json.id = json._id;
-                                        return json;
+                            try {
+                                $.whenall(resolve)
+                                    .done(function(){
+                                        // Done?
+                                        var alldata = _.map(arguments,function(json){
+                                            json.id = json[_id_or_id];
+                                            return json;
+                                        });
+
+                                        // console.log('alldata');
+                                        // console.log(arguments);
+                                        // console.log(alldata);
+
+                                        // collection.set(alldata); // new in Backbone 1.0.0            
+                                        // console.info('Resolved all');
+                                        // console.log(arguments);
+                                        d.resolve(alldata);
                                     });
-
-                                    // console.log('alldata');
-                                    // console.log(arguments);
-                                    // console.log(alldata);
-
-                                    // collection.set(alldata); // new in Backbone 1.0.0            
-                                    // console.info('Resolved all');
-                                    // console.log(arguments);
-                                    d.resolve(alldata);
-                                });
+                            } catch(err){
+                                throw "Fucking error2"
+                                return;
+                            }
                             
                         } catch(err){
                             // wp.done(d.resolve).fail(d.reject);
                             // return d.promise();  
-                            console.warn('FAILED blurry');  
+                            console.warn('FAILED burry:' + ns);  
                             console.log(err);
                             // console.log(ids);
                             d.resolve([]);
