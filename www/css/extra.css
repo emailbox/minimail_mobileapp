@@ -1170,6 +1170,36 @@ input.prefilters_select[readonly] {
 }
 
 
+
+/* Online Status */
+
+.online-status {
+  position: fixed;
+  top: 5px;
+  left: 5px;
+
+  text-align: left;
+  width: auto;
+
+  display: inline-block;
+
+  z-index: 100;
+    
+  background: #333;
+  color: white;
+
+  /*-webkit-border-radius: 2px;
+  border-radius: 2px;*/
+}
+
+.online-status > div {
+  display: inline-block;
+  /*background: #555;
+  color: white;*/
+  padding: 4px;
+}
+
+
 /* Debug messages */
 
 #debug-messages {
@@ -1272,10 +1302,15 @@ input.prefilters_select[readonly] {
 
     font-weight: 100;
 
-    color: white;
+    /*color: white;*/
 
-    font-size: 22pt;
+    font-size: 36pt;
     line-height: 28pt;
+
+    font-weight: bold;
+    /*color: #444;*/
+    color: rgba(255,255,255,0.4);
+    text-shadow: 1px 2px 3px #333, 0 0 0 #000, 1px 2px 3px #333;
 }
 
 .inbox_zero span.definition_name {
@@ -1337,10 +1372,57 @@ input.prefilters_select[readonly] {
   
   z-index: 9;
 
+  max-height: 1000px;
+  opacity: 1;
   width: 100%;
   overflow-x: hidden;
   /*overflow-y: hidden;*/
+
+
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  -ms-transition: all 1s ease;
+  transition: all 1s ease;
+
 }
+
+.thread.closing_nicely {
+  opacity: 0;
+  max-height: 0px;
+}
+
+@-moz-keyframes fadein {
+    0% {
+        opacity: 0
+    }
+    100% {
+        opacity: 1;
+    }
+}
+@-webkit-keyframes fadein {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.fade-in {
+
+  -moz-animation-name: fadein;
+  -moz-animation-iteration-count: once;
+  -moz-animation-timing-function: ease-in;
+  -moz-animation-duration: 1s;
+
+  -webkit-animation-name: fadein;
+  -webkit-animation-iteration-count: once;
+  -webkit-animation-timing-function: ease-in;
+  -webkit-animation-duration: 1s;
+
+}
+
 
 .thread:first-child {
   /*margin-top: 450px;*/
@@ -1352,7 +1434,6 @@ input.prefilters_select[readonly] {
 
 .thread.dragleft {
   background: rgba(250,203,71, 0.6);
-
 
   -webkit-transition: all .3s ease;
   -moz-transition: all .3s ease;
