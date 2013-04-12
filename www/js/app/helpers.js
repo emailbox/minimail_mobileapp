@@ -1340,9 +1340,12 @@ Handlebars.registerHelper("inbox_zero_words", function() {
 	
 	// Words/phrases to choose from
 	// - html ok
-	var words = ['Nice Work!', 
-				'Great Job!', 
-				'Go Home Email,<br /> You are Drunk']; // get clever
+	var words = ['Fuck Yeah', 
+				'Believe It.', 
+				'Solid.',
+				'Once Again!',
+				'Brush It Off',
+				'Inbox: 0']; // get clever
 
 	return words[Math.floor(Math.random()*words.length)];
 });
