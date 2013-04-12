@@ -803,7 +803,10 @@
 			<span class="words">{{{inbox_zero_words}}}</span>
 			<br />
 			<br />
-			<span class="definition_name"></span> <span class="definition_words">You reached Inbox Zero, keep up the good work!</span>
+			<span class="definition_name"></span> <span class="definition_words">
+				You reached Inbox Zero, 
+				keep up the good work!
+			</span>
 		</div>
 
 	</script>
@@ -1338,7 +1341,7 @@
 			<div class="contacts">
 
 				{{#each contacts}}
-
+					
 					<div class="contact clearfix" data-email="{{email}}">
 
 						<div class="photo">
@@ -1848,60 +1851,74 @@
 
 	<script id="t_search_emails_email_results" type="text/x-handlebars-template">
 
-
 		{{! iterate over Emails}}
 
 		{{#each this}}
 			
-			<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">
+			{{> t_search_emails_email_results_item}}
 
-				<div class="thread-preview clearfix" data-thread-id="{{attributes.thread_id}}">
+		{{/each}}
 
-					<div class="clearfix">
+	</script>
 
-						<div class="card-top clearfix">
+	<script id="t_search_emails_email_results_item" type="text/x-handlebars-template">
 
-							<div class="name ellipsis" data-address="{{attributes.thread_id}}">
-								{{email_participants_pretty this}}
-							</div>
+		<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">
 
+			<div class="thread-preview clearfix" data-thread-id="{{attributes.thread_id}}">
 
-							<div class="received" data-datetime="{{common.date}}">
-								{{display_shorttime common.date}}
-							</div>
+				<div class="clearfix">
 
-						</div>
+					<div class="card-top clearfix">
 
-						<div class="card-middle clearfix">
-
-							<div class="subject ellipsis">
-								{{thread_subject original.headers.Subject}}
-							</div>
-
+						<div class="name ellipsis" data-address="{{attributes.thread_id}}">
+							{{email_participants_pretty this}}
 						</div>
 
 
-						<div class="card-bottom clearfix">
+						<div class="received" data-datetime="{{common.date}}">
+							{{display_shorttime common.date}}
+						</div>
 
-							<div class="last_message ellipsis nodisplay">
-								{{display_last_message_of_email this}}
-							</div>
+					</div>
 
-							<div class="thread_count">
-								
-							</div>
+					<div class="card-middle clearfix">
 
+						<div class="subject ellipsis">
+							{{thread_subject original.headers.Subject}}
 						</div>
 
 					</div>
 
 
+					<div class="card-bottom clearfix">
+
+						<div class="last_message ellipsis nodisplay">
+							{{display_last_message_of_email this}}
+						</div>
+
+						<div class="thread_count">
+							
+						</div>
+
+					</div>
+
 				</div>
+
 
 			</div>
 
-		{{/each}}
+		</div>
+		
+	</script>
 
+
+	<script id="t_search_emails_email_results_item_loading" type="text/x-handlebars-template">
+
+		<div class="thread no_text_select">
+			Loading Email
+		</div>
+		
 	</script>
 
 	
@@ -2263,6 +2280,12 @@
 		</div>
 	</script>
 
+	<!-- online-status template -->
+	<script id="t_online_status" type="text/x-handlebars-template">
+		<div class="online-status-bg">
+			Connection Interrupted
+		</div>
+	</script>
 
 	<!-- Debug Messages template -->
 	<script id="t_debug_messages" type="text/x-handlebars-template">
