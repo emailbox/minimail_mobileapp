@@ -33,6 +33,7 @@ var App = {
 		Store: { // a temporary data store
 
 			ModelCache: {},
+			CollectionCache: {},
 
 			// Models on server
 			Thread: {},
@@ -51,6 +52,10 @@ var App = {
 			ContactsParsed: [],
 			Contact: {},
 			Link: {}
+		},
+		PermaViews: {
+			all: null,
+			leisure: null
 		},
 		GlobalViews: {
 			OnlineStatus: null
@@ -178,8 +183,8 @@ var App = {
 
 			// Have an access_token
 			// - save it to localStorage
-			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier);
-			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token);
+			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier, 'critical');
+			App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token, 'critical');
 
 			// Save
 			App.Events.trigger('saveAppDataStore',true);
@@ -199,14 +204,14 @@ var App = {
 		debug_messages.render();
 
 		// Get user and set to app global
-		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'user')
+		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'user', 'critical')
 			.then(function(user){
 				App.Credentials.user = user;
 			});
 
 		// Get access_token, set to app global, login to minimail server (doesn't allow offline access yet)
 		// - switch to be agnostic to online state (if logged in, let access offline stored data: need better storage/sync mechanisms)
-		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'access_token')
+		App.Utils.Storage.get(App.Credentials.prefix_access_token + 'access_token', 'critical')
 			.then(function(access_token){
 
 				console.log('Stored access_token:' + access_token);	
@@ -241,7 +246,7 @@ var App = {
 
 						// localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',null);
 						// 
-						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', null)
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', 'critical')
 							.then(function(){
 								App.Credentials.access_token = null;
 								Backbone.history.loadUrl('body_login')
