@@ -799,7 +799,7 @@
 
 	<script id="t_all_inboxzero" type="text/x-handlebars-template">
 
-		<div class="inbox_zero">
+		<div class="inbox_zero fade-in-looks-weird">
 			<span class="words">{{{inbox_zero_words}}}</span>
 			<br />
 			<br />
@@ -1619,33 +1619,12 @@
 	</script>
 
 
-	<script id="t_leisure" type="text/x-handlebars-template">
-
-			{{#Empty this}}
-
-				<div class="inbox_zero">
-					Nothing to read (instructions here)
-				</div>
-
-			{{else}}
-
-				<div class="all_threads threads_holder scroller">
-
-					{{! Leisure List }}
-					{{#each this}}
-
-						<div class="leisure_item no_text_select" data-id="{{AppMinimailLeisureFilter._id}}">
-
-							{{> t_leisure_item}}
-
-						</div>
-
-					{{/each}}
+	<script id="t_leisure_structure" type="text/x-handlebars-template">
 
 
-				</div>
+			<div class="all_threads threads_holder scroller">
 
-			{{/Empty}}
+			</div>
 
 			<div class="leisure_footer common_footer nodisplay">
 
@@ -1666,20 +1645,23 @@
 
 	<script id="t_leisure_item" type="text/x-handlebars-template" class="partial">
 
+		<!--<div class="leisure_item no_text_select" data-id="LeisureFilter._id">-->
+
 		<div class="leisure_item_holder">
 
 			<div class="filter_name">
 
 				<div class="leisure_unread_threads">
+					{{print ThreadUnreadCount}}
 					&nbsp;{{{display_unread_leisure_count ThreadUnreadCount}}}&nbsp;
 				</div>
 
-				{{AppMinimailLeisureFilter.name}}
+				{{LeisureFilter.name}}
 			</div>
 
 			<div class="item_threads nodisplay">
 
-				{{#each Thread}}
+				{{#each Threads}}
 
 					<div class="item_thread clearfix" data-thread-id="{{_id}}" data-read="{{attributes.read.status}}">
 
@@ -1863,7 +1845,7 @@
 
 	<script id="t_search_emails_email_results_item" type="text/x-handlebars-template">
 
-		<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">
+		<!--<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">-->
 
 			<div class="thread-preview clearfix" data-thread-id="{{attributes.thread_id}}">
 
@@ -1908,7 +1890,6 @@
 
 			</div>
 
-		</div>
 		
 	</script>
 
