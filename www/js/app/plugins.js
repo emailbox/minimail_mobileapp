@@ -731,9 +731,9 @@ App.Plugins.Minimail = {
 
 		end: function(e){
 			var that = this;
-
+			
 			if($(this).hasClass('touch_start')){
-
+				
 				var coords = App.Utils.get_point_position(e);
 				if(!coords.y){
 					return;
@@ -852,7 +852,6 @@ App.Plugins.Minimail = {
 					}
 
 				} else {
-
 					// Did not move far enough
 					// - trigger a "shorttap" or "longtap" event on thread-preview
 
