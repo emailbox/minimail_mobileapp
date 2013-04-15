@@ -1414,12 +1414,12 @@ input.prefilters_select[readonly] {
   -moz-animation-name: fadein;
   -moz-animation-iteration-count: once;
   -moz-animation-timing-function: ease-in;
-  -moz-animation-duration: 1s;
+  -moz-animation-duration: .3s;
 
   -webkit-animation-name: fadein;
   -webkit-animation-iteration-count: once;
   -webkit-animation-timing-function: ease-in;
-  -webkit-animation-duration: 1s;
+  -webkit-animation-duration: .3s;
 
 }
 
@@ -2056,6 +2056,10 @@ input.prefilters_select[readonly] {
 .common_thread_view {
   background: white;
   padding-bottom: 120px;
+}
+
+.common_thread_view.is-loading {
+  background: inherit;
 }
 
 .common_thread_view .body_container {
