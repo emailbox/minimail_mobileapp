@@ -9,7 +9,24 @@ App.Models.EmailBoxModel = Backbone.Model.extend({
 	internalModelName: '',
 	idAttribute: '_id',
 	cacheType: null,
-	fields: ['_id']
+	fields: ['_id'],
+
+	// Standard fetchFull
+	fetchFull: function(options){
+		// console.log('fetch ThreadFull');
+		// console.log(options);
+		// console.log(this.get('id'));
+		return this.fetch({
+			data: {
+				model: this.modelName,
+				conditions: {
+					'_id' : this.id
+				},
+				fields: [],
+				limit: 1
+			}
+		});
+	}
 
 });
 
@@ -124,6 +141,39 @@ App.Models.EmailFull = App.Models.EmailBoxModel.extend({
 });
 
 
+App.Models.LeisureFilterIds = App.Models.EmailBoxModel.extend({
+
+	modelName: 'AppMinimailLeisureFilter',
+	internalModelName: 'AppMinimailLeisureFilterFull',
+	sync: Backbone.cachingSync(emailbox_sync_model, 'AppMinimailLeisureFilterId')
+
+});
+
+App.Models.LeisureFilterFull = App.Models.EmailBoxModel.extend({
+
+	modelName: 'AppMinimailLeisureFilter',
+	internalModelName: 'AppMinimailLeisureFilterFull',
+	sync: Backbone.cachingSync(emailbox_sync_model, 'AppMinimailLeisureFilterFull'),
+
+	fetchFull: function(options){
+		// console.log('fetch ThreadFull');
+		// console.log(options);
+		// console.log(this.get('id'));
+		return this.fetch({
+			data: {
+				model: 'AppMinimailLeisureFilter',
+				conditions: {
+					'_id' : this.id
+				},
+				fields: [],
+				limit: 1
+			}
+		});
+	}
+
+});
+
+
 App.Models.Contact = App.Models.EmailBoxModel.extend({
 
 });
@@ -197,8 +247,8 @@ function emailbox_sync_model(method, model, options) {
 
 			// turn on caching for fucking everything yeah
 			// - fuck it why not?
-			if(App.Credentials.useCache){
-				// options.data.cache = true;
+			if(App.Credentials.usePatching){
+				options.data.cache = true;
 			}
 
 			// Get previous cache_hash
@@ -246,7 +296,7 @@ function emailbox_sync_model(method, model, options) {
 						// - stored in memory, not backed up anywhere
 						// - included hash+text
 						try {
-							console.log(model.internalModelName + '_' + model.id);
+							// console.log(model.internalModelName + '_' + model.id);
 							if(App.Data.Store.ModelCache[model.internalModelName + '_' + model.id].text.length > 0){
 								// ok
 							}
@@ -273,7 +323,8 @@ function emailbox_sync_model(method, model, options) {
 						} catch(err){
 							// Shoot, it wasn't able to be a object, this is kinda fucked now
 							// - need to 
-							console.error('Failed recreating JSON');
+							console.log('Failed recreating JSON');
+							console.log(response.data);
 							return false;
 						}
 
@@ -307,7 +358,7 @@ function emailbox_sync_model(method, model, options) {
 						if(options.success){
 							options.success(tmp[0]);
 						}
-					},1000);
+					},1);
 
 					// Update cache with hash and text
 					App.Data.Store.ModelCache[model.internalModelName + '_' + model.id] = {
