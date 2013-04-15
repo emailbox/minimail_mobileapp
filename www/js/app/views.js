@@ -1259,7 +1259,7 @@ App.Views.Delayed = Backbone.View.extend({
 
 App.Views.CommonThread = Backbone.View.extend({
 	
-	className: 'common_thread_view',
+	className: 'common_thread_view is-loading',
 
 	events: {
 		'click .btn[data-action="back"]' : 'go_back',
@@ -1279,6 +1279,8 @@ App.Views.CommonThread = Backbone.View.extend({
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'render_thread');
 		_.bindAll(this, 'email_sent');
+		_.bindAll(this, 'go_back');
+
 		// _.bindAll(this, 'refresh_and_render_thread');
 		var that = this;
 		// this.el = this.options.el;
@@ -1308,7 +1310,6 @@ App.Views.CommonThread = Backbone.View.extend({
 		// 	type: 'num'
 
 		// });
-
 
 		// Get Full Thread
 		this.threadFull = new App.Models.ThreadFull({
@@ -1355,6 +1356,8 @@ App.Views.CommonThread = Backbone.View.extend({
 		this.threadEmails = new App.Collections.EmailsFull();
 
 		this.threadEmails.on('reset', function(){
+			// never fires, what the fuck!!!!
+			console.log('reset, NEVER FUCKING FIRES');
 			if(!that.threadFull.EmailReady){
 				that.threadFull.EmailReady = true;
 				that.threadFull.trigger('check_display_ready');
@@ -1364,7 +1367,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		this.threadEmails.on('sync', function(threadFull){
 			// Fires after add/remove have completed?
 			// console.info('EmailSync');
-			if(!that.threadFull.EmailReady){
+			if(this.threadEmails.length && !that.threadFull.EmailReady){
 				that.threadFull.EmailReady = true;
 				that.threadFull.trigger('check_display_ready');
 			}
@@ -1667,6 +1670,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		var that = this;
 
 		this._rendered = true;
+		this.$el.removeClass('is-loading');
 
 		clog('rendering Thread');
 
@@ -4917,8 +4921,10 @@ App.Views.All = Backbone.View.extend({
 		},function(result){
 			console.warn('Fetching new because Thread.action or Email.new');
 			// App.Utils.Notification.debug.temp('Fetching delayed, silently');
-			that.delayedCollection.fetchDelayed();
-			that.undecidedCollection.fetchUndecided();
+			window.setTimeout(function(){
+				that.delayedCollection.fetchDelayed();
+				that.undecidedCollection.fetchUndecided();
+			},3000); // wait 3 seconds before doing our .fetch
 		});
 
 		// Listen fo refresh
@@ -4946,11 +4952,19 @@ App.Views.All = Backbone.View.extend({
 	},
 
 	beforeClose: function(){
-		// unbind
-		App.Events.off('new_email',this.refresh_and_render_threads);
+		// empty
+	},
 
-		// Stop listening
-		Api.Event.off(this.cacheListener);
+	// Custom close function for .all
+	close: function(){
+		console.log('closing Views.All');
+
+		// // unbind
+		// App.Events.off('new_email',this.refresh_and_render_threads);
+
+		// // Stop listening
+		// Api.Event.off(this.cacheListener);
+
 	},
 
 	set_scroll_position: function(){
@@ -5307,35 +5321,10 @@ App.Views.All = Backbone.View.extend({
 
 	thread_ready: function(thread){
 		var that = this;
-
-		// Cache
-
 	},
 
 	addDelayed: function(delayedThread){
-		// var that = this;
-
-		// alert('bad addDelayed');
-		// console.log('Adding 1 to Collection');
-		// console.log(delayedThread.toJSON());
-		// var dv = new App.Views.SubCommonThread({
-		// 	model : delayedThread,
-		// 	threadType: 'delayed'
-		// });
-
-	 	
-		// // And add it to the collection so that it's easy to reuse.
-		// this._subViews[this.threadType].push(dv);
 		
-		// // this._delayedViews.push(dv);
-	 
-		// // If the view has been rendered, then
-		// // we immediately append the rendered donut.
-		// if(this._rendered){
-		// 	that.$('.all_threads').append(dv.render().el);
-		// }
-		// console.log('is rendered?');
-
 	},
 
 	removeDelayed: function(undecidedThread){
@@ -5359,16 +5348,15 @@ App.Views.All = Backbone.View.extend({
 		// Displays multi-select options (if multiple selected)
 		// - or hides them
 		var that = this;
-
+		
 		// On or off?
-		if($('.all_threads').hasClass('multi-select-mode')){
+		if(this.$('.all_threads').hasClass('multi-select-mode')){
 			// Just turned on
-			$('.multi_select_options').removeClass('no_multi_select');
+			this.$('.multi_select_options').removeClass('no_multi_select');
 		} else {
 			// Turned off
-			$('.multi_select_options').addClass('no_multi_select');
+			this.$('.multi_select_options').addClass('no_multi_select');
 		}
-
 		
 		return false;
 	},
@@ -5798,6 +5786,28 @@ App.Views.All = Backbone.View.extend({
 	render: function() {
 		var that = this;
 
+		if(this._rendered){
+			console.log('rendered');
+
+			// Re-bind events
+			this.delegateEvents()
+
+			// Re-bind events for subViews
+			_(that._subViews.undecided).each(function(v) {
+				v.trigger('rebind');
+			});
+
+			// Re-bind events for subViews
+			_(that._subViews.delayed).each(function(v) {
+				v.trigger('rebind');
+			});
+
+			// Multi-select binding 
+			this.$(".all_threads").on('multi-change',that.multi_options);
+
+			return this;
+		}
+
 		this._rendered = true;
 		
 
@@ -5826,7 +5836,7 @@ App.Views.All = Backbone.View.extend({
 		this.$('.scroller').scrollTop(10000);
 
 		// Multi-select
-		$(".all_threads").on('multi-change',that.multi_options);
+		this.$(".all_threads").on('multi-change',that.multi_options);
 
 
 		// // Delayed views second (at the bottom)
@@ -5865,6 +5875,8 @@ App.Views.All = Backbone.View.extend({
 
 App.Views.SubSearchesEmail = Backbone.View.extend({
 	
+	className: 'thread no_text_select nodisplay',
+
 	events: {
 
 	},
@@ -5894,6 +5906,10 @@ App.Views.SubSearchesEmail = Backbone.View.extend({
 	render_full: function(){
 		// Have the full one now
 		var that = this;
+
+		this.$el.attr('data-id',this.model.EmailFull.toJSON().attributes.thread_id);
+		this.$el.attr('data-thread-type','searched');
+		this.$el.removeClass('nodisplay');
 
 		// Template
 		var template = App.Utils.template('t_search_emails_email_results_item');
@@ -5946,6 +5962,39 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		} else {
 			// console.log('model OK');
 		}
+
+		// Listen for rebinding events
+		this.on('rebind', this.rebind, this);
+	},
+
+	beforeClose: function(){
+
+	},
+
+	rebind: function(){
+		var that = this;
+
+		// Re-bind the events
+
+		this.delegateEvents();
+
+
+		// Draggable
+		if(usePg){
+
+			this.$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
+			this.$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
+			this.$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
+			
+		} else {
+
+			this.$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
+			this.$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
+			this.$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+			
+		}
+
+
 	},
 
 	after_delay_modal: function(wait, save_text){
@@ -6292,6 +6341,56 @@ App.Views.SubCommonThread = Backbone.View.extend({
 });
 
 
+App.Views.SubLeisureFilter = Backbone.View.extend({
+	
+	className: 'leisure_item no_text_select',
+
+	events: {
+	},
+
+	initialize: function(options) {
+		var that = this;
+		_.bindAll(this, 'render');
+
+		// Have model?
+		if(!this.model){
+			console.log('==Missing model');
+		} else {
+			// console.log('model OK');
+		}
+
+		// Set data-id attribute
+		// this.$el.attr('data-id',this.model.get('_id'));
+
+	},
+
+	render: function(){
+		var that = this;
+
+		this.$el.attr('data-id', this.model.get('_id'));
+
+		// Data for template
+		var data = {
+			LeisureFilter: this.model.Full.toJSON(),
+			Threads: this.model.Threads.toJSON(),
+			ThreadUnreadCount: this.model.ThreadUnreadCount
+		};
+
+		// console.info('leisure data');
+		// console.log(data);
+
+		// Template
+		var template = App.Utils.template('t_leisure_item');
+
+		// Write HTML
+		this.$el.html(template(data));
+
+		return this;
+	}
+
+});
+
+
 App.Views.LeisureList = Backbone.View.extend({
 	
 	className: 'leisure_list_inside_view reverse_vertical',
@@ -6310,18 +6409,360 @@ App.Views.LeisureList = Backbone.View.extend({
 
 	},
 
+	_subLeisureViews: [],
 	initialize: function(options) {
 		var that = this;
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'refresh_and_render_list');
 
-		// App.Events.bind('new_email',this.refresh_and_render_threads);
+		// removal containers
+		// - for when "refresh" is called
+		this._waitingToRemove = [];
+
+		// Create LeisureFilters Collection
+		// - should this be Global?
+		that.LeisureFilters = new App.Collections.LeisureFilters();
+		that.LeisureFilters.on('reset', this.reset_filters, this); // completely changed collection (triggers add/remove)
+		that.LeisureFilters.on('sync', this.sync_filters, this); // completely changed collection (triggers add/remove)
+		that.LeisureFilters.on('add', this.add_filter, this); // added a new ThreadId
+		// that.LeisureFilters.on('remove', this.remove_delayed_thread, delayContext); // removed a ThreadId
+		that.LeisureFilters.on('change', function(filterchange){
+			console.log('change_filters');
+			console.log(filterchange);
+
+		}, this);
+		that.LeisureFilters.on('sort', this.sort_filters, this);
+		// that.LeisureFilters.on('sync', function(sortchange){
+		// 	console.log('sync_filters');
+		// 	console.log(sortchange);
+
+		// }, this);
+		that.LeisureFilters.fetchList(); // trigger record retrieving
+
+
+		// This'll run until it get's closed, so I guess it might update the cache in the background?
+		that.cacheListener = Api.Event.on({
+			event: ['Thread.action','Email.new']
+		},function(result){
+			console.warn('Refreshing LeisureList');
+			// App.Utils.Notification.debug.temp('Fetching delayed, silently');
+			window.setTimeout(function(){
+				that.trigger('refresh');
+			},3000); // wait 3 seconds before doing our .fetch
+		});
+
+		// Listen fo refresh
+		this.on('refresh',this.refresh, this);
+
+
+		// // CacheWatcher (listener)
+
+		// // This'll run until it get's closed, so I guess it might update the cache in the background?
+		// that.cacheListener = Api.Event.on({
+		// 	event: ['Thread.action','Email.new']
+		// },function(result){
+		// 	console.warn('Fetching new because Thread.action or Email.new');
+		// 	// App.Utils.Notification.debug.temp('Fetching delayed, silently');
+		// 	that.delayedCollection.fetchDelayed();
+		// 	that.undecidedCollection.fetchUndecided();
+		// });
+
+		// // Listen fo refresh
+		// this.on('refresh',this.refresh, this);
 
 	},
 
+	close: function(){
+		// Custom close function
+		console.log('closing leisure');
+	},
 
-	refresh_data: function(){
-		// Refresh the data for the view
+	refresh: function(){
+		var that = this;
+		// Asked to refresh the page
+		// - clear any missing elements, add any that need to be added
+		// - it should look nice while adding/removing! 
+
+		that.LeisureFilters.fetchList();
+
+		// go through "waiting_to_remove"
+		_.each(this._waitingToRemove, function(elem, i){
+			// Remove Thread's subView
+
+			// Get subview to remove
+			that._subLeisureViews[elem[0]] = _(that._subLeisureViews[elem[0]]).without(elem[1]);
+
+			// Listen for transition end before removing the element entirely
+			$(elem[1].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				$(elem[1].el).remove();
+			});
+			$(elem[1].el).addClass('closing_nicely');
+
+		});
+
+	},
+
+	reset_filters: function(LeisureFilter){
+		// Iterate over each
+		console.log('reset_filters');
+
+		// conduct 'add'
+		that.LeisureFilters.each(this.add_filters, this);
+
+	},
+
+	sort_filters: function(LeisureFilters){
+		var that = this;
+		console.info('sort_filters');
+		LeisureFilters.each(function(LeisureFilter){
+			// See if it is in the correct place
+			var current_view_index = -1;
+			_.each(that._subLeisureViews, function(elem, i){
+				if(elem.model == LeisureFilter){
+					// console.log('foundview');
+					current_view_index = i;
+				}
+			});	
+			if(current_view_index == -1){
+				// Unable to find, "add" will take care of it
+				// console.warn('not in view');
+				return;
+			}
+
+			// Get current index too
+			var current_coll_index = LeisureFilters.indexOf(LeisureFilter);
+
+			try {
+				// Has the position of this view changed?
+				if(current_view_index != current_coll_index){
+					// Yes, it has changed position
+					// - move it to the correct position in the list
+
+					// changing one view might cause the other ones to fall into place correctly
+					// - or it might fuck everything up
+					//		- just do a simple re-render? (reset)
+
+					// console.warn('changed position');
+					// console.log(current_view_index);
+					// console.log(current_coll_index);
+
+					// get View
+					var theView = that._subLeisureViews[current_view_index];
+
+					// delete previous position
+					that._subLeisureViews.splice(current_view_index,1); // only deleting the reference??
+
+					// add it back to the view in the correct position
+					that._subLeisureViews.splice(current_coll_index, 0, theView);
+
+					// Render it in the correct spot in the page
+					if(current_coll_index == 0){
+						console.log('new index is zero');
+					} else {
+						// console.log('not zero');
+						// console.dir(that.$('.all_threads').find('.leisure_item:nth-of-type('+ current_coll_index +')'));
+						// console.dir(that.$('.all_threads').find('.leisure_item:nth-of-type('+ (current_coll_index + 1) +')'));
+						// console.dir(that.$('.all_threads').find('.leisure_item:nth-of-type('+ (current_coll_index - 1) +')'));
+						that.$('.all_threads').find('.leisure_item:nth-of-type('+ current_coll_index +')').after(theView.el);
+					}
+
+				} else {
+					// console.log('no position change');
+				}
+			} catch(err){
+				console.log(err);
+			}
+			
+		} , this);
+	},
+
+	sync_filters: function(LeisureFilters){
+
+	},
+
+	add_filter: function(LeisureFilter){
+		var that = this;
+
+		LeisureFilter.Full = new App.Models.LeisureFilterFull({
+			_id: LeisureFilter.toJSON()._id
+		});
+
+		// Listen for "change" event
+		LeisureFilter.Full.on('change', function(filterFull){
+			// Mark filter as ready to display
+			// - this fires immediately if anything is cached
+			// - otherwise it fires if something is different from the cached version
+			if(!LeisureFilter.FullReady){
+				LeisureFilter.FullReady = true;
+				LeisureFilter.trigger('check_display_ready');
+			}
+		}, this);
+
+		LeisureFilter.Full.fetchFull();
+
+
+		LeisureFilter.on('check_display_ready', function(){
+
+			// LeisureFilter is ready to be displayed
+
+			// Must have Full ready
+			if(!LeisureFilter.FullReady || !LeisureFilter.ThreadsReady){
+				// console.warn('thread.check_display_ready = not ready');
+				return;
+			}
+			// Already rendered this Thread?
+			if(LeisureFilter.Rendered){
+				// Show the change in the view
+				console.warn('Already rendered (need to change the view!)');
+				return;
+			}
+			LeisureFilter.Rendered = true;
+			
+			// Get UnreadCount
+
+			// Only show 5 per Filter
+			var unreadCount = 0;
+			LeisureFilter.Threads.each(function(Thread){
+				var tmpThread = Thread.toJSON();
+				// console.log(tmpThread);
+				try {
+					if(tmpThread.attributes.read.status != 1){
+						unreadCount += 1;
+					}
+				} catch(err){
+					unreadCount += 1;
+				}
+			});
+
+			LeisureFilter.ThreadUnreadCount = unreadCount;
+
+			// Get intended index (position) of this LeisureFilter
+			var idx = that.LeisureFilters.indexOf(LeisureFilter);
+
+			// Create the View
+			var dv = new App.Views.SubLeisureFilter({
+				model : LeisureFilter,
+				idx_in_collection: idx
+			});
+
+			// Add to views
+			that._subLeisureViews.push(dv);
+
+			// Re-sort the views we have
+			that._subLeisureViews = _.sortBy(that._subLeisureViews,function(sV){
+				return sV.options.idx_in_collection;
+			});
+
+			// Figure out the index of this view
+			var filter_idx = that._subLeisureViews.indexOf(dv);
+			// console.warn('thread_idx: ' + thread.Full.toJSON().original.subject);
+			// console.log(thread_idx);
+			// console.dir(that._subViews[this.threadType]);
+
+			// Render this fucker in the correct place meow
+
+			// If the view has been rendered, then immediately append views
+			if(that._rendered){
+				// Insert it into the correct place
+
+				// // What is already displayed?
+				// // - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
+				// if(_.size(that._subLeisureViews) != 1){
+				// 	// Already displayed at least one, so we need to figure out where this view is going
+
+				// 	that.$('.all_threads').find('.thread:nth-of-type('+filter_idx+')').after(dv.render().el);
+
+				// } else {
+				// 	// No other ones, just prepend it (highest on the list)
+				// 	// console.info('no other ones');
+
+				// 	// Is the structure already set up?
+				// 	if(!that.$('.all_threads').length){
+				// 		console.log('rendering structure');
+				// 		that.render_structure();
+				// 	}
+
+				// 	// At the bottom
+				// 	that.$('.all_threads').append(dv.render().el);
+				// }
+
+				// Is the structure already set up?
+				if(!that.$('.all_threads').length){
+					console.log('rendering structure');
+					that.render_structure();
+				}
+
+				// At the bottom (fuck it)
+				that.$('.all_threads').append(dv.render().el);
+
+				// Resize the scrollable part (.all_threads)
+				that.resize_fluid_page_elements();
+				that.resize_scroller();
+
+				// Scroll to bottom
+				that.$('.scroller').scrollTop(10000);
+
+			}
+
+			// // And add it to the collection so that it's easy to reuse.
+			// that._subViews[this.threadType].push(dv);
+
+			// done
+			// console.info('Rendered Thread (complete w/ emails)');
+
+		}, this);
+
+		// // Listen for "change" event
+		// LeisureFilter.Full.on('change', function(threadFull){
+		// 	// Mark thread as ready
+		// 	// - this fires immediately if anything is cached
+		// 	// - otherwise it fires if something is different from the cached version
+		// 	if(!thread.FullReady){
+		// 		thread.FullReady = true;
+		// 		thread.trigger('check_display_ready');
+		// 	}
+		// }, this);
+
+		// Emails for Thread
+		// - we want to know after all the emails have been loaded for the Thread
+		LeisureFilter.Threads = new App.Collections.LeisureThreads();
+
+		LeisureFilter.Threads.on('reset', function(Threads){
+			if(!LeisureFilter.ThreadsReady){
+				LeisureFilter.ThreadsReady = true;
+				LeisureFilter.trigger('check_display_ready');
+			}
+		}, this); // completely changed collection (triggers add/remove)
+
+		LeisureFilter.Threads.on('sync', function(threadFull){
+			// Fires after add/remove have completed?
+			// console.info('EmailSync');
+			if(!LeisureFilter.ThreadsReady){
+				LeisureFilter.ThreadsReady = true;
+				LeisureFilter.trigger('check_display_ready');
+			}
+		}, this); // completely changed collection (triggers add/remove)
+
+		LeisureFilter.Threads.on('add', function(emailFullModel){
+			// console.log('EmailAdd');
+			// console.log(emailFullModel.toJSON()._id);
+		}, this); // added a new EmailFull
+
+		LeisureFilter.Threads.on('remove', function(emailFullModel){
+			// console.log('EmailRemove');
+			// console.log(emailFullModel.get('id'));
+		}, this); // remove a new EmailFull
+		
+		LeisureFilter.Threads.on('change', function(emailFullModel){
+			console.log('EmailChange');
+		}, this); // an email is slightly different now (re-render)
+		
+		// trigger EmailFull collection retrieving
+		// console.info(LeisureFilter.get('_id'));
+		LeisureFilter.Threads.fetchAll({
+			ids: [LeisureFilter.get('_id')],
+			// cachePrefix: LeisureFilter.get('_id')
+		});
 
 	},
 
@@ -6379,6 +6820,20 @@ App.Views.LeisureList = Backbone.View.extend({
 
 		return this;
 
+	},
+
+	render_structure: function(){
+
+		// Render the loading screen
+		var that = this;
+
+		// Template
+		var template = App.Utils.template('t_leisure_structure');
+
+		// Write HTML
+		this.$el.html(template());
+
+		return this;
 	},
 
 	render_list: function(lfilters){
@@ -6458,19 +6913,19 @@ App.Views.LeisureList = Backbone.View.extend({
 
 		var that =  this;
 
-		that.LeisureFilterCollection = new App.Collections.AppMinimailLeisureFilter();
-		that.LeisureFilterCollection.fetchAll({
-			success: function(leisure_list) {
-				// Does not return models, just JSON data objects
-				// clog('back with result');
+		// that.LeisureFilterCollection = new App.Collections.LeisureFilters();
+		// that.LeisureFilterCollection.fetchAll({
+		// 	success: function(leisure_list) {
+		// 		// Does not return models, just JSON data objects
+		// 		// clog('back with result');
 				
-				// Store locally
-				App.Utils.Storage.set('leisure_list_top',leisure_list);
+		// 		// Store locally
+		// 		App.Utils.Storage.set('leisure_list_top',leisure_list);
 
-				// Render new Thread list
-				that.render_list(leisure_list);
-			}
-		});
+		// 		// Render new Thread list
+		// 		that.render_list(leisure_list);
+		// 	}
+		// });
 
 
 	},
@@ -6478,28 +6933,63 @@ App.Views.LeisureList = Backbone.View.extend({
 	render: function() {
 		var that = this;
 
-		// Render initial body
-		this.render_init();
+		if(this._rendered){
+			// Already rendered
+			// - re-displaying this View
+			this._rendered = true;
 
-		// Refresh and render
-		// this.refresh_and_render_threads();
+			// Re-delegate events
+			this.delegateEvents();
 
-		// Get stored leisure_list
-		App.Utils.Storage.get('leisure_list_top')
-			.then(function(threads){
-
-				if(threads != null){
-					// Have some local data
-					// Trigger a refresh of the data
-					// - when the data is refreshed, the view gets refreshed as well
-					
-					that.render_list(threads);
-
-				}
-
-				that.refresh_and_render_list();
-
+			// events for subviews
+			_(that._subLeisureViews).each(function(v) {
+				v.delegateEvents();
 			});
+
+		} else {
+			this._rendered = true;
+
+			// Render initial body
+			this.render_init();
+
+			// Render the views
+
+			// Leisure things
+			_(that._subLeisureViews).each(function(uv) {
+				that.$('.all_threads').append(uv.render().el);
+			});
+		}
+
+		// Resize the scrollable part (.all_threads)
+		this.resize_fluid_page_elements();
+		this.resize_scroller();
+
+		// Scroll to bottom
+		this.$('.scroller').scrollTop(10000);
+
+
+
+
+
+		// // Refresh and render
+		// // this.refresh_and_render_threads();
+
+		// // Get stored leisure_list
+		// App.Utils.Storage.get('leisure_list_top')
+		// 	.then(function(threads){
+
+		// 		if(threads != null){
+		// 			// Have some local data
+		// 			// Trigger a refresh of the data
+		// 			// - when the data is refreshed, the view gets refreshed as well
+					
+		// 			that.render_list(threads);
+
+		// 		}
+
+		// 		that.refresh_and_render_list();
+
+		// 	});
 
 		// How old is it?
 		// Do we need to do a refresh?
@@ -7186,6 +7676,14 @@ App.Views.SearchEmails = Backbone.View.extend({
 		// Display loading icon
 		that.render_loading_threads();
 
+		// Clear views (if any exist)
+		if(that._searchEmailSubViews.length > 0){
+			_.each(that._searchEmailSubViews, function(tmpView){
+				tmpView.close();
+			});
+		}
+		that._searchEmailSubViews =[];
+
 		// Get those threads and display them?
 		// - not checking cache at all?
 		var EmailSearches = new App.Collections.EmailSearches();
@@ -7201,19 +7699,46 @@ App.Views.SearchEmails = Backbone.View.extend({
 			// Render the view in the correct place (append)
 			// - contains a "nodisplay" until the Model arrives
 
+			// Remove "loading" if it is there?
+
+			// Get index (position) of this item
+			var idx = EmailSearches.indexOf(EmailObj);
+
 			// Create the View
 			var dv = new App.Views.SubSearchesEmail({
 				model : EmailObj,
-				// idx_in_collection: idx,
+				idx_in_collection: idx,
 				fadein: false
 			});
 
-			// Render
-			// - not cleaning these up! todo...
-			$('.search_emails_thread_results').append(dv.render().$el);
-
 			// Add to this subView tracker
 			that._searchEmailSubViews.push(dv);
+
+			// Re-sort the views we have
+			that._searchEmailSubViews = _.sortBy(that._searchEmailSubViews,function(sV){
+				return sV.options.idx_in_collection;
+			});
+
+			// Figure out the index of this view
+			var elem_idx = that._searchEmailSubViews.indexOf(dv);
+			
+			// Remove the loading page, if it exists
+			that.$('.loading').remove();
+
+			var $tmpElem = that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')');
+
+			if(_.size(that._searchEmailSubViews) != 1 && $tmpElem.length){
+				// Not the first view
+				// console.info(elem_idx);
+				// console.info(that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')'));
+				$tmpElem.after(dv.render().$el);
+				// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
+			} else {
+				// First view, append it to the page
+
+				// Render
+				that.$('.search_emails_thread_results').append(dv.render().$el);
+			}
 
 			// console.log('EmailObj');
 			// console.log(EmailObj.toJSON());
@@ -7235,6 +7760,9 @@ App.Views.SearchEmails = Backbone.View.extend({
 				// - already rendered, just need to remove the "nodisplay" from the view
 				dv.trigger('render_full');
 
+				// Scroll to bottom
+				that.$('.scroller').scrollTop(10000);
+
 			}, this);
 
 			// console.log('pre-fetch');
@@ -7252,6 +7780,14 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 			// Iterate over "add"
 			EmailSearches.each(EmailSearchesAdd, this);
+		}, this);
+
+
+		// Handle search results and getting the actual emails
+		EmailSearches.on('sync',function(EmailSearches){
+			// Order has probably changed
+			// - fires when changes come back from the API
+
 		}, this);
 
 		EmailSearches.on('add', EmailSearchesAdd, this);
@@ -7316,7 +7852,9 @@ App.Views.SearchEmails = Backbone.View.extend({
 				// Write HTML
 				that.$('.search_emails_thread_results').html(template(threads));
 
-				$('.search_emails_thread_results').scrollTop($('.search_emails_thread_results').height());
+				// Scroll to bottom
+				that.$('.scroller').scrollTop(10000);
+
 			}
 		});
 
@@ -7353,12 +7891,11 @@ App.Views.SearchEmails = Backbone.View.extend({
 				// Write HTML
 				that.$('.search_emails_thread_results').html(template(threads));
 
-				$('.search_emails_thread_results').scrollTop($('.search_emails_thread_results').height());
+				// Scroll to bottom
+				that.$('.scroller').scrollTop(10000);
 			}
 		});
 
-		// search_emails_thread_results
-		that.scroll_to_bottom();
 
 	},
 
@@ -7369,41 +7906,113 @@ App.Views.SearchEmails = Backbone.View.extend({
 		// Display loading icon
 		that.render_loading_threads();
 
+		// Clear views (if any exist)
+		if(that._searchEmailSubViews.length > 0){
+			_.each(that._searchEmailSubViews, function(tmpView){
+				tmpView.close();
+			});
+		}
+		that._searchEmailSubViews =[];
+
 		// Get those threads and display them?
 		// - not checking cache at all?
-		var EmailCollection = new App.Collections.Emails();
-		EmailCollection.fetch_sent({
-			success: function(emails){
+		var EmailSearches = new App.Collections.EmailSearches();
+		EmailSearches.fetch_sent();
 
-				// Returns a list of Emails
-				// - use those for the display
-				emails = emails.toJSON();
+		// Handle search results and getting the actual emails
+		var EmailSearchesAdd = function(EmailObj){
+			// Get the EmailFull
+			// - checks cache too
 
-				// Merge together by Thread?
-				// - todo...
+			// Render the view in the correct place (append)
+			// - contains a "nodisplay" until the Model arrives
 
-				// Sort by date
-				emails = App.Utils.sortBy({
-					arr: emails,
-					path: 'common.date',
-					direction: 'desc',
-					type: 'date'
-				});
+			// Remove "loading" if it is there?
 
-				// Template
-				var template = App.Utils.template('t_search_emails_email_results');
+			// Get index (position) of this item
+			var idx = EmailSearches.indexOf(EmailObj);
 
-				// Write HTML
-				that.$('.search_emails_thread_results').html(template(emails));
+			// Create the View
+			var dv = new App.Views.SubSearchesEmail({
+				model : EmailObj,
+				idx_in_collection: idx,
+				fadein: false
+			});
+
+			// Add to this subView tracker
+			that._searchEmailSubViews.push(dv);
+
+			// Re-sort the views we have
+			that._searchEmailSubViews = _.sortBy(that._searchEmailSubViews,function(sV){
+				return sV.options.idx_in_collection;
+			});
+
+			// Figure out the index of this view
+			var elem_idx = that._searchEmailSubViews.indexOf(dv);
+			
+			// Remove the loading page, if it exists
+			that.$('.loading').remove();
+
+			var $tmpElem = that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')');
+
+			if(_.size(that._searchEmailSubViews) != 1){
+				// Not the first view
+				// console.info(elem_idx);
+				// console.info(that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')'));
+				$tmpElem.after(dv.render().$el);
+				// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
+			} else {
+				// First view, append it to the page
+
+				// Render
+				that.$('.search_emails_thread_results').append(dv.render().$el);
+			}
+
+			// Create new Model for EmailFull
+			EmailObj.EmailFull = new App.Models.EmailFull({
+				_id: EmailObj.toJSON()['_id'],
+				id: EmailObj.toJSON()['_id']
+			});
+
+			// Wait for EmailFull to be populated ("change" is fired?)
+			EmailObj.EmailFull.on('change',function(EmailFull){
+				// Got the EmailFull
+
+				// Trigger full rendering
+				dv.trigger('render_full');
 
 				// Scroll to bottom
-				$('.search_emails_thread_results').scrollTop($('.search_emails_thread_results').height() + 1000);
+				that.$('.scroller').scrollTop(10000);
 
-			}
-		});
+			}, this);
+
+			// Fetch Full Email
+			EmailObj.EmailFull.fetchFull();
+
+		};
+
+		// Handle search results and getting the actual emails
+		EmailSearches.on('reset',function(EmailSearches){
+			// Only called once
+
+			console.warn('reset');
+			// that.$('.search_emails_thread_results').html();
+
+			// Iterate over "add"
+			EmailSearches.each(EmailSearchesAdd, this);
+		}, this);
+
+
+		// Handle search results and getting the actual emails
+		EmailSearches.on('sync',function(EmailSearches){
+			// Order has probably changed
+			// - fires when changes come back from the API
+
+		}, this);
+
+		EmailSearches.on('add', EmailSearchesAdd, this);
 
 		return false;
-
 	},
 
 	view_thread: function(ev){
@@ -8779,12 +9388,12 @@ App.Views.BodyLogin = Backbone.View.extend({
 				// Try logging in with it
 				// - eventually, exchange for an access_token
 
-				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',user_identifier)
+				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', user_identifier, 'critical')
 					.then(function(){
 						// Saved user!
 					});
 
-				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',access_token)
+				App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', access_token, 'critical')
 					.then(function(){
 
 						// Reload page, back to #home
@@ -8841,7 +9450,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 					if(typeof qs.user_token == "string"){
 						// Have a user_token
 						// - save it to localStorage
-						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token',qs.user_token)
+						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
 							.then(function(){
 								
 								// Reload page, back to #home
@@ -8925,12 +9534,12 @@ App.Views.BodyLogin = Backbone.View.extend({
 						// App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier);
 						// App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token);
 
-						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user',oauthParams.user_identifier)
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier, 'critical')
 							.then(function(){
 								// Saved user!
 							});
 
-						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token',oauthParams.access_token)
+						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token, 'critical')
 							.then(function(){
 								
 								// Reload page, back to #home
@@ -8971,7 +9580,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 					if(typeof qs.user_token == "string"){
 						// Have a user_token
 						// - save it to localStorage
-						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token',qs.user_token)
+						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
 							.then(function(){
 								
 								// Reload page, back to #home
@@ -9015,7 +9624,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 				if(typeof qs.user_token == "string"){
 					// Have a user_token
 					// - save it to localStorage
-					App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token',qs.user_token)
+					App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
 						.then(function(){
 							
 							// Reload page, back to #home
@@ -9177,8 +9786,8 @@ App.Views.OnlineStatus = Backbone.View.extend({
 
 		// display is on or off
 
-		this.on('online',this.show,this);
-		this.on('offline',this.hide,this);
+		this.on('online',this.hide,this);
+		this.on('offline',this.show,this);
 	},
 
 	show: function(){
