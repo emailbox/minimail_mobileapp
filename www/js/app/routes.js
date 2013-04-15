@@ -173,16 +173,59 @@ App.Router = Backbone.Router.extend({
 			App.router.emitView('main_view', 'refresh');
 			return;
 		}
-		var page = new App.Views.All();
-		$('.body_container').html(page.$el);
-		App.router.showView('main_view',page, 'all');
+
+		// Does page already exist?
+		// - some pages just stay in memory, do not get .close unless by force
+		var page;
+		if(!App.Data.PermaViews.all){
+			// Create page for first time
+			App.Data.PermaViews.all = new App.Views.All();
+
+			// Display 
+
+		} else {
+
+		}
+
+
+		// Display page
+		$('.body_container').html(App.Data.PermaViews.all.$el);
+		App.router.showView('main_view',App.Data.PermaViews.all, 'all');
 	},
 
 
 	leisure: function(){
-		var page = new App.Views.LeisureList();
-		$('.body_container').html(page.$el);
-		App.router.showView('main_view',page);
+
+		// Display the "inbox" (our version of an inbox)
+
+		// Already displaying all?
+		// - just refresh
+		if(App.router.getView('main_view', 'leisure')){
+			App.router.emitView('main_view', 'refresh');
+			return;
+		}
+
+		// Does page already exist?
+		// - some pages just stay in memory, do not get .close unless by force
+		var page;
+		if(!App.Data.PermaViews.leisure){
+			// Create page for first time
+			App.Data.PermaViews.leisure = new App.Views.LeisureList();
+
+			// Display 
+
+		} else {
+
+		}
+
+
+		// Display page
+		$('.body_container').html(App.Data.PermaViews.leisure.$el);
+		App.router.showView('main_view',App.Data.PermaViews.leisure, 'leisure');
+
+		// var page = new App.Views.LeisureList();
+		// $('.body_container').html(page.$el);
+		// App.router.showView('main_view',page);
 	},
 
 
