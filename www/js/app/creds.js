@@ -17,6 +17,7 @@ var tmp_credentials = {
 	
 	minimail_server: 'http://minimail.getemailbox.com',
 
-	useCache: true
+	usePatching: true, // emailbox diff/patch
+	useCache: true // backbone.cache to localStorage
 
 };
