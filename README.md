@@ -85,7 +85,7 @@ Minimail will eventually be a paid product/service, somewhere in the neighborhoo
 All your data is available, at any time, so you can easily export anything out of your Emailbox datastore.  
 You will have the option of hosting your own data.  
 Emailbox has no plans to do any data mining or selling of any kind of data and, if those plans change, existing users will not be switched over without them giving express permission to minimail/emailbox.  
-Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client is simple.  
+Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client requires no effort. 
 
 
 
