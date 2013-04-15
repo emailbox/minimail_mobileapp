@@ -29,7 +29,7 @@
         // _id_or_id handls mongo vs normal OK
 
         _id_or_id = _id_or_id || '_id'; // default is mongodb
-        console.log(ns + ' id: ' + _id_or_id);
+        // console.log(ns + ' id: ' + _id_or_id);
 
         var ns = base_ns + '_v12';
         // Create the `Burry.Store`
@@ -76,7 +76,7 @@
                         });
                         d.resolve(updated);
                     } else {
-                        console.warn('Invalid Model from burry');
+                        // console.warn('Invalid Model from burry');
                         wp.done(d.resolve).fail(d.reject);
                     }
                 });
@@ -111,6 +111,8 @@
             }
             // console.log('id_ns: ' + id_ns);
             // console.log(options);
+
+            options.ns = ns;
 
             App.Utils.Storage.get('__ids__', id_ns)
                 .then(function(ids){
@@ -255,7 +257,7 @@
                         }
                         
                     } else {
-                        console.warn('Invalid Collection from burry');
+                        // console.warn('Invalid Collection from burry');
                         wp.done(d.resolve).fail(d.reject);
                     }
 
