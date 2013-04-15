@@ -81,7 +81,7 @@ App.Utils = {
 		// Always use a promise
 
 		get: function(key, namespace){
-			namespace = (namespace != undefined) ? namespace + '_' : false || '_';
+			namespace = (namespace != undefined) ? namespace.toString() + '_' : false || '_';
 			// console.log('using ns');
 			// console.log(namespace);
 			key = key.toString();
@@ -106,7 +106,7 @@ App.Utils = {
 					dfd.resolve(null);
 				});
 
-			} else if(usePg){
+			} else {
 
 				// Open database
 				// - switch Phonegap/cordova to Database instead of localStorage?
@@ -127,25 +127,7 @@ App.Utils = {
 
 				},1);
 
-			} else {
-				
-				setTimeout(function(){
-					// window.console.info('key');
-					// window.console.log(namespace + key);
-					var value = localStorage.getItem(namespace + key);
-
-					try {
-						value = JSON.parse(value);
-					} catch(err){
-						dfd.resolve(null);
-						return;
-					}
-
-					dfd.resolve(value);
-
-				},1);
-
-			}
+			} 
 
 			return dfd.promise();
 
@@ -171,26 +153,100 @@ App.Utils = {
 					dfd.resolve(null);
 				});
 
-			} else if(usePg){
-
-				setTimeout(function(){
-					var tmp = window.localStorage.setItem(namespace + key,JSON.stringify(value));
-					// App.Events.trigger('saveAppDataStore');
-					dfd.resolve(tmp);
-
-				},1);
-
 			} else {
-				
+
 				setTimeout(function(){
-					var tmp = localStorage.setItem(namespace + key,JSON.stringify(value));
-					// App.Events.trigger('saveAppDataStore');
+
+					try {
+						var tmp = window.localStorage.setItem(namespace + key, JSON.stringify(value));
+					} catch(err){
+
+						// if (err.name === 'QUOTA_EXCEEDED_ERR' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+						console.warn('over quota');
+						if ( err.name.toUpperCase().indexOf('QUOTA') >= 0 ) {
+							console.log('yes over');
+							// Exceeded localStorage cache
+							// - like to use something beside localStorage anyways
+
+							// Flush things we don't need anymore
+							App.Utils.Storage.flush()
+								.then(function(){
+									// Should have room now
+									console.warn('trying again');
+									// Try again
+									// - if failed trying again, then just give up and resolve as False
+									try {
+										var tmp = window.localStorage.setItem(namespace + key, JSON.stringify(value));
+									} catch(err){
+										// Reject promise
+										dfd.reject(tmp);
+										return;
+									}
+
+								});
+
+							return;
+
+						}
+
+						// Other error
+
+						// Reject promise
+						dfd.reject(tmp);
+						return;
+
+					}
+					
+					// Resole with result of cache
 					dfd.resolve(tmp);
 
 				},1);
+
 			}
 
 			return dfd.promise();
+		},
+
+		flush: function(){
+			// Flushes all non-important values out of the cache
+			// - simplest way to do it for now
+
+			console.log('flushing');
+
+			var dfd = $.Deferred();
+
+			if(useForge){
+
+			} else {
+				// Get latest values
+
+				try {
+					console.log(1);
+					setTimeout(function(){
+						console.log(2);
+						var i, key, remove = [];
+						for (i=0; i < window.localStorage.length ; i++) {
+							key = localStorage.key(i);
+							if (key.indexOf('critical_') !== 0) {
+								// console.info(key);
+								remove.push(key);
+							}
+						}
+						for (i=0; i<remove.length; i++){
+							// console.log(3);
+							window.localStorage.removeItem(remove[i]);
+						}
+					}, 1);
+				} catch(err){
+					console.error(err);
+				}
+
+				
+			}
+
+
+			return dfd.promise();
+
 		}
 
 	},
@@ -224,8 +280,6 @@ App.Utils = {
 
 			// Remap without key
 			App.Data.backbutton_functions = _.filter(App.Data.backbutton_functions,function(item){
-				console.log('key2');
-				console.log(item.key);
 				return item.key != key;
 			});
 
