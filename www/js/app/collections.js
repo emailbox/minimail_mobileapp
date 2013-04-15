@@ -9,6 +9,10 @@ App.Collections.EmailSearches = Backbone.Collection.extend({
 
 	sync: Backbone.cachingSync(emailbox_sync_collection, 'EmailSearches'),
 
+	comparator: function( EmailModel ) {
+		return EmailModel.toJSON()._id;
+	},
+
 	fetch_for_search: function(options){
 		// Fetch emails for a certain Thread._id
 		// - updates App.Data.Store.Email
@@ -17,7 +21,9 @@ App.Collections.EmailSearches = Backbone.Collection.extend({
 		// - support everything on: http://support.google.com/mail/bin/answer.py?hl=en&answer=7190
 		// - better searching? 
 
-		// options.text
+		options = options || {
+			text: ''
+		};
 
 		var text = options.text;
 
@@ -68,7 +74,33 @@ App.Collections.EmailSearches = Backbone.Collection.extend({
 		// Create cachePrefix (better than creating it in the View)
 		// - unique cache for each search
 		options.collectionCachePrefix = App.Utils.MD5(JSON.stringify(search_conditions));
-		console.log('ccp: ' + options.collectionCachePrefix);
+		// console.log('ccp: ' + options.collectionCachePrefix);
+
+		return this.fetch({
+			options: options,
+			data: {
+				model: 'Email',
+				conditions: search_conditions,
+				fields : ['_id'],
+				limit : 20,
+				sort: {"_id" : -1} // most recently received (better way of sorting?)
+				
+			}
+		});
+
+	},
+
+	fetch_sent: function(options){
+		// Fetch Sent emails
+		options = options || {};
+
+		var search_conditions = {
+			"original.labels" : "\\\\Sent"
+		};
+
+		// Create cachePrefix (better than creating it in the View)
+		// - unique cache for each search
+		options.collectionCachePrefix = App.Utils.MD5(JSON.stringify(search_conditions));
 
 		return this.fetch({
 			options: options,
@@ -320,7 +352,7 @@ App.Collections.EmailsFull = Backbone.Collection.extend({
 	},
 
 	fetch_by_thread_id: function(options){
-		
+		options = options || {};
 		return this.fetch({
 			cachePrefix: options.cachePrefix || null,
 			data: {
@@ -336,7 +368,51 @@ App.Collections.EmailsFull = Backbone.Collection.extend({
 							// 'attributes',
 							// 'original.headers'
 							],
-				limit : 200
+				limit : 20
+				
+			},
+			success: function(email_models){
+				if(options.success) options.success(email_models);
+			}
+		});
+
+	}
+
+});
+
+// This is completely based off of App.Collections.UndecidedThreads
+App.Collections.LeisureFilters = Backbone.Collection.extend({
+
+	model: App.Models.LeisureFilterIds,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'LeisureFilters'),
+
+	comparator: function( LeisureFilter ) {
+		// console.log(LeisureFilter.toJSON());
+		try {
+			return LeisureFilter.toJSON().attributes.last_message_datetime_sec; // sorting by latest email received (better sorting?)
+		} catch(err){
+			return 0; // No attributes.last_message_datetime_sec
+		}
+		// return LeisureFilter.toJSON().name; // sorting by latest email received (better sorting?)
+		
+	},
+
+	fetchList: function(options){
+		options = options || {};
+		return this.fetch({
+			// cachePrefix: options.cachePrefix || null,
+			data: {
+				model: 'AppMinimailLeisureFilter',
+				conditions: {
+					// no conditions?
+					// - add a live=1 todo...
+				},
+				fields : ['_id', 'name', 'attributes'], // _id and sorting field
+				limit : 200,
+				sort: {
+					'attributes.last_message_datetime_sec' : -1
+				}
 				
 			},
 			success: function(email_models){
@@ -457,7 +533,7 @@ App.Collections.Attachments = Backbone.Collection.extend({
 					'original.labels' : '\\\\Sent'
 				},
 				fields: ['original.attachments','attributes.thread_id','common.date'],
-				limit: 20,
+				limit: 10,
 				sort: {"_id" : -1}
 			},
 			success: function(response){
@@ -507,7 +583,7 @@ App.Collections.Attachments = Backbone.Collection.extend({
 					}
 				},
 				fields: ['original.attachments','attributes.thread_id','common.date'],
-				limit: 20,
+				limit: 10,
 				sort: {"_id" : -1}
 			},
 			success: function(response){
@@ -866,15 +942,24 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 
 });
 
-App.Collections.Threads = Backbone.Collection.extend({
+App.Collections.LeisureThreads = Backbone.Collection.extend({
 
-	model: App.Models.Thread,
+	model: App.Models.ThreadFull,
 
-	sync: emailbox_sync_collection,
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'LeisureThreads'),
 
-	fetch_by_id: function(options){
+	comparator: function( Thread ) {
+		console.log(Thread.toJSON().attributes.last_message_datetime_sec);
+		return -1 * Thread.toJSON().attributes.last_message_datetime_sec;
+	},
 
+	fetchAll: function(options){
+		// Gettting all the Threads
+		options.collectionCachePrefix = App.Utils.MD5(JSON.stringify(options.ids));
+
+		// fetch
 		return this.fetch({
+			options: options,
 			data: {
 				model: 'Thread',
 				conditions: {
@@ -887,7 +972,10 @@ App.Collections.Threads = Backbone.Collection.extend({
 							'attributes',
 							'original'
 							],
-				limit : 200
+				limit : 10,
+				sort: {
+					'attributes.last_message_datetime_sec' : -1
+				}
 				
 			},
 			success: function(thread_models){
@@ -897,6 +985,13 @@ App.Collections.Threads = Backbone.Collection.extend({
 
 	},
 
+});
+
+App.Collections.Threads = Backbone.Collection.extend({
+
+	model: App.Models.ThreadFull,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'ThreadsFull'),
 
 	fetch_for_leisure: function(options){
 		// Fetch emails for a certain AppMinimailLeisureFilter._id
@@ -1231,10 +1326,38 @@ function emailbox_sync_collection(method, model, options) {
 			// console.log(model); // or collection
 			// console.log(model.model.prototype.fields);
 
-			// Caching is enabled on a per-collection basis
-			if(options.cacheType != null){
-				// Check the cache
+			// turn on caching for fucking everything yeah
+			// - fuck it why not?
+			if(App.Credentials.usePatching){
+				options.data.cache = true;
+			}
 
+			// Create namespace for storing
+			// console.info(model);
+			var ns = model.model.prototype.internalModelName + '_';
+
+            // Need to include a passed new cachePrefix for some collections
+            if(options.ns){
+                // console.warn('cachePrefix');
+                ns = ns + options.ns + '_';
+            }
+
+            // Collection namespace?
+            // - for ids
+            if(options.options && options.options.collectionCachePrefix){
+                ns = ns+ options.options.collectionCachePrefix + '_';
+            }
+			// console.log('ns');
+			// console.log(ns);
+			// console.log(options);
+			// return false;
+
+			// Get previous cache_hash
+			// - just stored in memory for now
+			try {
+				options.data.hash = App.Data.Store.CollectionCache[ns].hash;
+			} catch(err){
+				// no hash exists
 			}
 
 			Api.search({
@@ -1251,45 +1374,77 @@ function emailbox_sync_collection(method, model, options) {
 					}
 					// console.log('Calling success');
 
-					// data or patch?
-					if(response.patch){
-						// not written patch-handling yet for collections
-						options.success(this, response.patch);
-					} else {
-						// console.log('d');
-						// console.log(response.data);
+					if(response.hasOwnProperty('patch')){
+						// returned a patch
 
-						// Return data without the 'Model' lead
-						var tmp = [];
-						var tmp = _.map(response.data,function(v){
-							return v[options.data.model];
-						});
+						// do the patching
+						// - need to get our previous edition
+						// - apply the patch
+						// - re-save the data
 
-						// Merge local values with new ones
-						// _.each(tmp,function(model_values, iterator){
-						// 	// Local value exist?
-						// 	if(App.Data.Store[options.data.model][model_values._id] == undefined){
-						// 		// Set it
-						// 		App.Data.Store[options.data.model][model_values._id] = model_values;
+						// Get previous version of data
+						// - stored in memory, not backed up anywhere
+						// - included hash+text
+						try {
+							// console.log(collection.model.internalModelName + '_' + model.id);
+							if(App.Data.Store.CollectionCache[ns].text.length > 0){
+								// ok
 
-						// 	} else {
-						// 		App.Data.Store[options.data.model][model_values._id] = $.extend(true, App.Data.Store[options.data.model][model_values._id], model_values);
-						// 	}
-						// });
-
-						window.setTimeout(function(){
-							// Store App.Data.Store into localStorage/prefs!
-							// App.Events.trigger('saveAppDataStore',true);
-
-							// Resolve
-							dfd.resolve(tmp);
-
-							// Fire success function
-							if(options.success){
-								options.success(tmp);
 							}
-						},100);
+						} catch(err){
+							// No previous cache to compare against!
+							// - this should never be sent if we're sending a valid hash
+							console.error('HUGE FAILURE CACHING!');
+							console.log(err);
+							return false;
+						}
+
+						// Create patcher
+						var dmp = new diff_match_patch();
+
+						// Build patches from text
+						var patches = dmp.patch_fromText(response.patch);
+
+						// get our result text!
+						var result_text = dmp.patch_apply(patches, App.Data.Store.CollectionCache[ns].text);
+
+						// Convert text to an object
+						try {
+							response.data = JSON.parse(result_text[0]); // 1st, only 1 patch expected
+						} catch(err){
+							// Shoot, it wasn't able to be a object, this is kinda fucked now
+							// - need to 
+							console.error('Failed recreating JSON');
+							return false;
+						}
+
 					}
+
+					// After patching (if any occurred)
+
+					// Return data without the 'Model' lead
+					var tmp = [];
+					var tmp = _.map(response.data,function(v){
+						return v[options.data.model];
+					});
+
+					// Return single value
+					window.setTimeout(function(){
+
+						// Resolve
+						dfd.resolve(tmp);
+
+						// Fire success function
+						if(options.success){
+							options.success(tmp);
+						}
+					},1);
+
+					// Update cache with hash and text
+					App.Data.Store.CollectionCache[ns] = {
+						hash: response.hash,
+						text: JSON.stringify(response.data)
+					};
 				
 				}
 			});
