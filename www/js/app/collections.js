@@ -898,6 +898,7 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 
 	fetchDelayed: function(options){
 		var that = this;
+		console.info('fetch delayed');
 
 		// Return "undecided emails"
 		// - the "?" emails
@@ -1508,7 +1509,7 @@ function contacts_sync_collection(method, model, options) {
 				// alert(contacts_with_email.length);
 
 				// get only the top 25
-				contacts_with_email = contacts_with_email.splice(0,25);
+				// contacts_with_email = contacts_with_email.splice(0,25);
 
 				// Parse and sort
 				var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
@@ -1539,6 +1540,10 @@ function contacts_sync_collection(method, model, options) {
 function parse_and_sort_contacts(contacts){
 
 	contacts = _.map(contacts,function(contact){
+		// Iterating over every contact we have
+		// - returning an array of emails, with each email having the contact data included
+		// - instead of sorting by contact, we go by email address as the primary display
+
 		var data = {
 			id: contact.id, 
 			name: contact.displayName,
@@ -1546,14 +1551,18 @@ function parse_and_sort_contacts(contacts){
 			photo: ''
 		};
 
-		if(contact.emails.length < 1){
-			return [];
-		}
+		var tmp_emails = [];
 
-		var tmp_return = [];
-
+		// Iterate over emails for contact
+		// - remove emails we do not care about, like @craigslist
 		_.each(contact.emails,function(email, index){
 			var tmp_data = _.clone(data);
+
+			// Don't use contacts that are from craigslist (too many sale- emails that we don't care about)
+			if(email.value.indexOf('@craigslist') != -1){
+				// return out of _.each
+				return;
+			}
 
 			// Set display to email value, if displayName doesn't exist
 			if(!contact.displayName){
@@ -1574,16 +1583,22 @@ function parse_and_sort_contacts(contacts){
 			// Set email value
 			tmp_data.email = email.value;
 
-			tmp_return.push(tmp_data);
+			// console.log('adding');
+			tmp_emails.push(tmp_data);
 		})
 
-		return tmp_return;
+		if(contact.emails.length < 1){
+			return [];
+		}
+
+		// console.log('return: ' + tmp_emails.length);
+		return tmp_emails;
 
 	});
 	contacts = _.reduce(contacts,function(contact,next){
 		return contact.concat(next);
 	});
-	contacts = _.compact(contacts);
+	contacts = _.compact(contacts); // get rid of empty arrays
 	contacts = _.uniq(contacts);
 
 	// Sort
