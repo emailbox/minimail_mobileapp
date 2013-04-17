@@ -21,10 +21,15 @@ var App = {
 		notifications_queue: [],
 		paused: false,
 		was_paused: false,
+		pushNotification: null,
 		Keys: {},
 		debug_messages: {},
 		backbutton_functions: [],
 		menubutton_functions: [],
+		settings: {},
+		default_settings: {
+			debug: true
+		},
 		xy: {
 			win_height: 0, // by default, starts in portrait mode and as orientation changes this will update (portrait only)
 			win_width: 0,
@@ -55,7 +60,8 @@ var App = {
 		},
 		PermaViews: {
 			all: null,
-			leisure: null
+			leisure: null,
+			contacts: null
 		},
 		GlobalViews: {
 			OnlineStatus: null
@@ -127,6 +133,25 @@ var App = {
 				}
 			});
 
+		// Update local settings
+		// - use default settings if no local ones
+		App.Utils.Storage.get('settings','critical')
+			.then(function(settings){
+				if(!settings){
+					// Not created, create them
+					settings = $.extend({}, App.Data.default_settings);
+
+					// Save them
+					App.Utils.Storage.set('settings',settings,'critical');
+						// .then();
+				}
+
+				// Set to global
+				App.Data.settings = settings;
+
+			});
+
+
 		// Listen for request to save AppDataStore
 		App.Events.on('saveAppDataStore',function(opts){
 			// Store App.Data.Store into localStorage!
@@ -134,9 +159,14 @@ var App = {
 		});
 		// Save every 60 seconds
 		// - after coming back, does it run a ton of times? (queued when in standby?)
-		window.setInterval(function(){
-			App.Events.trigger('saveAppDataStore',true);
-		},60000);
+		var redoSave = function(){
+			window.setTimeout(function(){
+				console.info('saving App.Data.Store');
+				App.Events.trigger('saveAppDataStore',true);
+				redoSave();
+			},60000);
+		}
+		redoSave();
 
 		// CSS
 		// - local or debug version of CSS
@@ -502,11 +532,11 @@ var App = {
 
 			// Push notifications
 			try { 
-				var pushNotification = window.plugins.pushNotification;
+				App.Data.pushNotification = window.plugins.pushNotification;
 				if (device.platform == 'android' || device.platform == 'Android') {
 					// alert('android push');
 
-					pushNotification.register(function(result){
+					App.Data.pushNotification.register(function(result){
 						// alert('success w/ Push Notifications');
 						App.Utils.Notification.debug.temporary('Push Setup OK'); // not actually ok, not registering, nothing sending to it
 
@@ -690,13 +720,32 @@ function onNotificationGCM(e){
 			// Capture and then wait for a half-second to see if any other messages are incoming
 			// - don't want to overload the person
 			
-			if(App.Data.was_paused){
-				// Was just paused, add to queue
-				App.Data.notifications_queue.push(e);
-			} else {
-				// Not paused, immediately take action on the item
+			if (e.foreground){
+				// We were in the foreground when it was incoming
+				// - process right away
 				App.Plugins.Minimail.process_push_notification_message(e);
+			} else {
+				// Not in the foreground
+				// - they clicked the notification
+				// - process all of them at once
+				if (e.coldstart){
+					// App wasn't previously running, so it is starting up
+				} else {
+					// App is probably already displaying some other page
+				}
+
+				// add to process queue
+				App.Data.notifications_queue.push(e);
+
 			}
+
+			// if(App.Data.was_paused){
+			// 	// Was just paused, add to queue
+			// 	App.Data.notifications_queue.push(e);
+			// } else {
+			// 	// Not paused, immediately take action on the item
+			// 	App.Plugins.Minimail.process_push_notification_message(e);
+			// }
 
 		break;
 
