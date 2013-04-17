@@ -619,8 +619,7 @@ var App = {
 
 			// Init MENU button on Android (not always there?)
 			document.addEventListener("menubutton", function(){
-				// Backbone.history.loadUrl('confirm_logout');
-				Backbone.history.loadUrl('settings');
+				// Backbone.history.loadUrl('settings'); // view is kinda broken when not on a main_view
 			}, false);
 		
 			// Init BACK button on Android
