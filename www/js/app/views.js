@@ -118,6 +118,9 @@ App.Views.Body = Backbone.View.extend({
 		'click .goto_senders' : 'goto_senders',
 
 		'click .base_header_menu .threads_change button' : 'menu_click',
+		'dblclick .base_header_menu .threads_change button' : 'dblmenu_click',
+
+		'click .base_header_menu .logo' : 'settings',
 
 		'click .base_header_menu button[data-action="compose"]' : 'compose'
 	},
@@ -165,6 +168,46 @@ App.Views.Body = Backbone.View.extend({
 
 		// Launch router for undecided, delayed, all, leisure, collections
 		Backbone.history.loadUrl(id);
+
+		return false;
+
+	},
+
+
+	dblmenu_click: function(ev){
+		// trying to figure out a "force-refresh" type of approach
+		return;
+
+		// var elem = ev.currentTarget;
+
+		// // Get ID of btn
+		// var id = $(elem).attr('data-action');
+
+		// // Make other buttons inactive
+		// this.$('.base_header_menu button').removeClass('active');
+
+		// // Activate this button
+		// $(elem).addClass('active');
+
+		// // Store scroll position
+		// this.set_scroll_position();
+
+		// // Launch router for undecided, delayed, all, leisure, collections
+		// Backbone.history.loadUrl(id);
+
+		// return false;
+
+	},
+
+	settings: function(ev){
+		// Launch settings
+		// - double-tap on logo
+		console.log('settings');
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		Backbone.history.loadUrl('settings');
 
 		return false;
 
@@ -1489,6 +1532,9 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		// Mark as Done
 		App.Plugins.Minimail.saveAsDone(that.threadid);
+		
+		// Trigger local event
+		App.Events.trigger('Thread.done', that.threadid);
 
 		// Return to parent element
 		// - tell the screen we're returning to that the element has been marked as Done
@@ -3279,7 +3325,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 		'click .btn[data-action="cancel"]' : 'cancel',
 		'click .btn[data-action="send"]' : 'send',
 
-		'click .remove_address' : 'remove_address',
+		'click .participant' : 'remove_address', // click anywhere on the email to remove it
 
 		'click .add_attachment' : 'add_attachment',
 		'click .add_photo' : 'add_photo',
@@ -3314,11 +3360,19 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 	remove_address: function(ev){
 		// remove a person from the sending list
+		var that = this,
+			elem = ev.currentTarget;
 
-		var that = this;
-		var elem = ev.currentTarget;
+		// Confirm removing
+		// - probably do away with this step
+		//	- maybe have a slight delay before it actually gets rid of it, as a way to *undo* instead of having to confirm
+		var c = confirm('Remove address?');
+		if(!c){
+			return;
+		}
 
-		$(elem).parents('.participant').remove();
+		// Remove address
+		$(elem).remove();
 
 	},
 
@@ -3329,53 +3383,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 		// Validate email
 
-		if(useForge){
-			forge.contact.select(function(contact){
-				// Got contact
-				// - validate Email
-
-				// Gather only emails
-				var emails = _.map(contact.emails,function(email){
-					return email.value;
-				});
-
-				// Valid email?
-				emails = _.filter(emails,function(email){
-					if(App.Utils.Validate.email(email)){
-						return true;
-					}
-				});
-
-				// Unique?
-				emails = _.uniq(emails);
-				// emails = emails.concat(emails); // testing multiple emails
-
-				// How many left?
-				if(emails.length == 1){
-					// Only 1 email
-					that.chose_email(emails[0]);
-
-				} else if(emails.length > 1) {
-					// Show subview to choose which email to use
-					var subView = new App.Views.SelectEmailList({
-						chose_email: that.chose_email,
-						emails: emails
-					});
-					$('body > .full_page').addClass('nodisplay');
-					$('body').append(subView.$el);
-					subView.render();
-
-				} else {
-					// No emails found
-					alert('No emails found for that contact');
-					return false;
-				}
-
-			},function(content){
-				// Error
-				clog('Error getting contact');
-			});
-		} else if(usePg){
+		if(usePg){
 
 			// Already have contacts data?
 
@@ -3384,16 +3392,86 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 			// Display contacts chooser subview
 			window.setTimeout(function(){
-				that.subViewContacts = new App.Views.ChooseContact({
-					Parent: that,
-					multiple: true
-				});
+
+				if(!App.Data.PermaViews.contacts){
+					// Create page for first time
+					App.Data.PermaViews.contacts = new App.Views.ChooseContact();
+				}
+
+				// that.subViewContacts = new App.Views.ChooseContact({
+				// 	Parent: that,
+				// 	multiple: true
+				// });
+
+				// Set Parent for the View
+				App.Data.PermaViews.contacts.Parent = that;
+
+				// Turn on multi-select
+				// - on by default?
+				App.Data.PermaViews.contacts.multiple = true;
+
+				// Hide compose view
 				that.$el.addClass('nodisplay');
-				$('body').append(that.subViewContacts.$el);
-				that.subViewContacts.render();
+
+				// Tell contacts to render
+				// - the DOM element gets populated
+				App.Data.PermaViews.contacts.render();
+
+				// Add ChooseContacts view to the HTML
+				$('body').append(App.Data.PermaViews.contacts.el);
 
 				// Change text back
+				// - after view is already hidden
 				$(elem).text('Contacts');
+
+				// Listen for contact events
+				// - chose_email
+				// - cancel
+				// - any others?
+
+				// "cancel" event
+				App.Data.PermaViews.contacts.on('cancel',function(){
+					
+					// Remove View
+					App.Data.PermaViews.contacts.remove(); // this removes it from the DOM I believe
+
+					// un-hide this view
+					that.$el.removeClass('nodisplay');
+
+					// scroll to top
+					$('body').scrollTop(0);
+
+					// Remove listeners
+					App.Data.PermaViews.contacts.off();
+
+				}, this);	
+
+				// "chose_email" event
+				App.Data.PermaViews.contacts.on('chose_email',function(email){
+
+					console.log('  chose_email');
+					// Remove View
+					App.Data.PermaViews.contacts.remove(); // this removes it from the DOM I believe
+
+					// un-hide this view
+					that.$el.removeClass('nodisplay');
+
+					// Add using a template
+					var template = App.Utils.template('t_compose_recipient');
+
+					// If exists, display it
+					if(email){
+						that.$('.addresses').append(template(email));
+					}
+
+					// scroll to top
+					$('body').scrollTop(0);
+
+					// Remove listeners
+					App.Data.PermaViews.contacts.off();
+
+				}, this);				
+
 
 			},1);
 
@@ -3918,6 +3996,8 @@ App.Views.ChooseContact = Backbone.View.extend({
 		// - display whether we are fetching contacts and updating them
 		// - should be treated as a Collection of Contact Models
 
+		this._renderedContacts = null;
+
 		if(usePg){
 
 			// Collect from Collection.Contacts
@@ -3927,91 +4007,55 @@ App.Views.ChooseContact = Backbone.View.extend({
 
 			this.contacts.on('reset',function(contacts){
 				// alert('reset');
+				console.log('reset contacts');
 			}, this);
 			this.contacts.on('sync',function(contacts){
 				// Render template with all contacts
 				// - ignoring additions/subtractions until next load
 				// - not using 'add' or 'remove' at all
-
+				console.log('sync');
 				if(contacts.length < 1){
-					// Nothing to render
+					// Nothing to render (probably nothing cached, first grab)
+					console.log('no contacts found (in cache?)');
 					return;
 				}
+				console.log('found some contacts');
 
 				// Template
 				var template = App.Utils.template('t_choose_contacts');
 
 				// Write HTML
-				if(!that._rendered){
+				if(!that._renderedContacts){
+					that.__renderedContacts = true;
 					that.$el.html(template({
 						contacts: contacts.toJSON()
 					}));
+				} else {
+					console.log('already rendered');
 				}
 
 			});
 
+			var k = 1;
+			this.contacts.on('add', function(contact){
+				// console.log('added_contact: ' + k);
+				k++;
+			}, this);
+
+			this.contacts.on('remove', function(contact){
+				// console.log('removed_contact');
+				// k--;
+			}, this);
+
 			this.contacts.on('all', function(event){
-				// console.log('triggered: ' + event);
+				if(event == 'add' || event == 'remove'){
+					return;
+				}
+				console.log(event);
 			}, this);
 
 			// Trigger data
 			this.contacts.fetch();
-
-			// var contactFields = ["id","displayName","name","emails","photos"];
-			// var contactFindOptions = {
-			// 	// filter: searchCritera,
-			// 	multiple: true
-			// };
-
-			// // Data already exists locally?
-			// // - go get new data
-
-			// navigator.contacts.find(contactFields, function(all_contacts){
-			// 	// Filter contacts who have no email address
-			// 	var contacts_with_email = [];
-			// 	$.each(all_contacts,function(i,contact){
-			// 		try {
-			// 			if(contact.emails.length > 0){
-			// 				contacts_with_email.push(contact);
-			// 			}
-			// 		} catch (err){
-
-			// 		}
-			// 	});
-
-			// 	// alert(contacts_with_email.length);
-
-			// 	// Parse and sort
-			// 	var contacts_parsed = that.parse_and_sort(contacts_with_email);
-
-			// 	// Re-render if empty
-			// 	if(!App.Data.Store.Contacts.length){
-			// 		// No data
-			// 		// Update local store
-			// 		App.Data.Store.Contacts = contacts_with_email;
-			// 		App.Data.Store.ContactsParsed = contacts_parsed;
-			// 		// Re-render
-			// 		alert('rerender');
-			// 		that.render();
-			// 	} else {
-			// 		// Update local store
-			// 		App.Data.Store.Contacts = contacts_with_email;
-			// 		App.Data.Store.ContactsParsed = contacts_parsed;
-			// 	}
-
-			// 	// Api.event({
-			// 	// 	data: {
-			// 	// 		event: 'Render.test3',
-			// 	// 		obj: contacts_with_email.splice(0,100)
-			// 	// 	}
-			// 	// });
-
-			// }, function(err){
-			// 	// Err with contacts
-			// 	alert('Error with contacts');
-			// }, contactFindOptions);
-
-		} else if(useForge) {
 
 		} else {
 			// Browser
@@ -4032,9 +4076,21 @@ App.Views.ChooseContact = Backbone.View.extend({
 		// Kill back button grabber
 		var that = this;
 
-		App.Utils.BackButton.debubble(this.backbuttonBind);
+		// App.Utils.BackButton.debubble(this.backbuttonBind);
 
 		return;
+	},
+
+	close: function(){
+		// Don't actually close
+		// - overwriting Backbone.View.prototype.close (at top)
+		var that = this;
+
+		// De-bubble BackButton
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return this;
+
 	},
 
 	cancel: function(ev){
@@ -4042,8 +4098,11 @@ App.Views.ChooseContact = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
+		// Trigger cancel
+		this.trigger('cancel');
+
 		// Return
-		this.back(null);
+		// this.back(null);
 
 		return false;
 
@@ -4057,36 +4116,67 @@ App.Views.ChooseContact = Backbone.View.extend({
 		// Get email
 		var email = $(elem).attr('data-email');
 
-		// Return
-		this.back(email);
+		// Trigger that we got an email
+		this.trigger('chose_email',email);
 
 
-		return false;
+		// // Return
+		// this.back(email);
 
+		// return false;
+		return;
 	},
 
 	back: function(email){
 		var that = this;
 
-		// Add email to the parent page
-		this.options.Parent.chose_email(email);
+		this.trigger('cancel');
 
-		// Show the parent
-		// - should be using a window manager
-		that.options.Parent.$el.removeClass('nodisplay');
-		// $('body > .common_compose').removeClass('nodisplay');
+		return;
 
-		// Close this view
-		this.close();
+		// this.cancel();
+
+		// alert('never back!');
+		// // trying to exit
+		// // - trigger "want to leave"
+		// // - expect some other view to handle this mofucker
+		// this.trigger('want_to_leave', email);
+
+		// // // Add email to the parent page
+		// // this.options.Parent.chose_email(email);
+
+		// // // Show the parent
+		// // // - should be using a window manager
+		// // that.options.Parent.$el.removeClass('nodisplay');
+		// // // $('body > .common_compose').removeClass('nodisplay');
+
+		// // // Close this view
+		// this.close();
 
 	},
 
 	render: function() {
 		var that = this;
 
+		// Already rendered once?
 		if(this._rendered){
+			// Already rendered, but asking to be shown?
+
+			// Re-bind events
+			this.delegateEvents()
+
+			// Re-bind events for subViews (not necessary for ChooseContacts yet)
+			// _(that._subViews.undecided).each(function(v) {
+			// 	v.trigger('rebind');
+			// });
+
+			// Back button
+			this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
+
 			return this;
 		}
+
+		this._rendered = true;
 
 		// Template (loading)
 		var template = App.Utils.template('t_common_loading');
@@ -4927,8 +5017,17 @@ App.Views.All = Backbone.View.extend({
 			},3000); // wait 3 seconds before doing our .fetch
 		});
 
-		// Listen fo refresh
+		// Listen fo refresh request
 		this.on('refresh',this.refresh, this);
+
+		// Listen to local thread action
+		// - delay
+		// - done
+		App.Events.on('Thread.done',function(thread_id){
+			// Trigger the mass_action for animation
+			// - might not actually affect any threads, but doesn't hurt
+			that.mass_action('done', [thread_id]);
+		}, this);
 
 		// // Collection for Undecided
 		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
@@ -5008,12 +5107,13 @@ App.Views.All = Backbone.View.extend({
 		// Should remove all existing views?
 		// - yes?
 
+		console.log('reset delayed');
+
 		// Add each Thread object
 		// - passes individual Thread model
 		that.delayedCollection.each(that.add_delayed_thread, this);
 
-		console.info('reset delayed');
-
+		console.log('reset delayed');
 	},
 
 	reset_undecided_threads: function(threads, options){
@@ -5021,6 +5121,8 @@ App.Views.All = Backbone.View.extend({
 
 		// Should remove all existing views?
 		// - yes? todo because it doesn't really get called in that way
+
+		console.log('reset undecided');
 
 		// Add each Thread object
 		// - passes individual Thread model
@@ -5038,6 +5140,8 @@ App.Views.All = Backbone.View.extend({
 	sync_delayed_threads: function(threads, options){
 		var that = this.this; // view
 
+		console.log('sync_delayed_threads');
+
 		// Empty?
 		if(that.delayedCollection.length == 0 && that.undecidedCollection.length == 0){
 			// alert('both zero');
@@ -5054,6 +5158,7 @@ App.Views.All = Backbone.View.extend({
 		var that = this.this;
 
 		// Got a new Thread._id, so we need to go get the corresponding ThreadFull model
+		console.log('add_delayed_thread');
 
 		// // Full Thread
 		// console.log('new ThreadFull');
@@ -5140,7 +5245,11 @@ App.Views.All = Backbone.View.extend({
 
 						// });
 						
-						that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
+						console.log('dsize != 1: ' + _.size(that._subViews[this.threadType]));
+
+						var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')');
+						console.log($elem.length);
+						$elem.after(dv.render().el);
 
 						// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')').after(dv.render().el);
 						// that.$('.all_threads').append(dv.render().el);
@@ -5150,6 +5259,7 @@ App.Views.All = Backbone.View.extend({
 
 						// Is the structure already set up?
 						if(!that.$('.all_threads').length){
+							console.log('rendering all_threads structure');
 							that.render_structure();
 						}
 
@@ -5163,7 +5273,11 @@ App.Views.All = Backbone.View.extend({
 					if(_.size(that._subViews[this.threadType]) != 1){
 						// Already displayed at least one, so we need to figure out where this view is going
 
-						that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
+						console.log('usize != 1: ' + _.size(that._subViews[this.threadType]));
+
+						var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')');
+						console.log($elem.length);
+						$elem.after(dv.render().el);
 
 					} else {
 						// No other ones, just prepend it (highest on the list)
@@ -5171,6 +5285,7 @@ App.Views.All = Backbone.View.extend({
 
 						// Is the structure already set up?
 						if(!that.$('.all_threads').length){
+							console.log('rendering all_threads structure');
 							that.render_structure();
 						}
 
@@ -5232,10 +5347,11 @@ App.Views.All = Backbone.View.extend({
 			}
 		}, this); // completely changed collection (triggers add/remove)
 
-		thread.Email.on('sync', function(threadFull){
+		thread.Email.on('sync', function(Emails){
 			// Fires after add/remove have completed?
 			// console.info('EmailSync');
-			if(!thread.EmailReady){
+
+			if(Emails.length > 0 && !thread.EmailReady){
 				thread.EmailReady = true;
 				thread.trigger('check_display_ready');
 			}
@@ -6312,6 +6428,8 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			Thread: this.model.Full.toJSON(),
 			Email: this.model.Email.toJSON()
 		};
+
+		console.log(data);
 
 		// Template
 		var template = App.Utils.template('t_all_single_thread');
@@ -7731,13 +7849,13 @@ App.Views.SearchEmails = Backbone.View.extend({
 				// Not the first view
 				// console.info(elem_idx);
 				// console.info(that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')'));
-				$tmpElem.after(dv.render().$el);
+				$tmpElem.after(dv.render().el);
 				// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
 			} else {
 				// First view, append it to the page
 
 				// Render
-				that.$('.search_emails_thread_results').append(dv.render().$el);
+				that.$('.search_emails_thread_results').append(dv.render().el);
 			}
 
 			// console.log('EmailObj');
@@ -7791,7 +7909,6 @@ App.Views.SearchEmails = Backbone.View.extend({
 		}, this);
 
 		EmailSearches.on('add', EmailSearchesAdd, this);
-
 
 		// 	success: function(emails){
 
@@ -7955,17 +8072,17 @@ App.Views.SearchEmails = Backbone.View.extend({
 
 			var $tmpElem = that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')');
 
-			if(_.size(that._searchEmailSubViews) != 1){
+			if(_.size(that._searchEmailSubViews) != 1 && $tmpElem.length){
 				// Not the first view
 				// console.info(elem_idx);
 				// console.info(that.$('.search_emails_thread_results ').find('.thread:nth-of-type('+elem_idx+')'));
-				$tmpElem.after(dv.render().$el);
+				$tmpElem.after(dv.render().el);
 				// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')').after(dv.render().el);
 			} else {
 				// First view, append it to the page
 
 				// Render
-				that.$('.search_emails_thread_results').append(dv.render().$el);
+				that.$('.search_emails_thread_results').append(dv.render().el);
 			}
 
 			// Create new Model for EmailFull
@@ -9204,19 +9321,33 @@ App.Views.Settings = Backbone.View.extend({
 	className: 'view_settings',
 
 	events: {
+		'click .setting[data-setting-type="general"]' : 'general_settings',
+		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
+		'click .setting[data-setting-type="flushcache"]' : 'flushcache',
 		'click .setting[data-setting-type="logout"]' : 'logout',
 		'click .cancel' : 'cancel'
 	},
 
 	initialize: function(options) {
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'cancel');
 		var that = this;
 
 	},
 
 	beforeClose: function(){
-		
+		var that = this;
+
+		// kill any subviews
+		if(this.speedtestSubView){
+			this.speedtestSubView.close(); // should emit an event instead?
+		}
+		if(this.displayedSubview){
+			this.displayedSubview.close(); // should emit an event instead?
+		}
+
+		// De-bubble this back button
 		App.Utils.BackButton.debubble(this.backbuttonBind);
 
 	},
@@ -9251,6 +9382,89 @@ App.Views.Settings = Backbone.View.extend({
 		Backbone.history.loadUrl('confirm_logout');
 	},
 
+	general_settings: function(ev){
+
+		var that = this;
+
+		// Launch speedtest subView
+		// - should it really be a subView?
+
+		this.displayedSubview = new App.Views.GeneralSettings();
+
+		// Render the subView
+		this.displayedSubview.render();
+
+		// Append to View
+		this.$el.after(this.displayedSubview.el); // could do this.speedtestSubView.render().el ?
+
+		// Hide this View
+		this.$el.hide();
+
+		// Listen for subview closing
+		this.displayedSubview.on('back', function(){
+			// Show the parent
+			// - close the guy
+
+			this.displayedSubview.close();
+
+			that.$el.show();
+
+		}, this);
+
+	},
+
+	speedtest: function(ev){
+		var that = this;
+
+		// Launch speedtest subView
+		// - should it really be a subView?
+
+		this.speedtestSubView = new App.Views.SpeedTest();
+
+		// Render the subView
+		this.speedtestSubView.render();
+
+		console.log(this.speedtestSubView);
+
+		// Append to View
+		this.$el.after(this.speedtestSubView.el); // could do this.speedtestSubView.render().el ?
+
+		// Hide this View
+		this.$el.hide();
+
+		// Listen for subview closing
+		this.speedtestSubView.on('back', function(){
+			// Show the parent
+			// - close the guy
+
+			this.speedtestSubView.close();
+
+			that.$el.show();
+
+		}, this);
+
+		return;
+	},
+
+	flushcache: function(ev){
+		// Flushes the cache
+		// - seems to fix some problems with models/collections
+
+		var that = this;
+
+		var c = confirm('It might take a minute for previous emails to re-appear, as they are loaded back into the cache');
+		if(c){
+			// Wait for cache to flush
+			App.Utils.Storage.flush()
+				.then(function(){
+					// worked
+					alert('Cache Flushed');
+				});
+		}
+
+		return;
+	},
+
 	render: function() {
 		var that = this;
 
@@ -9264,10 +9478,20 @@ App.Views.Settings = Backbone.View.extend({
 				text: 'General Settings',
 				subtext: 'random things',
 			},
+			// {
+			// 	key: 'theme',
+			// 	text: 'Theme',
+			// 	subtext: 'lots of pretty colors',
+			// },
 			{
-				key: 'theme',
-				text: 'Theme',
-				subtext: 'lots of pretty colors',
+				key: 'speedtest',
+				text: 'Speed Test',
+				subtext: 'how fast is your data connection?',
+			},
+			{
+				key: 'flushcache',
+				text: 'Flush Cache',
+				subtext: 'fixes most problems',
 			},
 			{
 				key: 'logout',
@@ -9284,6 +9508,207 @@ App.Views.Settings = Backbone.View.extend({
 
 		return this;
 
+	}
+
+});
+
+App.Views.GeneralSettings = Backbone.View.extend({
+
+	className: 'settings_general_view',
+
+	events: {
+		'click .cancel' : 'backButton'
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'back');
+
+	},
+
+	beforeClose: function(){
+		// De-bubble this back button
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+	},
+
+	backButton: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		this.back();
+
+		return false;
+	},
+
+	back: function(){
+		// Go back to settings page
+		var that = this;
+
+		this.trigger('back');
+	},
+
+	render: function(){
+		var that = this;
+
+		// Remove any previous one
+		// $('.logout').remove();
+
+		// Build from template
+		var template = App.Utils.template('t_settings_general');
+
+		// Get Settings from Cache
+		App.Utils.Storage.get('settings', 'critical')
+			.then(function(settings){
+				if(!settings){
+					// No settings created! 
+					// - use defaults
+				}
+			});
+
+
+		// Build settings data
+		// - already loaded into the app, so just show those settings
+		
+
+		// Write HTML
+		that.$el.html(template(App.Data.settings));
+
+		// Back button
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
+
+		return this;
+	}
+
+});
+
+App.Views.SpeedTest = Backbone.View.extend({
+
+	className: 'speedtest_view',
+
+	events: {
+		'click #start' : 'start',
+		'click .cancel' : 'backButton'
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'back');
+
+	},
+
+	beforeClose: function(){
+		// De-bubble this back button
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+	},
+
+	start: function(ev){
+		// Start the speedtest
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Hide button
+		this.$('.pre_start').hide();
+
+		// Show "running" text
+		this.$('.running').show();
+
+		// start
+		var st = new SpeedTest();
+		st.run({
+			runCount: 5,
+			imgUrl: "https://s3.amazonaws.com/emailboxv1/speedtest.jpg",
+			size: 85400,
+			onStart: function() {
+				// alert('Before Running Speed Test');
+
+			}
+
+			,onEnd: function(speed_results) {
+
+				console.log(speed_results);
+
+				speed_results.connection_type = that.checkConnection();
+
+				// Hide "running" text
+				that.$('.running').hide();
+
+				// Show results
+
+				// Build template
+				var template = App.Utils.template('t_speedtest_results');
+
+				// console.info(template(speed_results));
+
+				speed_results.KBps = speed_results.KBps.toFixed(2);
+				speed_results.Kbps = speed_results.Kbps.toFixed(2);
+
+				// Write HTML
+				that.$('.results').html(template(speed_results));
+
+				// Show results
+				that.$('.results').show();
+
+				// alert( 'Speed test complete:  ' + speed.Kbps + ' Kbps');
+				// put your logic here
+				if( speed_results.Kbps < 200 ){
+					// alert('Your connection is too slow');
+				}
+			}
+		});
+
+
+	},
+
+	checkConnection: function(){
+		var networkState = navigator.connection.type;
+
+		var states = {};
+		states[Connection.UNKNOWN]  = 'Unknown connection';
+		states[Connection.ETHERNET] = 'Ethernet connection';
+		states[Connection.WIFI]     = 'WiFi connection';
+		states[Connection.CELL_2G]  = 'Cell 2G connection';
+		states[Connection.CELL_3G]  = 'Cell 3G connection';
+		states[Connection.CELL_4G]  = 'Cell 4G connection';
+		states[Connection.CELL]     = 'Cell generic connection';
+		states[Connection.NONE]     = 'No network connection';
+
+		return states[networkState];
+	},
+
+	backButton: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		this.back();
+
+		return false;
+	},
+
+	back: function(){
+		// Go back to settings page
+		var that = this;
+
+		this.trigger('back');
+	},
+
+	render: function(){
+		var that = this;
+
+		// Remove any previous one
+		// $('.logout').remove();
+
+		// Build from template
+		var template = App.Utils.template('t_speedtest');
+
+		// Write HTML
+		that.$el.html(template());
+
+		// Back button
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
+
+		return this;
 	}
 
 });
