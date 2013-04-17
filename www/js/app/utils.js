@@ -20,7 +20,7 @@ App.Utils = {
 				window.setTimeout(function(){
 					if(App.Data.debug_messages[key]){
 						// Stil exists
-						App.Utils.Notification.temp('Bad: ' + App.Data.debug_messages[key].text);
+						App.Utils.Notification.debug.temp('Bad: ' + App.Data.debug_messages[key].text);
 						App.Utils.Notification.debug.remove(key);
 					}
 				}, 30000);
