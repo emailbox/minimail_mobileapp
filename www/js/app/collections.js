@@ -1507,6 +1507,9 @@ function contacts_sync_collection(method, model, options) {
 
 				// alert(contacts_with_email.length);
 
+				// get only the top 25
+				contacts_with_email = contacts_with_email.splice(0,25);
+
 				// Parse and sort
 				var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
 				// contacts_parsed = contacts_parsed.splice(0,25);
@@ -1514,10 +1517,10 @@ function contacts_sync_collection(method, model, options) {
 				// Resolve
 				dfd.resolve(contacts_parsed);
 
-				// console.info('contacts_parsed');
-				// console.log(JSON.stringify(contacts_parsed.splice(0,5)));
-				// Continue with success
-				options.success(contacts_parsed);
+				// Fire success function
+				if(options.success){
+					options.success(contacts_parsed);
+				}
 
 			}, function(err){
 				// Err with contacts
