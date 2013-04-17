@@ -1532,7 +1532,7 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		// Mark as Done
 		App.Plugins.Minimail.saveAsDone(that.threadid);
-		
+
 		// Trigger local event
 		App.Events.trigger('Thread.done', that.threadid);
 
@@ -5012,12 +5012,24 @@ App.Views.All = Backbone.View.extend({
 			console.warn('Fetching new because Thread.action or Email.new');
 			// App.Utils.Notification.debug.temp('Fetching delayed, silently');
 			window.setTimeout(function(){
+
+				// go through "waiting_to_remove"
+				_.each(that._waitingToRemove, function(elem, i){
+					// Remove Thread's subView
+
+					// Get subview to remove
+					that._subViews[elem[0]] = _(that._subViews[elem[0]]).without(elem[1]);
+					$(elem[1].el).remove();
+
+				});
+
 				that.delayedCollection.fetchDelayed();
 				that.undecidedCollection.fetchUndecided();
+
 			},3000); // wait 3 seconds before doing our .fetch
 		});
 
-		// Listen fo refresh request
+		// Listen for refresh request
 		this.on('refresh',this.refresh, this);
 
 		// Listen to local thread action
@@ -5081,9 +5093,6 @@ App.Views.All = Backbone.View.extend({
 		// - clear any missing elements, add any that need to be added
 		// - it should look nice while adding/removing! 
 
-		that.delayedCollection.fetchDelayed();
-		that.undecidedCollection.fetchUndecided();
-
 		// go through "waiting_to_remove"
 		_.each(this._waitingToRemove, function(elem, i){
 			// Remove Thread's subView
@@ -5098,6 +5107,14 @@ App.Views.All = Backbone.View.extend({
 			$(elem[1].el).addClass('closing_nicely');
 
 		});
+
+		that.delayedCollection.fetchDelayed();
+		that.undecidedCollection.fetchUndecided();
+
+		// Print out number of views
+		console.log('num');
+		console.log(that.undecidedCollection.length);
+		console.log(that.delayedCollection.length);
 
 	},
 
@@ -5145,7 +5162,7 @@ App.Views.All = Backbone.View.extend({
 		// Empty?
 		if(that.delayedCollection.length == 0 && that.undecidedCollection.length == 0){
 			// alert('both zero');
-
+			console.warn('both zero');
 			that.check_inbox_zero();
 		}
 
@@ -5189,6 +5206,8 @@ App.Views.All = Backbone.View.extend({
 			}
 			thread.Rendered = true;
 			
+			console.log('Thread is ready to be rendered');
+
 			// Get index (position) of this Thread
 			var idx;
 			if(this.threadType == 'delayed'){
@@ -9324,6 +9343,7 @@ App.Views.Settings = Backbone.View.extend({
 		'click .setting[data-setting-type="general"]' : 'general_settings',
 		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
 		'click .setting[data-setting-type="flushcache"]' : 'flushcache',
+		'click .setting[data-setting-type="close"]' : 'closeapp',
 		'click .setting[data-setting-type="logout"]' : 'logout',
 		'click .cancel' : 'cancel'
 	},
@@ -9373,13 +9393,6 @@ App.Views.Settings = Backbone.View.extend({
 		this.close();
 
 		return false;
-	},
-
-	logout: function(ev){
-		var that = this;
-
-		// Confirm logout
-		Backbone.history.loadUrl('confirm_logout');
 	},
 
 	general_settings: function(ev){
@@ -9465,6 +9478,19 @@ App.Views.Settings = Backbone.View.extend({
 		return;
 	},
 
+	closeapp: function(ev){
+		var that = this;
+
+		navigator.app.exitApp();
+	},
+
+	logout: function(ev){
+		var that = this;
+
+		// Confirm logout
+		Backbone.history.loadUrl('confirm_logout');
+	},
+
 	render: function() {
 		var that = this;
 
@@ -9492,6 +9518,11 @@ App.Views.Settings = Backbone.View.extend({
 				key: 'flushcache',
 				text: 'Flush Cache',
 				subtext: 'fixes most problems',
+			},
+			{
+				key: 'close',
+				text: 'Close',
+				subtext: 'in case BackButton broke'
 			},
 			{
 				key: 'logout',
