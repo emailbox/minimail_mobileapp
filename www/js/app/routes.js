@@ -207,7 +207,6 @@ App.Router = Backbone.Router.extend({
 
 		// Does page already exist?
 		// - some pages just stay in memory, do not get .close unless by force
-		var page;
 		if(!App.Data.PermaViews.leisure){
 			// Create page for first time
 			App.Data.PermaViews.leisure = new App.Views.LeisureList();
@@ -439,6 +438,13 @@ App.Router = Backbone.Router.extend({
 
 			// Unsubscribe from Push Notifications
 			// - todo...
+			App.Data.pushNotification.unregister(function(){
+				// Success
+				console.log('Unsubscribed from Push OK');
+			}, function(){
+				// Error
+				console.log('Failed Unsubscribe from Push');
+			});
 
 			// Clear preferences
 			window.localStorage.clear();
