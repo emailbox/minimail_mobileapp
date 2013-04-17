@@ -14,7 +14,8 @@
 	<!--
     <script src="js_main/cordova-2.4.0.js"></script>
     <script src="js_main/childbrowser_local.js"></script>
-	-->
+-->
+	
 	
 
 	<!-- Using build.phonegap.com -->
@@ -70,6 +71,7 @@
 
 	<script src="js/libs/json-formatter.js"></script>
 	<script src="js/libs/date.js"></script>
+	<script src="js/libs/speedtest.js"></script>
 	<!-- http://momentjs.com/  would be an alternative -->
 
 	<script src="js/bootstrap/bootstrap-modal.js"></script>
@@ -236,7 +238,7 @@
 								<button data-action="all" class="btn">
 									<i class="icon-inbox"></i>
 								</button>
-								<button data-action="leisure" class="btn">
+								<button data-action="leisure" class="btn nodisplay">
 									<i class="icon-glass"></i>
 								</button>
 								<button data-action="search" class="btn">
@@ -945,9 +947,9 @@
 							</div>
 						</div>
 
-						<div class="center">
+						<div class="center ">
 							<div class="btn-group pull-right">
-								<button data-action="leisure" class="btn">
+								<button data-action="leisure" class="btn nodisplay">
 									<i class="icon-glass"></i>
 								</button>
 							</div>
@@ -2170,29 +2172,6 @@
 
 	<script id="t_settings" type="text/x-handlebars-template">
 
-		<div class="footer">
-					
-			<div class="footer_holder clearfix">
-
-				<div class="base_header_menu clearfix">
-					<div class="left">
-						<h1>
-							Settings
-						</h1>
-					</div>
-					<div class="right">
-						<div class="btn-group pull-right">
-							<button data-action="cancel" class="btn cancel">
-								Cancel
-							</button>
-						</div>
-					</div>
-				</div>
-					
-			</div>
-			
-		</div>
-
 		<div class="body_container">
 
 			<div class="settings">
@@ -2228,6 +2207,183 @@
 
 		</div>
 
+		<div class="footer">
+					
+			<div class="footer_holder clearfix">
+
+				<div class="base_footer_menu clearfix">
+					<div class="left">
+						<h1>
+							Settings
+						</h1>
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn cancel">
+								Cancel
+							</button>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+	</script>
+
+
+	<script id="t_settings_general" type="text/x-handlebars-template">
+
+		<div class="body_container">
+
+			<div class="settings_list">
+
+				{{#each settings}}
+
+					<div class="setting">
+
+
+
+					</div>
+
+				{{/each}}
+
+			</div>
+
+		</div>
+
+		<div class="footer">
+					
+			<div class="footer_holder clearfix">
+
+				<div class="base_footer_menu clearfix">
+					<div class="left">
+						<h1>
+							General Settings
+						</h1>
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn cancel">
+								Back
+							</button>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+
+	</script>
+
+
+	<script id="t_speedtest" type="text/x-handlebars-template">
+
+		<div class="body_container">
+
+			<div class="speedtest">
+
+				<div class="pre_start text-center">
+
+					<br />
+					<br />
+					<br />
+
+					<button id="start" class="btn btn-xlarge">Start Speedtest</button>
+				</div>
+
+				<div class="running text-center" style="display:none;">
+					<br />
+					<br />
+					<br />
+					<br />
+					<br />
+
+					<h1>
+						running...
+					</h1>
+
+				</div>
+
+				<div class="results text-center" style="display:none;">
+					
+
+				</div>
+
+
+			</div>
+
+		</div>
+
+		<div class="footer">
+					
+			<div class="footer_holder clearfix">
+
+				<div class="base_footer_menu clearfix">
+					<div class="left">
+						<h1>
+							Speed Test
+						</h1>
+					</div>
+					<div class="right">
+						<div class="btn-group pull-right">
+							<button data-action="cancel" class="btn cancel">
+								Back
+							</button>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+
+	</script>
+
+	<script id="t_speedtest_results" class="partial" type="text/x-handlebars-template">
+
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+
+		<h1>
+			results:
+		</h1>
+
+		<h3>
+			<strong>{{Kbps}}</strong> Kbps
+		</h3>
+		<h3>
+			<strong>{{KBps}}</strong> KBps
+		</h3>
+
+		<br />
+		<br />
+
+		{{#compare KBps ">" 200}}
+
+			<h4>
+				seems like a Broadband connection (fast internet)
+			</h4>
+		{{else}}
+
+			<h4>
+				seems like a Mobile connection (slow internet)
+			</h4>
+		{{/compare}}
+
+		<br />
+		<br />
+
+		<h4>
+			{{connection_type}}
+		</h4>
 
 	</script>
 
