@@ -16,6 +16,15 @@ App.Utils = {
 
 				App.Events.trigger('debug_messages_update',true);
 
+				// At most, show it for 30 seconds before removing
+				window.setTimeout(function(){
+					if(App.Data.debug_messages[key]){
+						// Stil exists
+						App.Utils.Notification.temp('Bad: ' + App.Data.debug_messages[key].text);
+						App.Utils.Notification.debug.remove(key);
+					}
+				}, 30000);
+
 				return key;
 			},
 
@@ -221,9 +230,7 @@ App.Utils = {
 				// Get latest values
 
 				try {
-					console.log(1);
 					setTimeout(function(){
-						console.log(2);
 						var i, key, remove = [];
 						for (i=0; i < window.localStorage.length ; i++) {
 							key = localStorage.key(i);
@@ -236,6 +243,8 @@ App.Utils = {
 							// console.log(3);
 							window.localStorage.removeItem(remove[i]);
 						}
+						// Resolve after completed
+						dfd.resolve(true);
 					}, 1);
 				} catch(err){
 					console.error(err);
@@ -1331,15 +1340,12 @@ var Api = {
 
 		ajaxOptions = $.extend(ajaxOptions, queryOptions);
 
+		use_queue = true;
 		if(use_queue){
 			return Api.queue.add(ajaxOptions);
 		} else {
 
-			if(useForge){
-				return window.forge.ajax(ajaxOptions); // not a promise?
-			} else {
-				return $.ajax(ajaxOptions); // promise?
-			}
+			return $.ajax(ajaxOptions); // promise?
 
 		}
 
