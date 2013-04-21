@@ -17,9 +17,9 @@ Please fork and submit pull requests!
 ## Current status 
 
 Version: 0.1 aka Extreme Alpha  
-It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, create Leisure Filters, and search links/attachments/emails. Push Notifications work only when using Phonegap Build.  
+It's alive! Minimail is usable as a mobile email client at this point (not just a prototype)! Sending and receiving both work, you can view Threads, and search links/attachments/emails. Push Notifications work only when using Phonegap Build.  
 
-> Important Note: This is a pre-release, pre-stable version of Emailbox, and developers are encouraged to not use their primary email address! 
+> Important Note: This is a pre-release, pre-stable version of Emailbox, and developers are discouraged from using their primary email address! 
 
 Priorities include: 
 - Refactor into correct Backbone patterns
@@ -30,7 +30,7 @@ Priorities include:
 If you encounter an issue not already on GitHub Issues for this repository, please add it with as much info as possible! 
 
 ## Contents of this Repository  
-Source for the minimail mobile email client for Android. The app works in conjunction with a server-side component (receiving and sending emails, Push Notifications, leisure filters) and the Emailbox API (https://getemailbox.com/docs).  
+Source for the minimail mobile email client for Android. The app works in conjunction with a server-side component (receiving and sending emails, Push Notifications) and the Emailbox API (https://getemailbox.com/docs).  
 
 ## Requirements to run:  
 - Android Phone running 2.2+ (CSS not optimized for Tablets) 
@@ -55,10 +55,7 @@ By default the basic minimail server is used. If you want to run your own server
 
 ## App Todos
 - Issues have been moved to GitHub's issue tracker: [https://github.com/emailbox/minimail_mobileapp/issues](https://github.com/emailbox/minimail_mobileapp/issues)
-- switch to Require.js, Component, Browserify, etc. (easier plugins)
-- Camera and File Upload (emailbox file api)
-- CSS scheme (color, positioning, dimensions) 
-- Additional phones/platforms (per-dimensions/responsive css w/ defaults) 
+
 
 ## How to build on Android (incomplete):  
 1. Download the Android SDK tools (adt-bundle) 
@@ -72,20 +69,17 @@ By default the basic minimail server is used. If you want to run your own server
 
 ## FAQs  
 
-### Is this your first Backbone.js application?  
-Yes, is it that obvious? I'm fully aware that I'm using Models/Collections about as well as a baby with scissors, and I'll be refactoring it before any stable release.  
-
 ### What is the plan for minimail?  
-I want minimail to be a jumping off point for developers and designers to easily create their own personalized email clients. Minimail is a reference application, so you can see how it handles Contacts, Push Notifications, File Uploads, and more, do a Pull Request, and then improve upon the design or user experience. 
+Minimail is a jumping off point for developers and designers to easily create their own personalized email clients. Minimail is a reference application, so you can see how it handles Contacts, Push Notifications, File Uploads, and more, do a Pull Request, and then improve upon the design or user experience. 
 
 ### Pricing and revenue-sharing thoughts? 
-Minimail will eventually be a paid product/service, somewhere in the neighborhood of $10/mo per person. There are no plans for a free version, but some affiliate-like program will encourage developers to fork-build-host, then do marketing and collect revenue. 
+Minimail will eventually be a paid product/service, somewhere in the neighborhood of $10/mo per person. There are some plans for a free version, and an affiliate-like program will encourage developers to fork-build-host, then do marketing and collect revenue. 
 
 ### Lock-in, and Who Owns My Data?  
 All your data is available, at any time, so you can easily export anything out of your Emailbox datastore.  
 You will have the option of hosting your own data.  
 Emailbox has no plans to do any data mining or selling of any kind of data and, if those plans change, existing users will not be switched over without them giving express permission to minimail/emailbox.  
-Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client requires no effort. 
+Any changes to your original email or thread (read, starred, labels, etc.) are already synced back to Gmail, so switching back to (or between) another mail client requires minimal effort. 
 
 
 
