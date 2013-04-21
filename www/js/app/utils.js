@@ -1026,117 +1026,83 @@ var Api = {
 	}),
 
 	search: function(queryOptions, cacheOptions){
+		// Gather multiple requests in a 100ms window into a single request
+		// - needs to be really quick at switching?
 
-		// Caching is only half-written. Got out of control thinking about how to do it correctly
+		var dfd = $.Deferred();
 
-		// Search does caching, no other functions use it (why would they?)
-		if(typeof(cacheOptions) == 'object'){
-			if(cacheOptions.cache == true){
-				// cache is ON
+		if(App.Data.timer){
+			// already started timer
+			// - add to current bucket
+			
+			App.Data.timerBucket.push([dfd, queryOptions]);
 
-				// 2 functions required: 
-				// - create: new records retrieved, either from cache or query
-				// - update: new records retrieved, from query
+		} else {
 
-				// Records will be returned in 2 primary types
-				// - searching using a query: LIKE, or other conditions
-				//		- cache search parameters, see if we have that query stored
-				//		- run the search occasionally, or when triggered somehow (clicking 'Inbox' again)
-				// - searching for exact models: id: 201
-				//		- models listen on a Firebase channel for updates to that model's version number, then do a new Search accordingly
+			// Start timer
+			App.Data.timer = 1;
+			App.Data.timerBucket = [];
 
-				// Types:
-				// - search
-				// - ids (array using IN, or a single id)
-				//		- paths must match?
+			App.Data.timerBucket.push([dfd, queryOptions]);
 
-				if(cacheOptions.type == 'search'){
-					// todo..., not caching this stuff yet
-				}
+			// Start waiting period for new searchOptions
+			setTimeout(function(){
+				// Turn off timer
+				App.Data.timer = 0;
 
-				if(cacheOptions.type == 'id'){
-					// What id's are we trying to get cached values for?
+				// Clone timer bucket
+				var searchesToRun = App.Data.timerBucket.splice(0);
 
-					try {
-						var tmpData = queryOptions.data;
-						var tmpModel = tmpData.model;
-						var tmpIds = tmpData.conditions.id;
-						var tmpPaths = App.Utils.MD5(JSON.stringify(tmpData.paths));
+				// Create search query
+				// - iterate through each possible query
+				var searchData = {};
+				var searchQueryOptions = {
+					data: {
+						type: "multi",
+						searches: {} // object
+					},
+					success: function(response){
+						response = JSON.parse(response);
 
-						// Parse Ids
-						if(typeof(tmpIds) == 'array'){
-							tmpIds = tmpIds[1]; // contains IN as first value in array
-						} else {
-							tmpIds = [tmpIds.toString()];	// only a single id
-						}
+						// query has returned
+						// - parse out the deferreds according to the indexKey
 
-					} catch(err){
-						// Failed caching
-						// - should gracefully fuck up
-						clog('Failed Caching!');
-					}
+						// resolve each dfd accordingly
 
-					// Do we have these values cached?
-					// - iterate through each
-					var cached = [];
-					var uncached = [];
-					$.each(tmpIds,function(i,id){
-						// Get item from localstorage
-						var tmpPath = tmpModel+'.'+id;
-						clog('Looking for: '+tmpPath);
-						var tmpItem = localStorage.getItem(App.Credentials.prefix_access_token + tmpPath);
-						if(typeof(tmpItem) == 'undefined'){
-							// Unable to find
-							clog('Failed to find');
-							uncached.push(id);
-						} else {
-							// Found it in the cache!
-							
-							// Do we have each of the paths cached?
-							// - this doesn't handle missing paths (like original.Attachments)!! 
-							//		- renders it virtually useless because of this...
-							tmpItem = JSON.parse(tmpItem);
-							
+						_.each(response.data, function(elemData, idx){
+							// idx refers to the index of the searchesToRun
+							// console.log('elemData');
+							// console.log(elemData);
 
+							// Resolve
+							searchesToRun[idx][0].resolve(elemData);
 
-							cached.push(tmpItem);
-						}
-					});
+							// Call success function
+							// console.log(searchesToRun[idx]);
+							searchesToRun[idx][1].success(JSON.stringify(elemData));
 
-					// Any not cached?
-					// - we will search for those again
-					if(cached.length != tmpIds.length){
-
-						// Run search like normal, cache the results
-						// - todo, only run the search for the non-cached values
-
-
+						});
 
 					}
+				};
+				_.each(searchesToRun, function(search, idx){
+					// search[0] = dfd, search[1] = queryOptions
 
+					searchQueryOptions.data.searches[idx] = search[1].data;
+				});
 
-				}
+				// Run query
+				Api.query('/api/search',searchQueryOptions);
 
-				// Try to get records from Cache
-				var records = recordsFromCache();
+			}, 100);
 
-				// Any records exist?
-				if(records.code == 200){
-					// We were returned some records from the cache
-					// - going to fire both create and update
-
-					// Fire create with cached data
-
-
-				} else {
-
-				}
-
-			}
 		}
 
-		// Normal search query
-		return Api.query('/api/search',queryOptions);
+		// Return a deferred
+		return dfd.promise();
+
+		// // Normal search query
+		// return Api.query('/api/search',queryOptions);
 
 	},
 
@@ -1285,6 +1251,17 @@ var Api = {
 				debug_message = url + ': ' + queryOptions.data.event_id;
 				break;
 
+			case '/api/search':
+				if(queryOptions.data.type && queryOptions.data.type == 'multi'){
+					// multiple
+					// - see if all one type?
+					debug_message = url + ': ' + 'multiple';
+				} else {
+					// normal, with model
+					debug_message = url + ': ' + queryOptions.data.model;
+				}
+				break;
+
 			default: 
 				debug_message = url + ': ' + queryOptions.data.model;
 				break;
@@ -1340,7 +1317,7 @@ var Api = {
 
 		ajaxOptions = $.extend(ajaxOptions, queryOptions);
 
-		use_queue = true;
+		use_queue = false;
 		if(use_queue){
 			return Api.queue.add(ajaxOptions);
 		} else {
