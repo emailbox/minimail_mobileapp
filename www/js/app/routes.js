@@ -187,7 +187,6 @@ App.Router = Backbone.Router.extend({
 
 		}
 
-
 		// Display page
 		$('.body_container').html(App.Data.PermaViews.all.$el);
 		App.router.showView('main_view',App.Data.PermaViews.all, 'all');
