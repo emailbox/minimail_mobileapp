@@ -548,9 +548,9 @@ App.Plugins.Minimail = {
 
 	},
 
+
 	thread_main: {
 		
-
 		start: function(e){
 			// var that = this;
 
@@ -592,8 +592,8 @@ App.Plugins.Minimail = {
 						$('.touch_start').addClass('multi-selected');
 						$('.touch_start').removeClass('touch_start');
 
-						$parent_controller.addClass('multi-select-mode');
-						$parent_controller.trigger('multi-change');
+						// $parent_controller.addClass('multi-select-mode');
+						$parent_controller.trigger('multi-change'); // not actually triggering anything?
 
 						// clog('===firing');
 						return;
