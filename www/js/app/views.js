@@ -1516,7 +1516,8 @@ App.Views.CommonThread = Backbone.View.extend({
 		// Display delay_modal Subview
 		var subView = new App.Views.DelayModal({
 			context: that,
-			threadid: that.threadid
+			threadid: that.threadid,
+			onComplete: that.after_delay_modal
 		});
 		$('body').append(subView.$el);
 		subView.render();
@@ -1524,6 +1525,18 @@ App.Views.CommonThread = Backbone.View.extend({
 		return false;
 
 
+	},
+
+	after_delay_model: function(wait, wait_text){
+		// After delaying
+		// - emit an event
+
+		alert('after');
+
+		// Trigger local event
+		App.Events.trigger('Thread.delay', that.threadid, wait, wait_text);
+
+		return;
 	},
 
 	click_done: function(ev){
@@ -4939,7 +4952,9 @@ App.Views.All = Backbone.View.extend({
 
 		'click .multi-deselect' : 'multi_deselect',
 		'click .multi-done' : 'multi_done',
-		'click .multi-delay' : 'multi_delay'
+		'click .multi-delay' : 'multi_delay',
+
+		'multi-change .all_threads' : 'multi_options'
 
 	},
 
@@ -4948,6 +4963,7 @@ App.Views.All = Backbone.View.extend({
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'render_structure');
 		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'after_multi_delay_modal');
 		_.bindAll(this, 'mass_action');
 		_.bindAll(this, 'multi_options');
 		// _.bindAll(this, 'after_delay_modal');
@@ -5032,6 +5048,9 @@ App.Views.All = Backbone.View.extend({
 		// Listen for refresh request
 		this.on('refresh',this.refresh, this);
 
+		// Listen for check_multi_select
+		this.on('check_multi_select',this.multi_options, this);
+
 		// Listen to local thread action
 		// - delay
 		// - done
@@ -5039,6 +5058,11 @@ App.Views.All = Backbone.View.extend({
 			// Trigger the mass_action for animation
 			// - might not actually affect any threads, but doesn't hurt
 			that.mass_action('done', [thread_id]);
+		}, this);
+		App.Events.on('Thread.delay',function(thread_id, wait, wait_text){
+			// Trigger the mass_action for animation
+			// - might not actually affect any threads, but doesn't hurt
+			that.mass_action('delay', [thread_id], wait, wait_text);
 		}, this);
 
 		// // Collection for Undecided
@@ -5111,10 +5135,15 @@ App.Views.All = Backbone.View.extend({
 		that.delayedCollection.fetchDelayed();
 		that.undecidedCollection.fetchUndecided();
 
+		// Emit checker for multi-select
+		this.trigger('check_multi_select');
+
 		// Print out number of views
 		console.log('num');
 		console.log(that.undecidedCollection.length);
 		console.log(that.delayedCollection.length);
+
+		return;
 
 	},
 
@@ -5221,7 +5250,8 @@ App.Views.All = Backbone.View.extend({
 				model : thread,
 				threadType: this.threadType,
 				idx_in_collection: idx,
-				fadein: true
+				fadein: true,
+				parentView: that
 			});
 
 			// Add to views
@@ -5480,18 +5510,27 @@ App.Views.All = Backbone.View.extend({
 	},
 
 	multi_options: function(){
-		// Displays multi-select options (if multiple selected)
-		// - or hides them
+		// Displays (or hides) multi-select options
 		var that = this;
-		
-		// On or off?
-		if(this.$('.all_threads').hasClass('multi-select-mode')){
-			// Just turned on
+
+		// See if there are any views that are multi-selected
+		if(this.$('.multi-selected').length > 0){
+			this.show_multi_options = true;
 			this.$('.multi_select_options').removeClass('no_multi_select');
 		} else {
-			// Turned off
+			this.show_multi_options = false;
 			this.$('.multi_select_options').addClass('no_multi_select');
 		}
+
+		// // On or off?
+		// // if(this.$('.all_threads').hasClass('multi-select-mode')){
+		// if(this.show_multi_options){
+		// 	// Just turned on
+		// 	this.$('.multi_select_options').removeClass('no_multi_select');
+		// } else {
+		// 	// Turned off
+		// 	this.$('.multi_select_options').addClass('no_multi_select');
+		// }
 		
 		return false;
 	},
@@ -5611,23 +5650,165 @@ App.Views.All = Backbone.View.extend({
 	},
 
 	multi_delay: function(ev){
-		// Delay older messages
+		// Delay messages
 		// - displayes DelayModal
+		// - trigger animation (mass_action)
 
 		var that = this,
 			elem = ev.currentTarget;
 
-		// Hide multi-options
+		var incl_thread_ids = [];
+		$('.multi-selected').each(function(i, threadElem){
+			// Wait for this element to get triggered
+			var $threadParent = $(threadElem).parent();
+			incl_thread_ids.push($threadParent.attr('data-id'));
+			// if(incl_thread_ids.length > 0){
+			// 	// Already found this element
+			// 	incl_thread_ids.push($(threadElem).attr('data-id'));
+			// } else if($(threadElem).attr('data-id') == that.options.threadid){
+			// 	incl_thread_ids.push($(threadElem).attr('data-id'));
+			// }
+		});
+
+		// Make sure some are included
+		if(!incl_thread_ids || incl_thread_ids.length < 1){
+			alert('None Selected');
+			return false;
+		}
+
+		// Show multi-options
 		$('.multi_select_options').addClass('nodisplay');
 
 		// Display delay_modal Subview
 		var subView = new App.Views.DelayModal({
 			context: that,
-			threadid: that.threadid,
-			onComplete: that.after_delay_modal
+			onComplete: that.after_multi_delay_modal
 		});
 		$('body').append(subView.$el);
 		subView.render();
+
+		return false;
+
+	},
+
+	after_multi_delay_modal: function(wait, save_text){
+		var that = this;
+
+		// Show multi-options
+		$('.multi_select_options').removeClass('nodisplay');
+
+		// Return if a null value was sent through by DelayModal
+		if(!wait){
+			return false;
+		}
+
+		var incl_thread_ids = [];
+		$('.multi-selected').each(function(i, threadElem){
+			// Wait for this element to get triggered
+			var $threadParent = $(threadElem).parent();
+			incl_thread_ids.push($threadParent.attr('data-id'));
+		});
+
+		// Make sure some are included
+		if(!incl_thread_ids || incl_thread_ids.length < 1){
+			alert('None Selected');
+			return false;
+		}
+
+		// Figure out delay in seconds
+		var now_sec = parseInt(new Date().getTime() / 1000);
+		var delay_time = wait.getTime() / 1000;
+		var delay_seconds = parseInt(delay_time - now_sec);
+		var in_seconds = now_sec + delay_seconds;
+
+		// App.Plugins.Minimail.saveNewDelay(this.threadid,in_seconds,delay_seconds);
+
+		// Fire event to be run in the future when these are due
+		// - causes a bunch of events to fire at one time?
+		// - what if one of the due ones cancels?? (breaks it)
+		Api.event({
+			data: {
+				event: 'Minimail.wait_until_fired',
+				delay: delay_seconds,
+				obj: {
+					text: "Emails are due"
+				}
+			},
+			success: function(response){
+				response = JSON.parse(response);
+
+				console.log(JSON.stringify(response));
+
+				if(response.code != 200){
+					// Failed launching event
+					alert('Failed launching event');
+					dfd.reject(false);
+					return;
+				}
+
+				// Save new delay also
+				Api.update({
+					data: {
+						model: 'Thread',
+						conditions: {
+							'_id' : {
+								'$in' : incl_thread_ids
+							}
+						},
+						multi: true, 
+						paths: {
+							"$set" : {
+								"app.AppPkgDevMinimail.wait_until" : in_seconds,
+								"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+								"app.AppPkgDevMinimail.done" : 0
+							}
+						}
+					},
+					success: function(response){
+						response = JSON.parse(response);
+						if(response.code != 200){
+							// Shoot
+							alert('Failed updating threads!');
+						}
+					}
+				});
+
+			}
+		});
+
+
+		// Fire event to modify move Email/Thread to Archive (it will be brought back later when wait_until is fired)
+		_.each(incl_thread_ids, function(tmp_thread_id){
+
+			Api.event({
+				data: {
+					event: 'Thread.action',
+					obj: {
+						'_id' : tmp_thread_id, // allowed to pass a thread_id here
+						'action' : 'archive'
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+
+					if(response.code != 200){
+						// Failed launching event
+						alert('Failed launching Thread.action2');
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+
+		});
+
+		// Initiate mass action
+		// - even if only 1 thing was changed
+		that.mass_action('delay', incl_thread_ids, wait, save_text);
+
+		// De-select
+		this.multi_deselect();
 
 		return false;
 
@@ -5839,82 +6020,82 @@ App.Views.All = Backbone.View.extend({
 
 
 	refresh_and_render_threads: function(){
-		// Refresh the Thread list from the server
-		// - re-render the Threads (this.render_threads)
+		// // Refresh the Thread list from the server
+		// // - re-render the Threads (this.render_threads)
 
-		var that =  this;
+		// var that =  this;
 
-		// Start the refresher for each
-		// After each has finished refreshing, it should tell the list to be recompiled
+		// // Start the refresher for each
+		// // After each has finished refreshing, it should tell the list to be recompiled
 
-		// Wait for both to finish, then recombine threads
+		// // Wait for both to finish, then recombine threads
 
-		var dfdUndecided = $.Deferred(),
-			dfdDelayed = $.Deferred();
+		// var dfdUndecided = $.Deferred(),
+		// 	dfdDelayed = $.Deferred();
 
-		that.undecidedThreadsCollection = new App.Collections.UndecidedThreads();
-		that.undecidedThreadsCollection.fetchUndecided({
-			success: function(threads) {
-				// Does not return models, just JSON data objects
+		// that.undecidedThreadsCollection = new App.Collections.UndecidedThreads();
+		// that.undecidedThreadsCollection.fetchUndecided({
+		// 	success: function(threads) {
+		// 		// Does not return models, just JSON data objects
 					
-				// Store locally
-				App.Utils.Storage.set('undecided_threads_and_emails',threads);
+		// 		// Store locally
+		// 		App.Utils.Storage.set('undecided_threads_and_emails',threads);
 
-				// Resolve
-				dfdUndecided.resolve();
+		// 		// Resolve
+		// 		dfdUndecided.resolve();
 
-			}
-		});
+		// 	}
+		// });
 
 
-		that.delayedThreadsCollection = new App.Collections.DelayedThreads();
-		that.delayedThreadsCollection.fetchDelayed({
-			success: function(threads) {
-				// Does not return models, just JSON data objects
+		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
+		// that.delayedThreadsCollection.fetchDelayed({
+		// 	success: function(threads) {
+		// 		// Does not return models, just JSON data objects
 					
-				// Store locally
-				App.Utils.Storage.set('delayed_threads_and_emails',threads);
+		// 		// Store locally
+		// 		App.Utils.Storage.set('delayed_threads_and_emails',threads);
 
-				// Resolve
-				dfdDelayed.resolve();
+		// 		// Resolve
+		// 		dfdDelayed.resolve();
 
-				// // Recombine threads
-				// that.recombine_threads()
-				// 	.then(function(threads){
+		// 		// // Recombine threads
+		// 		// that.recombine_threads()
+		// 		// 	.then(function(threads){
 
-				// 		// No threads?
-				// 		if(threads.undecided.length < 1 && threads.delayed.length < 1){
-				// 			// Render Inbox Zero view
-				// 			that.render_zero();
-				// 			return;
-				// 		}
+		// 		// 		// No threads?
+		// 		// 		if(threads.undecided.length < 1 && threads.delayed.length < 1){
+		// 		// 			// Render Inbox Zero view
+		// 		// 			that.render_zero();
+		// 		// 			return;
+		// 		// 		}
 
-				// 		// Render new Thread list
-				// 		that.render_threads(threads);
-				// 	});
+		// 		// 		// Render new Thread list
+		// 		// 		that.render_threads(threads);
+		// 		// 	});
 
 
-			}
-		});
+		// 	}
+		// });
 
-		$.when(dfdUndecided.promise(), dfdDelayed.promise())
-			.then(function(){
+		// $.when(dfdUndecided.promise(), dfdDelayed.promise())
+		// 	.then(function(){
 
-				// Recombine threads
-				that.recombine_threads()
-					.then(function(threads){
+		// 		// Recombine threads
+		// 		that.recombine_threads()
+		// 			.then(function(threads){
 
-						// No threads?
-						if(threads.undecided.length < 1 && threads.delayed.length < 1){
-							// Render Inbox Zero view
-							that.render_zero();
-							return;
-						}
+		// 				// No threads?
+		// 				if(threads.undecided.length < 1 && threads.delayed.length < 1){
+		// 					// Render Inbox Zero view
+		// 					that.render_zero();
+		// 					return;
+		// 				}
 
-						// Render new Thread list
-						that.render_threads(threads);
-					});
-			});
+		// 				// Render new Thread list
+		// 				that.render_threads(threads);
+		// 			});
+		// 	});
 
 	},
 
@@ -5937,14 +6118,16 @@ App.Views.All = Backbone.View.extend({
 				v.trigger('rebind');
 			});
 
+			// Scroll to bottom (yeah?)
+			this.$('.scroller').scrollTop(10000);
+
 			// Multi-select binding 
-			this.$(".all_threads").on('multi-change',that.multi_options);
+			// this.$('.all_threads').on('multi-change',that.multi_options); // now in view.events
 
 			return this;
 		}
 
 		this._rendered = true;
-		
 
 		// Render initial body
 		// - container, basically
@@ -5971,7 +6154,7 @@ App.Views.All = Backbone.View.extend({
 		this.$('.scroller').scrollTop(10000);
 
 		// Multi-select
-		this.$(".all_threads").on('multi-change',that.multi_options);
+		// this.$('.all_threads').on('multi-change',that.multi_options); // now in view.events
 
 
 		// // Delayed views second (at the bottom)
@@ -6097,6 +6280,9 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		} else {
 			// console.log('model OK');
 		}
+
+		// Have parentView?
+		this.parentView = this.options.parentView;
 
 		// Listen for rebinding events
 		this.on('rebind', this.rebind, this);
@@ -6262,7 +6448,8 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		var threadElem = $(elem).parents('.thread');
 		
 		// In multi-select mode?
-		if(this.$el.parents('.all_threads').hasClass('multi-select-mode')){
+		if(this.parentView.show_multi_options){
+		// if(this.$el.parents('.all_threads').hasClass('multi-select-mode')){
 			
 			// Already selected?
 			// alert($(elem).attr('class'));
@@ -6387,7 +6574,8 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			threadElem = $(elem).parents('.thread');
 
 		// In multi-select mode?
-		if(this.$el.parents('.all_threads').hasClass('multi-select-mode')){
+		if(this.parentView.show_multi_options){
+		// if(this.$el.parents('.all_threads').hasClass('multi-select-mode')){
 			
 			// Already selected?
 			// alert($(elem).attr('class'));
@@ -6397,11 +6585,14 @@ App.Views.SubCommonThread = Backbone.View.extend({
 				$(elem).removeClass('multi-selected');
 
 				// Anybody else selected?
-				if($('.multi-selected').length < 1){
-					// turn of multi-select mode
-					$(elem).parents('.all_threads').removeClass('multi-select-mode');
-					$('.all_threads').trigger('multi-change');
-				}
+				// - triggers the "checker" on the parentView
+				console.info('triggering check_multi_select');
+				that.parentView.trigger('check_multi_select');
+				// if($('.multi-selected').length < 1){
+				// 	// turn off multi-select mode?
+				// 	$(elem).parents('.all_threads').removeClass('multi-select-mode');
+				// 	that.parentView.trigger('multi-change');
+				// }
 
 			} else {
 				// select row
@@ -6448,7 +6639,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			Email: this.model.Email.toJSON()
 		};
 
-		console.log(data);
+		// console.log(data);
 
 		// Template
 		var template = App.Utils.template('t_all_single_thread');
