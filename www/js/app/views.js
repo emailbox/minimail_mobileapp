@@ -5132,14 +5132,20 @@ App.Views.All = Backbone.View.extend({
 
 		});
 
+		// Trigger fetches
 		that.delayedCollection.fetchDelayed();
 		that.undecidedCollection.fetchUndecided();
+
+		// At inbox zero?
+		if(that.undecidedCollection.length == 0 && that.delayedCollection.length == 0){
+			that.check_inbox_zero();
+		}
 
 		// Emit checker for multi-select
 		this.trigger('check_multi_select');
 
 		// Print out number of views
-		console.log('num');
+		console.log('number of views__');
 		console.log(that.undecidedCollection.length);
 		console.log(that.delayedCollection.length);
 
@@ -9532,6 +9538,7 @@ App.Views.Settings = Backbone.View.extend({
 
 	events: {
 		'click .setting[data-setting-type="general"]' : 'general_settings',
+		'click .setting[data-setting-type="sync"]' : 'sync_inbox',
 		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
 		'click .setting[data-setting-type="flushcache"]' : 'flushcache',
 		'click .setting[data-setting-type="close"]' : 'closeapp',
@@ -9617,6 +9624,25 @@ App.Views.Settings = Backbone.View.extend({
 
 	},
 
+	sync_inbox: function(ev){
+		// Triggers an inbox sync with Gmail
+
+		var that = this;
+
+		// trigger the sync event
+		Api.event({
+			data: {
+				event: 'Email.sync',
+				delay: 0,
+				obj: {}
+			}
+		});
+
+		App.Utils.Notification.toast('Sync has been triggered, it may take a moment');
+
+		return;
+	},
+
 	speedtest: function(ev){
 		var that = this;
 
@@ -9694,6 +9720,11 @@ App.Views.Settings = Backbone.View.extend({
 				key: 'general',
 				text: 'General Settings',
 				subtext: 'random things',
+			},
+			{
+				key: 'sync',
+				text: 'Sync Inbox',
+				subtext: 'reconcile with gmail in a jiffy',
 			},
 			// {
 			// 	key: 'theme',
