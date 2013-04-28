@@ -60,6 +60,9 @@ var App = {
 		},
 		PermaViews: {
 			all: null,
+			dunno: null,
+			due: null,
+			later: null,
 			leisure: null,
 			contacts: null
 		},
