@@ -1022,8 +1022,11 @@ Handlebars.registerHelper("display_body", function(Email) {
 });
 
 
-Handlebars.registerHelper("due_ago", function(varSeconds) {
+Handlebars.registerHelper("due_ago", function(threadType, varSeconds) {
 	//  Total minutes, hours, days ago since varDate
+
+	// Only used for certain types of Threads
+	// - different response based on if it is due now, or later
 
 	var now = new Date();
 	var now_seconds = parseInt(now.getTime() / 1000);
@@ -1034,30 +1037,75 @@ Handlebars.registerHelper("due_ago", function(varSeconds) {
 	var hour = minute * 60;
 	var day = hour * 24;
 
+	// Seconds even defined?
 	if(varSeconds == undefined){
 		return '';
 	}
 
 	var text_result = '';
-	if(seconds_diff > day){
-		// Days
-		var days = Math.floor(seconds_diff / day);
-		text_result = days + 'd';
 
-	} else if(seconds_diff > hour){
-		// Hours
-		var hours = Math.floor(seconds_diff / hour);
-		text_result = hours + 'h';
+	if(threadType == 'later'){
+		// "due in ..."
+		// - different color
 
-	} else if(seconds_diff > minute){
-		// Minutes
-		var minutes = Math.floor(seconds_diff / minute);
-		text_result = minutes + 'm';
+		// expecting negative values
+		if(seconds_diff > 0){
+			// Now
+			text_result = 'now';
+
+		} else {
+			// Non-negative
+			seconds_diff = seconds_diff * -1;
+
+			if(seconds_diff > day){
+				// Days
+				var days = Math.floor(seconds_diff / day);
+				text_result = days + 'd';
+
+			} else if(seconds_diff > hour){
+				// Hours
+				var hours = Math.floor(seconds_diff / hour);
+				text_result = hours + 'h';
+
+			} else if(seconds_diff > minute){
+				// Minutes
+				var minutes = Math.floor(seconds_diff / minute);
+				text_result = minutes + 'm';
+
+			} else {
+				// Seconds
+				text_result = 'dunno';
+			}
+
+		}
+
+
+
+	} else if(threadType == 'delayed'){
+		// Past due
+
+		if(seconds_diff > day){
+			// Days
+			var days = Math.floor(seconds_diff / day);
+			text_result = days + 'd';
+
+		} else if(seconds_diff > hour){
+			// Hours
+			var hours = Math.floor(seconds_diff / hour);
+			text_result = hours + 'h';
+
+		} else if(seconds_diff > minute){
+			// Minutes
+			var minutes = Math.floor(seconds_diff / minute);
+			text_result = minutes + 'm';
+
+		} else {
+			// Seconds
+			text_result = 'now';
+		}
 
 	} else {
-		// Seconds
-		clog(seconds_diff);
-		text_result = 'now';
+		// Do nothing
 	}
 
 	return new Handlebars.SafeString(text_result); // no icon-time
