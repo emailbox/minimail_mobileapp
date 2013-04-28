@@ -126,7 +126,42 @@ App.Views.Body = Backbone.View.extend({
 	},
 
 	initialize: function() {
+		var that = this;
 		_.bindAll(this, 'render');
+
+		// Start listening for update events to the counts
+
+		App.Events.on('Main.UpdateCount',this.updateCount, this); // not yet invoked anywhere
+
+	},
+
+	updateCount: function(data){
+		// Updates the count for one of the displayed now,due,later
+
+		// Convert types
+		if(data.type == 'delayed'){
+			data.type = 'now';
+		}
+		if(data.type == 'later'){
+			data.type = 'later';
+		}
+		if(data.type == 'undecided'){
+			data.type = 'dunno';
+		}
+		console.log(data);
+		var $button = this.$('.base_header_menu .threads_change button[data-action="'+data.type+'"]');
+
+		// Remove any previous one
+		$button.find('.counter').remove();
+
+		// Create template
+		var template = App.Utils.template('t_thread_counter');
+
+		// Add to button
+		$button.append(template({count: data.count}));
+		
+		return false;
+
 	},
 
 
@@ -247,7 +282,7 @@ App.Views.Body = Backbone.View.extend({
 
 		// Load the Undecided View
 		// Backbone.history.loadUrl('undecided');
-		var doclick = 'all';
+		var doclick = 'dunno';
 		this.$('.base_header_menu button[data-action="'+doclick+'"]').addClass('active');
 		Backbone.history.loadUrl(doclick);
 		// this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('touchend');
@@ -1731,15 +1766,16 @@ App.Views.CommonThread = Backbone.View.extend({
 		this._rendered = true;
 		this.$el.removeClass('is-loading');
 
-		clog('rendering Thread');
+		console.log('rendering Thread');
 
 		// Template
 		var template = App.Utils.template('t_common_thread_view');
 
 		// build the data
+		console.log(this.threadEmails.toJSON());
 		var data = {
-			Thread: this.threadFull.toJSON(),
-			Email: this.threadEmails.toJSON()
+			Thread: that.threadFull.toJSON(),
+			Email: that.threadEmails.toJSON()
 		};
 
 		// // Sort Email (already sorted?)
@@ -1753,6 +1789,81 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		// Write HTML
 		this.$el.html(template(data));
+
+		// Run MathJax code
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub,"threadContainer"]);
+
+		// Parse out links we want to embed
+		// - gists: <script src="https://gist.github.com/nicholasareed/5177795.js"></script>
+		// - youtube
+		_.each(data.Email, function(email, i){
+			console.log(1);
+			console.log(email);
+			try {
+				// Iterate over links
+				// - embed below
+				_.each(email.app.AppPkgDevMinimail.links, function(link, i){
+					// GitHub gists
+					console.log(link);
+					if(link.indexOf("https://gist.github.com/") != -1){
+						// Gist is in here
+						// - add template
+						// console.log('found github gist');
+						// var tmp_template = App.Utils.template('t_embed_github_gist');
+
+						// var script = document.createElement('script');
+						// script.type = 'text/javascript';
+						// // script.async = true;
+						// // script.onload = function(){
+						// // 	// remote script has loaded
+						// // };
+						// script.src = link + '.js';
+						// that.$('.email[data-id="'+email._id+'"] .email_body').append(script);
+
+						// Get gist_id
+						// alert('gist');
+						var tmp_link = link.split('/');
+						// console.info(tmp_link);
+						var gist_id = tmp_link[4];
+
+						// var iframe = document.createElement('iframe');
+						// iframe.src = 'http://urlspoiler.heroku.com/gists?id=' + gist_id;
+						// iframe.width = "300px";
+						// iframe.height = "200px";
+						// iframe.setAttribute('style', "border:none;");
+						// that.$('.email[data-id="'+email._id+'"] .email_body').append( iframe );
+
+						$.get('https://api.github.com/gists/' + gist_id, function(data){
+							// $('body').append($(data));
+							// alert('back');
+							// console.log('should be rendering');
+							// console.log(data);
+							// var j = JSON.parse(data);
+							var j = data;
+							// console.log(data);
+							// console.log(JSON.stringify(j.files));
+							// console.log(j.files);
+
+							// console.log('files');
+							_.each(j.files, function(elem, i){
+								// console.log('file');
+								// console.log(elem.content);
+								that.$('.email[data-id="'+email._id+'"] .email_body').append( '<pre><strong>'+elem.filename+'</strong><br /><br />' + App.Utils.nl2br(elem.content) + '</pre>');
+							});
+							// that.$('.email[data-id="'+email._id+'"] .email_body').append($(data));
+						});
+						
+						console.log(email._id);
+						// that.$('.email[data-id="'+email._id+'"] .email_body').remove();
+						// that.$('.email[data-id="'+email._id+'"] .email_body').after(tmp_template(link));
+					}
+				});
+			} catch(e){
+				console.warn('error');
+				console.error(e);
+			}
+		});
+
 
 		// Resize body_container
 		this.resize_fluid_page_elements();
@@ -4937,18 +5048,16 @@ App.Views.SelectEmailList = Backbone.View.extend({
 
 
 
-App.Views.All = Backbone.View.extend({
+
+
+// Base inbox view (dunno, now, later)
+App.Views.Inbox_Base = Backbone.View.extend({
 	
 	className: 'all_thread_inside_view reverse_vertical',
 
 	last_scroll_position: 0,
 
 	events: {
-		// 'click .save' : 'save',
-		// 'click .preview' : 'preview'
-		// 'click #back' : 'go_back',
-		// 'click .sender' : 'approve',
-		// 'click .sender_status a' : 'status_change'
 
 		'click .multi-deselect' : 'multi_deselect',
 		'click .multi-done' : 'multi_done',
@@ -4967,48 +5076,68 @@ App.Views.All = Backbone.View.extend({
 		_.bindAll(this, 'mass_action');
 		_.bindAll(this, 'multi_options');
 		// _.bindAll(this, 'after_delay_modal');
-		_.bindAll(this, 'refresh_and_render_threads');
-		_.bindAll(this, 'addDelayed');
-		_.bindAll(this, 'allDelayed');
+		// _.bindAll(this, 'refresh_and_render_threads');
+		// _.bindAll(this, 'addDelayed');
+		// _.bindAll(this, 'allDelayed');
 		
 		// App.Events.bind('new_email',this.refresh_and_render_threads);
 
 		// View containers
-		this._subViews = {
-			delayed: [],
-			undecided: []
-		};
+		this._subViews = [];
+
 		// removal containers
 		// - for when "refresh" is called
 		this._waitingToRemove = [];
 
-		// Set up delayed thread caching mechanism
-		var delayContext = {
+		// Run after_init (each Inbox has a different versino for loading the correct search threads)
+		var threadType = this.collection_init(); // keeps context
+		this.threadType = threadType;
+
+		// Continue with collection initiation
+		this.start_thread_getting(threadType);
+
+
+	},
+
+	beforeClose: function(){
+		// empty
+	},
+
+	// Custom close function for .all
+	close: function(){
+		console.log('closing Views.Inbox_Base (no .close for custom inbox view)');
+
+		// // unbind
+		// App.Events.off('new_email',this.refresh_and_render_threads);
+
+		// // Stop listening
+		// Api.Event.off(this.cacheListener);
+
+	},
+
+	set_scroll_position: function(){
+		var that = this;
+		
+		// Set last scroll position
+		this.last_scroll_position = this.$('.data-lsp').scrollTop();
+		this.$el.attr('last-scroll-position',this.last_scroll_position);
+
+	},
+
+	start_thread_getting: function(threadType){
+		var that = this;
+
+		var useContext = {
 			this: this,
-			threadType: 'delayed'
+			threadType: threadType
 		};
-		that.delayedCollection = new App.Collections.DelayedThreads();
-		that.delayedCollection.on('reset', this.reset_delayed_threads, delayContext); // completely changed collection (triggers add/remove)
-		that.delayedCollection.on('sync', this.sync_delayed_threads, delayContext); // completely changed collection (triggers add/remove)
-		that.delayedCollection.on('add', this.add_delayed_thread, delayContext); // added a new ThreadId
-		that.delayedCollection.on('remove', this.remove_delayed_thread, delayContext); // removed a ThreadId
-		that.delayedCollection.on('change', this.change_delayed_thread, delayContext); // somehow one changed?
-		that.delayedCollection.fetchDelayed(); // trigger record retrieving
 
-
-		// Set up delayed thread caching mechanism
-		var undecidedContext = {
-			this: this,
-			threadType: 'undecided'
-		};
-		that.undecidedCollection = new App.Collections.UndecidedThreads();
-		that.undecidedCollection.on('reset', this.reset_undecided_threads, undecidedContext); // completely changed collection (triggers add/remove)
-		that.undecidedCollection.on('sync', this.sync_delayed_threads, undecidedContext); // completely changed collection (triggers add/remove)
-		that.undecidedCollection.on('add', this.add_delayed_thread, undecidedContext); // added a new ThreadId
-		that.undecidedCollection.on('remove', this.remove_delayed_thread, undecidedContext); // removed a ThreadId
-		that.undecidedCollection.on('change', this.change_delayed_thread, undecidedContext); // somehow one changed?
-		that.undecidedCollection.fetchUndecided(); // trigger record retrieving
-
+		that.useCollection.on('reset', this.reset_threads, useContext); // completely changed collection (triggers add/remove)
+		that.useCollection.on('sync', this.sync_threads, useContext); // completely changed collection (triggers add/remove)
+		that.useCollection.on('add', this.add_thread, useContext); // added a new ThreadId
+		that.useCollection.on('remove', this.remove_thread, useContext); // removed a ThreadId
+		that.useCollection.on('change', this.change_thread, useContext); // somehow one changed?
+		that.useCollection.fetchDefault(); // trigger record retrieving
 
 		// Start the CacheWatcher for Delayed threads
 		// - listening for events that impact the Threads we have
@@ -5028,21 +5157,24 @@ App.Views.All = Backbone.View.extend({
 			console.warn('Fetching new because Thread.action or Email.new');
 			// App.Utils.Notification.debug.temp('Fetching delayed, silently');
 			window.setTimeout(function(){
-
+				console.log('cacheListener fired');
 				// go through "waiting_to_remove"
 				_.each(that._waitingToRemove, function(elem, i){
 					// Remove Thread's subView
+					console.log('removing subview');
+					console.log(elem);
+					console.log(that._subViews);
 
 					// Get subview to remove
-					that._subViews[elem[0]] = _(that._subViews[elem[0]]).without(elem[1]);
-					$(elem[1].el).remove();
+					that._subViews = _(that._subViews).without(elem);
+					$(elem.el).remove();
 
 				});
 
-				that.delayedCollection.fetchDelayed();
-				that.undecidedCollection.fetchUndecided();
+				// that.delayedCollection.fetchDelayed();
+				that.useCollection.fetchDefault();
 
-			},3000); // wait 3 seconds before doing our .fetch
+			},500); // wait 3 seconds before doing our .fetch (unclear why we are waiting?)
 		});
 
 		// Listen for refresh request
@@ -5065,50 +5197,6 @@ App.Views.All = Backbone.View.extend({
 			that.mass_action('delay', [thread_id], wait, wait_text);
 		}, this);
 
-		// // Collection for Undecided
-		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
-		// // that.delayedThreadsCollection.each(this.addUndecided); // probably not doing anything?
-		// that.delayedThreadsCollection.on('add',that.add_delayed_thread, this);
-		// that.delayedThreadsCollection.on('remove',that.remove_delayed_thread, this);
-		// // that.delayedThreadsCollection.on('remove',that.removeUndecided, this);
-		// // that.delayedThreadsCollection.on('all',that.all_delayed_threads, this); // 'all' means "fucking everything" including "change" and "sync" and "fetch"
-		// that.delayedThreadsCollection.on('reset',that.reset_delayed_threads, this); // emitted alot, on every fetch or cache return
-		// that.delayedThreadsCollection.on('all',function(arg1){
-		// 	console.log('==all: ' + arg1);
-		// }, this); // only on "fetch"
-		// that.delayedThreadsCollection.fetchDelayed();
-
-		// // Collection for Delayed
-		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
-		// // that.delayedThreadsCollection.each(this.addDelayed);
-		// that.delayedThreadsCollection.bind('add',that.addDelayed);
-		// that.delayedThreadsCollection.bind('remove',that.removeDelayed);
-
-	},
-
-	beforeClose: function(){
-		// empty
-	},
-
-	// Custom close function for .all
-	close: function(){
-		console.log('closing Views.All');
-
-		// // unbind
-		// App.Events.off('new_email',this.refresh_and_render_threads);
-
-		// // Stop listening
-		// Api.Event.off(this.cacheListener);
-
-	},
-
-	set_scroll_position: function(){
-		var that = this;
-		
-		// Set last scroll position
-		this.last_scroll_position = this.$('.data-lsp').scrollTop();
-		this.$el.attr('last-scroll-position',this.last_scroll_position);
-
 	},
 
 	refresh: function(){
@@ -5118,26 +5206,34 @@ App.Views.All = Backbone.View.extend({
 		// - it should look nice while adding/removing! 
 
 		// go through "waiting_to_remove"
+		// alert('refreshing');
+		// console.log('waiting to remove');
+		// console.log(this._waitingToRemove);
+		// console.log(this._waitingToRemove.length);
 		_.each(this._waitingToRemove, function(elem, i){
 			// Remove Thread's subView
 
+			// console.log('subViews');
+			// console.log(that._subViews);
+			// console.log('elem');
+			// console.log(elem);
+
 			// Get subview to remove
-			that._subViews[elem[0]] = _(that._subViews[elem[0]]).without(elem[1]);
+			that._subViews = _(that._subViews).without(elem[0]);
 
 			// Listen for transition end before removing the element entirely
-			$(elem[1].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
-				$(elem[1].el).remove();
+			$(elem[0].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				$(elem[0].el).remove();
 			});
-			$(elem[1].el).addClass('closing_nicely');
+			$(elem[0].el).addClass('closing_nicely');
 
 		});
 
 		// Trigger fetches
-		that.delayedCollection.fetchDelayed();
-		that.undecidedCollection.fetchUndecided();
+		that.useCollection.fetchDefault();
 
 		// At inbox zero?
-		if(that.undecidedCollection.length == 0 && that.delayedCollection.length == 0){
+		if(that.useCollection.length == 0){
 			that.check_inbox_zero();
 		}
 
@@ -5146,58 +5242,54 @@ App.Views.All = Backbone.View.extend({
 
 		// Print out number of views
 		console.log('number of views__');
-		console.log(that.undecidedCollection.length);
-		console.log(that.delayedCollection.length);
+		console.log(that.useCollection.length);
 
 		return;
 
 	},
 
-	reset_delayed_threads: function(threads, options){
+	refresh_fetch: function(){
+		// Fetch new emails after a refresh
+		var that = this;
+
+		// Trigger fetches
+		that.useCollection.fetchDefault();
+
+		// At inbox zero?
+		if(that.useCollection.length == 0){
+			that.check_inbox_zero();
+		}
+
+		// Print out number of views
+		console.log('number of views__');
+		console.log(that.useCollection.length);
+
+	},
+
+	reset_threads: function(threads, options){
 		var that = this; // not the view, passing context to 'add'
 
 		// Should remove all existing views?
 		// - yes?
 
-		console.log('reset delayed');
+		console.log('reset threads');
 
 		// Add each Thread object
 		// - passes individual Thread model
-		that.delayedCollection.each(that.add_delayed_thread, this);
+		that.useCollection.each(that.add_thread, this);
 
 		console.log('reset delayed');
 	},
 
-	reset_undecided_threads: function(threads, options){
-		var that = this; // not the view, passing context to 'add'
-
-		// Should remove all existing views?
-		// - yes? todo because it doesn't really get called in that way
-
-		console.log('reset undecided');
-
-		// Add each Thread object
-		// - passes individual Thread model
-		that.undecidedCollection.each(that.add_delayed_thread, this);
-
-		if(that.undecidedCollection.length < 1){
-			// None!
-			// - display the "no new threads left!" box
-		}
-
-		console.info('reset undecided');
-
-	},
-
-	sync_delayed_threads: function(threads, options){
+	sync_threads: function(threads, options){
 		var that = this.this; // view
 
 		console.log('sync_delayed_threads');
 
 		// Empty?
-		if(that.delayedCollection.length == 0 && that.undecidedCollection.length == 0){
+		if(that.useCollection.length == 0){
 			// alert('both zero');
-			console.warn('both zero');
+			console.warn('zero1');
 			that.check_inbox_zero();
 		}
 
@@ -5206,11 +5298,12 @@ App.Views.All = Backbone.View.extend({
 
 	},
 
-	add_delayed_thread: function(thread){
-		var that = this.this;
+	add_thread: function(thread){
+		var that = this.this,
+			threadType = this.threadType;
 
 		// Got a new Thread._id, so we need to go get the corresponding ThreadFull model
-		console.log('add_delayed_thread');
+		console.log('add_thread');
 
 		// // Full Thread
 		// console.log('new ThreadFull');
@@ -5244,32 +5337,27 @@ App.Views.All = Backbone.View.extend({
 			console.log('Thread is ready to be rendered');
 
 			// Get index (position) of this Thread
-			var idx;
-			if(this.threadType == 'delayed'){
-				idx = that.delayedCollection.indexOf(thread);
-			} else {
-				idx = that.undecidedCollection.indexOf(thread);
-			}
+			var idx = that.useCollection.indexOf(thread);
 
 			// Create the View
 			var dv = new App.Views.SubCommonThread({
 				model : thread,
-				threadType: this.threadType,
+				threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
 				idx_in_collection: idx,
 				fadein: true,
 				parentView: that
 			});
 
 			// Add to views
-			that._subViews[this.threadType].push(dv);
+			that._subViews.push(dv);
 
 			// Re-sort the views we have
-			that._subViews[this.threadType] = _.sortBy(that._subViews[this.threadType],function(sV){
+			that._subViews = _.sortBy(that._subViews,function(sV){
 				return sV.options.idx_in_collection;
 			});
 
 			// Figure out the index of this view
-			var thread_idx = that._subViews[this.threadType].indexOf(dv);
+			var thread_idx = that._subViews.indexOf(dv);
 			// console.warn('thread_idx: ' + thread.Full.toJSON().original.subject);
 			// console.log(thread_idx);
 			// console.dir(that._subViews[this.threadType]);
@@ -5279,74 +5367,45 @@ App.Views.All = Backbone.View.extend({
 			// If the view has been rendered, then immediately append views
 			if(that._rendered){
 				// Insert it into the correct place
-				if(this.threadType == 'delayed'){
-					// at bottom
+				// - at bottom
 
-					// What is already displayed?
-					// - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
-					if(_.size(that._subViews[this.threadType]) != 1){
-						// Already displayed at least one, so we need to figure out where this view is going
+				// What is already displayed?
+				// - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
+				if(_.size(that._subViews) != 1){
+					// Already displayed at least one, so we need to figure out where this view is going
 
-						// // iterate over existing views to get the index, and display based on that order? 
-						// // - they are already ordered in the collection, but not in the view
-						// console.info('already 1 or more');
-						// console.log('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')');
+					// // iterate over existing views to get the index, and display based on that order? 
+					// // - they are already ordered in the collection, but not in the view
+					// console.info('already 1 or more');
+					// console.log('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')');
 
-						// // Find the rendered subView that is directly before this one
-						// // - just going to .after on that one
-						// var insertPosition = 1; // at the beginning!
-						// var diff = 10000;
-						// _.each(that._subViews[this.threadType], function(subView, idx, lst){
+					// // Find the rendered subView that is directly before this one
+					// // - just going to .after on that one
+					// var insertPosition = 1; // at the beginning!
+					// var diff = 10000;
+					// _.each(that._subViews[this.threadType], function(subView, idx, lst){
 
-						// });
-						
-						console.log('dsize != 1: ' + _.size(that._subViews[this.threadType]));
+					// });
+					
+					console.log('dsize != 1: ' + _.size(that._subViews));
 
-						var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')');
-						console.log($elem.length);
-						$elem.after(dv.render().el);
+					var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+threadType+'"]:nth-of-type('+thread_idx+')');
+					console.log($elem.length);
+					$elem.after(dv.render().el);
 
-						// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')').after(dv.render().el);
-						// that.$('.all_threads').append(dv.render().el);
-					} else {
-						// No other ones, just append it (lowest on the list)
-						// console.info('no other ones');
-
-						// Is the structure already set up?
-						if(!that.$('.all_threads').length){
-							console.log('rendering all_threads structure');
-							that.render_structure();
-						}
-
-						that.$('.all_threads').append(dv.render().el);
-					}
+					// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')').after(dv.render().el);
+					// that.$('.all_threads').append(dv.render().el);
 				} else {
-					// at top
+					// No other ones, just append it (lowest on the list)
+					// console.info('no other ones');
 
-					// What is already displayed?
-					// - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
-					if(_.size(that._subViews[this.threadType]) != 1){
-						// Already displayed at least one, so we need to figure out where this view is going
-
-						console.log('usize != 1: ' + _.size(that._subViews[this.threadType]));
-
-						var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+thread_idx+')');
-						console.log($elem.length);
-						$elem.after(dv.render().el);
-
-					} else {
-						// No other ones, just prepend it (highest on the list)
-						// console.info('no other ones');
-
-						// Is the structure already set up?
-						if(!that.$('.all_threads').length){
-							console.log('rendering all_threads structure');
-							that.render_structure();
-						}
-
-						that.$('.all_threads').prepend(dv.render().el);
+					// Is the structure already set up?
+					if(!that.$('.all_threads').length){
+						console.log('rendering all_threads structure');
+						that.render_structure();
 					}
 
+					that.$('.all_threads').append(dv.render().el);
 				}
 
 				// Resize the scrollable part (.all_threads)
@@ -5434,14 +5493,21 @@ App.Views.All = Backbone.View.extend({
 			cachePrefix: thread.get('_id')
 		});
 
+		// Update count for number
+		var eventData = {
+			count: that.useCollection.length,
+			type: that.threadType
+		};
+		App.Events.trigger('Main.UpdateCount', eventData);
+
 	},
 
-	remove_delayed_thread : function(model) {
+	remove_thread : function(model) {
 		var that = this.this;
 		
-		console.log('remove_delayed_thread');
+		console.log('remove_thread');
 
-		var viewToRemove = _(that._subViews[this.threadType]).select(function(cv) { return cv.model === model; })[0];
+		var viewToRemove = _(that._subViews).select(function(cv) { return cv.model === model; });
 		// that._subViews[this.threadType] = _(that._subViews[this.threadType]).without(viewToRemove);
 
 		// Change the view's opacity:
@@ -5451,14 +5517,22 @@ App.Views.All = Backbone.View.extend({
 
 		// don't actually remove it?
 		// - only remove it when refresh is called
-		that._waitingToRemove.push([this.threadType, viewToRemove]);
+		that._waitingToRemove.push(viewToRemove);
 
 		// if(that._rendered && viewToRemove){
 		// 	$(viewToRemove.el).remove();
 		// }
+
+		// Update count for number
+		var eventData = {
+			count: that.useCollection.length,
+			type: that.threadType
+		};
+		App.Events.trigger('Main.UpdateCount', eventData);
+
 	},
 
-	change_delayed_thread: function(model){
+	change_thread: function(model){
 		// Change triggered
 		console.log('change?');
 	},
@@ -5492,27 +5566,6 @@ App.Views.All = Backbone.View.extend({
 
 	thread_ready: function(thread){
 		var that = this;
-	},
-
-	addDelayed: function(delayedThread){
-		
-	},
-
-	removeDelayed: function(undecidedThread){
-		alert('removing undecided from view/collection');
-	},
-
-	allDelayed: function(){
-		var that = this;
-		console.log('All Undecided');
-		console.log(that.undecidedThreadsCollection.toJSON());
-		that.undecidedThreadsCollection.each(that.add_undecided_thread, this);
-
-	},
-
-	resetDelayed: function(){
-		console.log('Reset Undecided');
-		// this.undecidedThreadsCollection.each(this.get_messages, this);
 	},
 
 	multi_options: function(){
@@ -5642,9 +5695,6 @@ App.Views.All = Backbone.View.extend({
 			});
 
 		});
-
-
-		// Instead, emit an event that is handled by the server for 
 		
 		// Take mass action
 		that.mass_action('done', incl_thread_ids);
@@ -5928,45 +5978,9 @@ App.Views.All = Backbone.View.extend({
 		var template = App.Utils.template('t_all_structure');
 
 		// Write HTML
-		this.$el.html(template());
+		this.$el.html(template(this.threadType));
 
 		return this;
-
-	},
-
-	recombine_threads: function(){
-		// Recombine the two and display them
-		var that = this;
-
-		var dfd = $.Deferred();
-
-		$.when(
-			App.Utils.Storage.get('undecided_threads_and_emails'),
-			App.Utils.Storage.get('delayed_threads_and_emails')
-		)
-		.then(function(undecided_threads, delayed_threads){
-			// Merge the two together
-			// Sort them as expected
-			// - prevent any duplicate Threads (show the Delayed version only)
-			
-			if(undecided_threads == undefined || undecided_threads.length < 1){
-				undecided_threads = [];
-			}
-			if(delayed_threads == undefined || delayed_threads.length < 1){
-				delayed_threads = [];
-			}
-
-			// var threads = undecided_threads.concat(delayed_threads);
-
-			dfd.resolve({
-				undecided: undecided_threads,
-				delayed: delayed_threads
-			});
-
-		});
-
-		return dfd.promise();
-
 
 	},
 
@@ -5991,15 +6005,14 @@ App.Views.All = Backbone.View.extend({
 		// Scroll to bottom
 		this.$('.scroller').scrollTop(10000);
 
-
 		return this;
 		
 	},
 
 	check_inbox_zero: function(){
 		// See if we should render inbox-zero
-
-		if(1==1){
+		// - really, this is what I had it here?
+		if(this.useCollection.length == 0){
 			this.render_zero();
 		}
 
@@ -6015,94 +6028,13 @@ App.Views.All = Backbone.View.extend({
 		}
 
 		// Template
-		var template = App.Utils.template('t_all_inboxzero');
+		var template = App.Utils.template(this.zero_template);
 
 		// Write HTML
-		this.$el.html(template());
+		this.$el.html(template(this.threadType));
 
 		return this;
 		
-	},
-
-
-	refresh_and_render_threads: function(){
-		// // Refresh the Thread list from the server
-		// // - re-render the Threads (this.render_threads)
-
-		// var that =  this;
-
-		// // Start the refresher for each
-		// // After each has finished refreshing, it should tell the list to be recompiled
-
-		// // Wait for both to finish, then recombine threads
-
-		// var dfdUndecided = $.Deferred(),
-		// 	dfdDelayed = $.Deferred();
-
-		// that.undecidedThreadsCollection = new App.Collections.UndecidedThreads();
-		// that.undecidedThreadsCollection.fetchUndecided({
-		// 	success: function(threads) {
-		// 		// Does not return models, just JSON data objects
-					
-		// 		// Store locally
-		// 		App.Utils.Storage.set('undecided_threads_and_emails',threads);
-
-		// 		// Resolve
-		// 		dfdUndecided.resolve();
-
-		// 	}
-		// });
-
-
-		// that.delayedThreadsCollection = new App.Collections.DelayedThreads();
-		// that.delayedThreadsCollection.fetchDelayed({
-		// 	success: function(threads) {
-		// 		// Does not return models, just JSON data objects
-					
-		// 		// Store locally
-		// 		App.Utils.Storage.set('delayed_threads_and_emails',threads);
-
-		// 		// Resolve
-		// 		dfdDelayed.resolve();
-
-		// 		// // Recombine threads
-		// 		// that.recombine_threads()
-		// 		// 	.then(function(threads){
-
-		// 		// 		// No threads?
-		// 		// 		if(threads.undecided.length < 1 && threads.delayed.length < 1){
-		// 		// 			// Render Inbox Zero view
-		// 		// 			that.render_zero();
-		// 		// 			return;
-		// 		// 		}
-
-		// 		// 		// Render new Thread list
-		// 		// 		that.render_threads(threads);
-		// 		// 	});
-
-
-		// 	}
-		// });
-
-		// $.when(dfdUndecided.promise(), dfdDelayed.promise())
-		// 	.then(function(){
-
-		// 		// Recombine threads
-		// 		that.recombine_threads()
-		// 			.then(function(threads){
-
-		// 				// No threads?
-		// 				if(threads.undecided.length < 1 && threads.delayed.length < 1){
-		// 					// Render Inbox Zero view
-		// 					that.render_zero();
-		// 					return;
-		// 				}
-
-		// 				// Render new Thread list
-		// 				that.render_threads(threads);
-		// 			});
-		// 	});
-
 	},
 
 	render: function() {
@@ -6115,14 +6047,13 @@ App.Views.All = Backbone.View.extend({
 			this.delegateEvents()
 
 			// Re-bind events for subViews
-			_(that._subViews.undecided).each(function(v) {
+			_(that._subViews).each(function(v) {
 				v.trigger('rebind');
 			});
 
-			// Re-bind events for subViews
-			_(that._subViews.delayed).each(function(v) {
-				v.trigger('rebind');
-			});
+			// Resize the scrollable part (.all_threads)
+			this.resize_fluid_page_elements();
+			this.resize_scroller();
 
 			// Scroll to bottom (yeah?)
 			this.$('.scroller').scrollTop(10000);
@@ -6144,11 +6075,7 @@ App.Views.All = Backbone.View.extend({
 		// Render each of the views into the correct places
 
 		// Undecided views first
-		_(that._subViews.undecided).each(function(uv) {
-			that.$('.all_threads').append(uv.render().el);
-		});
-		// Delayed views next
-		_(that._subViews.delayed).each(function(uv) {
+		_(that._subViews).each(function(uv) {
 			that.$('.all_threads').append(uv.render().el);
 		});
 
@@ -6195,6 +6122,58 @@ App.Views.All = Backbone.View.extend({
 
 		return this;
 	}
+});
+
+
+// Base inbox view (dunno, now, later)
+App.Views.Inbox_Dunno = App.Views.Inbox_Base.extend({
+
+	zero_template: 't_all_new_done',
+
+	collection_init: function(){
+		var that = this;
+
+		// Set collection to use
+		that.useCollection = new App.Collections.UndecidedThreads();
+
+		// Return type of threads to display
+		return 'undecided';
+	},
+
+});
+
+// Base inbox view (dunno, now, later)
+App.Views.Inbox_Now = App.Views.Inbox_Base.extend({
+
+	zero_template: 't_all_due_done',
+	
+	collection_init: function(){
+		var that = this;
+
+		// Set collection to use
+		that.useCollection = new App.Collections.DelayedThreads();
+
+		// Return type of threads to display
+		return 'delayed';
+	},
+
+});
+
+// Base inbox view (dunno, now, later)
+App.Views.Inbox_Later = App.Views.Inbox_Base.extend({
+
+	zero_template: 't_all_later_done',
+
+	collection_init: function(){
+		var that = this;
+
+		// Set collection to use
+		that.useCollection = new App.Collections.LaterThreads();
+
+		// Return type of threads to display
+		return 'later';
+	},
+
 });
 
 App.Views.SubSearchesEmail = Backbone.View.extend({
@@ -6279,6 +6258,9 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		if(this.options.fadein){
 			this.el.className = this.className + ' fade-in';
 		}
+
+		// threadType
+		this.threadType = this.options.threadType;
 
 		// Have model?
 		if(!this.model){
@@ -6642,7 +6624,8 @@ App.Views.SubCommonThread = Backbone.View.extend({
 		// console.log(this.model.Email.toJSON());
 		var data = {
 			Thread: this.model.Full.toJSON(),
-			Email: this.model.Email.toJSON()
+			Email: this.model.Email.toJSON(),
+			threadType: this.threadType
 		};
 
 		// console.log(data);
