@@ -14,7 +14,7 @@
 	<!--
     <script src="js_main/cordova-2.4.0.js"></script>
     <script src="js_main/childbrowser_local.js"></script>
--->
+	-->
 	
 	
 
@@ -86,6 +86,7 @@
 	<script src="js/libs/jquery.scrollTo.min.js"></script>
 	<script src="js/libs/mobiscroll.2.4.4.min.js"></script>
 	<script src="js/libs/fullcalendar.js"></script>
+	<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
 	<!-- FancyBox -->
 	<!--<script src="js/libs/jquery.mousewheel-3.0.6.pack.js"></script>
@@ -93,7 +94,6 @@
 	<script type="text/javascript" src="js/libs/fancybox/jquery.fancybox.pack.js?v=2.1.3"></script>-->
 
 	<script src="js/libs/jquery.ui.touch.punch.js"></script>
-
 	
 	<!-- <script src="libs/jquery.toObject.js"></script> -->
 
@@ -235,8 +235,14 @@
 								</button>
 								}}
 
-								<button data-action="all" class="btn">
+								<button data-action="dunno" class="btn">
 									<i class="icon-inbox"></i>
+								</button>
+								<button data-action="now" class="btn">
+									<i class="icon-time"></i>
+								</button>
+								<button data-action="later" class="btn">
+									<i class="icon-road"></i>
 								</button>
 								<button data-action="leisure" class="btn nodisplay">
 									<i class="icon-glass"></i>
@@ -267,6 +273,14 @@
 			
 		</div>
 
+	</script>
+
+	<script id="t_thread_counter" class="partial" type="text/x-handlebars-template">
+		{{#if count}}
+			<div class="counter">
+				<span>{{count}}</span>
+			</div>
+		{{/if}}
 	</script>
 
 
@@ -764,17 +778,21 @@
 
 	<script id="t_all_structure" type="text/x-handlebars-template">
 
-			<div class="multi_select_options no_multi_select">
+		<div class="top_flag flag_type_{{this}} slide-from-left">
+			{{this}}
+		</div>
 
-				<button data-action="multi-deselect" class="btn multi-deselect">Deselect All</button>
-				
-				<button data-action="multi-done" class="btn multi-done">Done</button>
-				<button data-action="multi-delay" class="btn multi-delay">Delay</button>
+		<div class="multi_select_options no_multi_select">
 
-			</div>
-			<div class="all_threads threads_holder data-lsp scroller">
+			<button data-action="multi-deselect" class="btn multi-deselect">Deselect All</button>
+			
+			<button data-action="multi-done" class="btn multi-done">Done</button>
+			<button data-action="multi-delay" class="btn multi-delay">Delay</button>
 
-			</div>
+		</div>
+		<div class="all_threads threads_holder data-lsp scroller">
+
+		</div>
 			
 	</script>
 
@@ -800,9 +818,65 @@
 
 
 	<script id="t_all_inboxzero" type="text/x-handlebars-template">
-
+		// Not using this guy anymore
 		<div class="inbox_zero fade-in-looks-weird">
 			<span class="words">{{{inbox_zero_words}}}</span>
+			<br />
+			<br />
+			<span class="definition_name"></span> <span class="definition_words">
+				You reached Inbox Zero, 
+				keep up the good work!
+			</span>
+		</div>
+
+	</script>
+
+
+	<script id="t_all_now_done" type="text/x-handlebars-template">
+
+		<div class="top_flag flag_type_{{this}} slide-from-left">
+			{{this}}
+		</div>
+		
+		<div class="inbox_zero fade-in-looks-weird">
+
+			<span class="words">{{{inbox_zero_words}}}</span>
+			<br />
+			<br />
+			<span class="definition_name"></span> <span class="definition_words">
+				You do not have any new emails to look at.
+			</span>
+		</div>
+
+	</script>
+
+
+	<script id="t_all_later_done" type="text/x-handlebars-template">
+
+		<div class="top_flag flag_type_{{this}} slide-from-left">
+			{{this}}
+		</div>
+		
+		<div class="inbox_zero fade-in-looks-weird">
+			<span class="words">No Upcoming</span>
+			<br />
+			<br />
+			<span class="definition_name"></span> <span class="definition_words">
+				No emails are waiting to be due
+			</span>
+		</div>
+
+	</script>
+
+
+	<script id="t_all_due_done" type="text/x-handlebars-template">
+
+		<div class="top_flag flag_type_{{this}} slide-from-left">
+			{{this}}
+		</div>
+		
+		<div class="inbox_zero fade-in-looks-weird">
+			<span class="words">None Due!</span>
 			<br />
 			<br />
 			<span class="definition_name"></span> <span class="definition_words">
@@ -849,9 +923,9 @@
 						{{thread_subject Thread.original.subject}}
 					</div>
 
-					<div class="due_ago">
+					<div class="due_ago thread_type_{{threadType}}">
 						<p>
-							{{due_ago Thread.app.AppPkgDevMinimail.wait_until}}
+							{{due_ago threadType Thread.app.AppPkgDevMinimail.wait_until}}
 						</p>
 					</div>
 
@@ -982,7 +1056,7 @@
 
 	<script id="t_common_thread_view_content" type="text/x-handlebars-template" class="partial">
 
-		<div class="thread_container scroller">
+		<div id="threadContainer" class="thread_container scroller">
 
 			<div class="thread_details">
 				<div class="subject">
@@ -1845,7 +1919,7 @@
 
 	</script>
 
-	<script id="t_search_emails_email_results_item" type="text/x-handlebars-template">
+	<script id="t_search_emails_email_results_item" class="partial" type="text/x-handlebars-template">
 
 		<!--<div class="thread no_text_select" data-id="{{attributes.thread_id}}" data-thread-type="searched">-->
 
@@ -2220,7 +2294,7 @@
 					<div class="right">
 						<div class="btn-group pull-right">
 							<button data-action="cancel" class="btn cancel">
-								Cancel
+								Back
 							</button>
 						</div>
 					</div>
@@ -2456,6 +2530,11 @@
 
 		}
 
+	</script>
+
+
+	<script id="t_embed_github_gist" class="partial" type="text/x-handlebars-template">
+		<script src="{{this}}.js"></script>
 	</script>
 
 </head>
