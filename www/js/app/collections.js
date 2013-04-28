@@ -863,7 +863,7 @@ App.Collections.UndecidedThreads = Backbone.Collection.extend({
 		]
 	},
 
-	fetchUndecided: function(options){
+	fetchDefault: function(options){
 		var that = this;
 
 		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
@@ -896,7 +896,7 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 		return -1 * Thread.toJSON().app.AppPkgDevMinimail.wait_until;
 	},
 
-	fetchDelayed: function(options){
+	fetchDefault: function(options){
 		var that = this;
 		console.info('fetch delayed');
 
@@ -919,6 +919,63 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 						{
 							'app.AppPkgDevMinimail.wait_until' : {
 								'$lte' : now_sec
+							}
+						},
+						{
+							'app.AppPkgDevMinimail.done' : {
+								"$ne" : 1
+							}
+						}
+					]
+				},
+				fields: ['_id','app.AppPkgDevMinimail.wait_until'], // id + seconds
+				limit: 10,
+				sort: {
+					'app.AppPkgDevMinimail.wait_until' : -1
+				}
+			}
+		});
+
+		// Return fetch call (not actual results)
+		// return models;
+
+	},
+
+});
+
+App.Collections.LaterThreads = Backbone.Collection.extend({
+
+	model: App.Models.ThreadIds,
+
+	sync: Backbone.cachingSync(emailbox_sync_collection, 'later1'),
+
+	comparator: function( Thread ) {
+		return -1 * Thread.toJSON().app.AppPkgDevMinimail.wait_until;
+	},
+
+	fetchDefault: function(options){
+		var that = this;
+		console.info('fetch later');
+
+		// Return "undecided emails"
+		// - the "?" emails
+
+		// - Must be "unread"
+		// - must be past "wait_until" time
+
+		var now = new Date();
+		var now_sec = parseInt(now.getTime() / 1000);
+
+		// Fetch from emailbox
+		return this.fetch({
+			options: options,
+			data: {
+				model: 'Thread',
+				conditions: {
+					'$and' : [
+						{
+							'app.AppPkgDevMinimail.wait_until' : {
+								'$gt' : now_sec
 							}
 						},
 						{
