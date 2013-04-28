@@ -8,8 +8,13 @@ App.Router = Backbone.Router.extend({
 		'body_login' : 'body_login',
 
 		'home' : 'home',
-		'undecided' : 'undecided',
-		'delayed' : 'delayed',
+
+
+		'dunno' : 'dunno',
+		'now' : 'now',
+		'later' : 'later',
+
+
 		'all' : 'all',
 		'leisure' : 'leisure',
 
@@ -166,6 +171,7 @@ App.Router = Backbone.Router.extend({
 
 	all: function(){
 		// Display the "inbox" (our version of an inbox)
+		alert('bad, not all');
 
 		// Already displaying all?
 		// - just refresh
@@ -190,6 +196,93 @@ App.Router = Backbone.Router.extend({
 		// Display page
 		$('.body_container').html(App.Data.PermaViews.all.$el);
 		App.router.showView('main_view',App.Data.PermaViews.all, 'all');
+	},
+
+
+	dunno: function(){
+		// Display the "inbox" (our version of an inbox)
+
+		// Already displaying all?
+		// - just refresh
+		if(App.router.getView('main_view', 'dunno')){
+			App.router.emitView('main_view', 'refresh');
+			return;
+		}
+
+		// Does page already exist?
+		// - some pages just stay in memory, do not get .close unless by force
+		var page;
+		if(!App.Data.PermaViews.dunno){
+			// Create page for first time
+			App.Data.PermaViews.dunno = new App.Views.Inbox_Dunno(); //Inbox_Dunno
+
+			// Display 
+
+		} else {
+
+		}
+
+		// Display page
+		$('.body_container').html(App.Data.PermaViews.dunno.$el);
+		App.router.showView('main_view',App.Data.PermaViews.dunno, 'dunno');
+	},
+
+
+	now: function(){
+		// Display the "inbox" (our version of an inbox)
+
+		// Already displaying all?
+		// - just refresh
+		if(App.router.getView('main_view', 'now')){
+			App.router.emitView('main_view', 'refresh');
+			return;
+		}
+
+		// Does page already exist?
+		// - some pages just stay in memory, do not get .close unless by force
+		var page;
+		if(!App.Data.PermaViews.now){
+			// Create page for first time
+			App.Data.PermaViews.now = new App.Views.Inbox_Now();
+
+			// Display 
+
+		} else {
+
+		}
+
+		// Display page
+		$('.body_container').html(App.Data.PermaViews.now.$el);
+		App.router.showView('main_view',App.Data.PermaViews.now, 'now');
+	},
+
+
+	later: function(){
+		// Display the "inbox" (our version of an inbox)
+
+		// Already displaying all?
+		// - just refresh
+		if(App.router.getView('main_view', 'later')){
+			App.router.emitView('main_view', 'refresh');
+			return;
+		}
+
+		// Does page already exist?
+		// - some pages just stay in memory, do not get .close unless by force
+		var page;
+		if(!App.Data.PermaViews.later){
+			// Create page for first time
+			App.Data.PermaViews.later = new App.Views.Inbox_Later();
+
+			// Display 
+
+		} else {
+
+		}
+
+		// Display page
+		$('.body_container').html(App.Data.PermaViews.later.$el);
+		App.router.showView('main_view',App.Data.PermaViews.later, 'later');
 	},
 
 
