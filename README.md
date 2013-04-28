@@ -49,7 +49,7 @@ Try out [debug.phonegap.com](http://debug.phonegap.com) (super buggy and slow, b
 ## Server-side   
 By default the basic minimail server is used. If you want to run your own server:  
 
-1. Register as an emailbox developer (https://getemailbox.com/login/first)  
+1. Register as an emailbox developer (https://getemailbox.com/login/first) **Signup currently disabled**  
 1. Follow instructions at repo: https://github.com/emailbox/minimail_nodeserver  
 1. Change the value for `minimail_server` in `creds.json` in the mobile app to use your server (usually on heroku). 
 
