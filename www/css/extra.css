@@ -586,7 +586,8 @@ body.console {
 
 .base_header_menu .btn-group .btn .counter {
   position: absolute;
-  bottom: -11;
+  bottom: -11px;
+  left: 2px;
 
   text-align: center;
   width: 25px;
