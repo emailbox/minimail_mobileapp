@@ -16,6 +16,7 @@
     <script src="js_main/childbrowser_local.js"></script>
 -->
 
+
 	<!-- Using build.phonegap.com -->
 	
     <script src="phonegap.js"></script>
@@ -277,7 +278,7 @@
 	<script id="t_thread_counter" class="partial" type="text/x-handlebars-template">
 		{{#if count}}
 			<div class="counter">
-				<span>{{count}}</span>
+				<span>{{{count}}}</span>
 			</div>
 		{{/if}}
 	</script>
@@ -816,8 +817,8 @@
 	</script>
 
 
-	<script id="t_all_inboxzero" type="text/x-handlebars-template">
-		// Not using this guy anymore
+	<script id="t_all_new_done" type="text/x-handlebars-template">
+		
 		<div class="inbox_zero fade-in-looks-weird">
 			<span class="words">{{{inbox_zero_words}}}</span>
 			<br />
