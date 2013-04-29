@@ -5528,6 +5528,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			count: that.useCollection.length,
 			type: that.threadType
 		};
+		if(eventData.count == 10){
+			eventData.count = "10+";
+		}
 		App.Events.trigger('Main.UpdateCount', eventData);
 
 	},
