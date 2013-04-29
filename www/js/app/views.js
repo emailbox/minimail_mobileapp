@@ -1791,7 +1791,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		this.$el.html(template(data));
 
 		// Run MathJax code
-		MathJax.Hub.Queue(["Typeset",MathJax.Hub,"threadContainer"]);
+		// MathJax.Hub.Queue(["Typeset",MathJax.Hub,"threadContainer"]);
 
 		// Parse out links we want to embed
 		// - gists: <script src="https://gist.github.com/nicholasareed/5177795.js"></script>
