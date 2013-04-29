@@ -1392,7 +1392,7 @@ Handlebars.registerHelper("inbox_zero_words", function() {
 				'Believe It.', 
 				'Solid.',
 				'Once Again!',
-				'Brush It Off',
+				'Noice',
 				'Inbox: 0']; // get clever
 
 	return words[Math.floor(Math.random()*words.length)];
