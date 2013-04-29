@@ -1380,7 +1380,15 @@ var Api = {
 			// Start listening on the socket.io feed
 			// return false;
 			console.log('Starting to listen...');
-			var socket = io.connect(App.Credentials.base_api_url + '/'); // SSL
+			try {
+				var socket = io.connect(App.Credentials.base_api_url + '/'); // SSL
+			} catch(e){
+				// Not loaded, try again in a minute
+				console.log('not loaded socket.io');
+				console.log(e);
+				window.setTimeout(Api.Event.start_listening, 1000);
+				return;
+			}
 			var room_login = {
 				app: App.Credentials.app_key,
 				access_token: App.Credentials.access_token,

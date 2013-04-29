@@ -160,7 +160,8 @@
                             //         silent: true // prevent event emittance
                             //     }); // new in Backbone 1.0.0               
                             // } else {
-                                collection.set(models); // new in Backbone 1.0.0               
+                                console.log('set models');
+                                collection.set(models); // new in Backbone 1.0.0  (never fires reset?)             
                             // }
 
                         }

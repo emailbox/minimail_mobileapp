@@ -5902,6 +5902,19 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			if(_.contains(incl_thread_ids, $(threadElem).attr('data-id'))){
 				// Affected this one!
 
+				var viewToRemove = _(that._subViews).select(function(cv) { 
+					return cv.model.get('_id') === $(threadElem).attr('data-id'); 
+				});
+
+				// Change the view's opacity:
+				$(viewToRemove.el).css('opacity', 0.2);
+
+				// don't actually remove it?
+				// - only remove it when refresh is called
+				that._waitingToRemove.push(viewToRemove);
+
+
+
 				// Slide the .thread-preview and show the Thread
 				// - sliding based on type (delayed, undecided)
 				var previewElem = $(threadElem).find('.thread-preview');
@@ -6031,7 +6044,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var template = App.Utils.template(this.zero_template);
 
 		// Write HTML
-		this.$el.html(template(this.threadType));
+		// this.$el.html(template(this.threadType));
 
 		return this;
 		
