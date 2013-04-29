@@ -148,7 +148,13 @@ App.Views.Body = Backbone.View.extend({
 		if(data.type == 'undecided'){
 			data.type = 'dunno';
 		}
-		console.log(data);
+
+		// console.log(data);
+
+		if(data.count == 10){
+			data.count = "10<sup>+</sup>";
+		}
+
 		var $button = this.$('.base_header_menu .threads_change button[data-action="'+data.type+'"]');
 
 		// Remove any previous one
@@ -5210,24 +5216,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// console.log('waiting to remove');
 		// console.log(this._waitingToRemove);
 		// console.log(this._waitingToRemove.length);
-		_.each(this._waitingToRemove, function(elem, i){
-			// Remove Thread's subView
-
-			// console.log('subViews');
-			// console.log(that._subViews);
-			// console.log('elem');
-			// console.log(elem);
-
-			// Get subview to remove
-			that._subViews = _(that._subViews).without(elem[0]);
-
-			// Listen for transition end before removing the element entirely
-			$(elem[0].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
-				$(elem[0].el).remove();
-			});
-			$(elem[0].el).addClass('closing_nicely');
-
-		});
+		that.remove_waitingToRemove();
 
 		// Trigger fetches
 		that.useCollection.fetchDefault();
@@ -5289,7 +5278,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Empty?
 		if(that.useCollection.length == 0){
 			// alert('both zero');
-			console.warn('zero1');
+			// console.warn('zero1');
 			that.check_inbox_zero();
 		}
 
@@ -5306,12 +5295,6 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		console.log('add_thread');
 
 		// // Full Thread
-		// console.log('new ThreadFull');
-		// console.log(thread);
-		// console.dir(thread);
-		// console.log(thread.get('id'));
-		// console.log(thread.toJSON()._id);
-		// console.log(thread.
 		thread.Full = new App.Models.ThreadFull({
 			_id: thread.toJSON()._id
 		});
@@ -5333,6 +5316,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 				return;
 			}
 			thread.Rendered = true;
+
+			// Remove .inbox_zero if it exists
+			that.$('.inbox_zero').remove();
 			
 			console.log('Thread is ready to be rendered');
 
@@ -5528,9 +5514,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			count: that.useCollection.length,
 			type: that.threadType
 		};
-		if(eventData.count == 10){
-			eventData.count = "10+";
-		}
+
 		App.Events.trigger('Main.UpdateCount', eventData);
 
 	},
@@ -6047,10 +6031,29 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var template = App.Utils.template(this.zero_template);
 
 		// Write HTML
-		// this.$el.html(template(this.threadType));
+		this.$el.prepend(template(this.threadType));
 
 		return this;
 		
+	},
+
+	remove_waitingToRemove: function(){
+		 var that = this;
+
+		_.each(this._waitingToRemove, function(elem, i){
+			// Remove Thread's subView
+			
+			// Get subview to remove
+			that._subViews = _(that._subViews).without(elem[0]);
+
+			// Listen for transition end before removing the element entirely
+			$(elem[0].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				$(elem[0].el).remove();
+			});
+			$(elem[0].el).addClass('closing_nicely');
+
+		});
+
 	},
 
 	render: function() {
@@ -6066,6 +6069,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			_(that._subViews).each(function(v) {
 				v.trigger('rebind');
 			});
+
+			// Remove _waitingToRemove things
+			this.remove_waitingToRemove();
 
 			// Resize the scrollable part (.all_threads)
 			this.resize_fluid_page_elements();
