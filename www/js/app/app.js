@@ -271,10 +271,28 @@ var App = {
 					.then(function(){
 						// Good, logged into minimail
 					}) // end .then
-					.fail(function(){
+					.fail(function(failInfo){
 						// Failed Minimail login
-						// - already started the process of opening windows, so we put the breaks on that, then totally log the person out
+						// - already started the process of opening windows, so we put the brakes on that, then totally log the person out
 
+						// 
+						try {
+							if(failInfo.data.code == 404){
+								// Unable to reach emailbox
+								// - emailbox returning 404
+								console.log('Emailbox server is down');
+
+								// Render "unreachable" display
+								// - it includes a "try again" button
+								Backbone.history.loadUrl('body_unreachable_server')
+								return;
+							}
+
+						} catch(err){
+
+						}
+
+						// Might have failed if the API was unreachable
 						console.log('Failed Minimail login');
 
 						// localStorage.setItem(App.Credentials.prefix_access_token + 'access_token',null);
