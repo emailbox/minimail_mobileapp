@@ -6,6 +6,7 @@ App.Router = Backbone.Router.extend({
 		'body' : 'body',         // entry point: no hash fragment or #
 
 		'body_login' : 'body_login',
+		'body_unreachable_server' : 'body_unreachable_server',
 
 		'home' : 'home',
 
@@ -145,6 +146,16 @@ App.Router = Backbone.Router.extend({
 			return;
 		} 
 
+
+
+	},
+
+
+	body_unreachable_server: function(){
+		// Unable to reach emailbox, reload
+
+		var page = new App.Views.BodyUnreachable();
+		App.router.showView('bodylogin',page);
 
 
 	},
