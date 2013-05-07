@@ -21,6 +21,7 @@ App.Plugins.Minimail = {
 			error: function(err){
 				// Failed for some reason
 				// - probably not on the internet
+				console.log(2);
 				if(!App.Data.online){
 					alert('Unable to load a data connection (placeholder)');
 				}
@@ -31,8 +32,8 @@ App.Plugins.Minimail = {
 
 				if(jData.code != 200){
 					//Failed logging in
-					clog('==failed logging in');
-					dfd.reject(false);
+					console.log('==failed logging in');
+					dfd.reject(jData);
 					return;
 				}
 
@@ -767,6 +768,9 @@ App.Plugins.Minimail = {
 						App.Utils.toast('Marked as done');
 						App.Plugins.Minimail.saveAsDone(thread_id); // should also kill any wait_until queues
 
+						// emit thread.delay 
+						App.Events.trigger('Thread.delay', thread_id);
+
 						// Scroll the window
 						if($(this).parents('.thread').is(':last-child')){
 							var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
@@ -829,7 +833,7 @@ App.Plugins.Minimail = {
 							
 							if($(this).parents('.thread').is(':last-child')){
 								var now_scroll_height = $(this).parents('.threads_holder').scrollTop();
-								$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74,500);
+								$(this).parents('.threads_holder').scrollTo(now_scroll_height - 74, 500);
 							}
 
 							// Save delay
@@ -837,9 +841,12 @@ App.Plugins.Minimail = {
 							var now = new Date();
 							var now_sec = parseInt(now.getTime() / 1000, 10);
 							var in_seconds = now_sec + (delay_seconds);//(60*60*3);
-							// var test = new Date(in_seconds * 1000);
-							// clog(test);
+
+							// save the delay
 							App.Plugins.Minimail.saveNewDelay(thread_id,in_seconds,delay_seconds);
+
+							// emit event
+							App.Events.trigger('Thread.delay', thread_id);
 
 
 						} else {
