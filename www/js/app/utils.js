@@ -19,7 +19,7 @@ App.Utils = {
 				// At most, show it for 30 seconds before removing
 				window.setTimeout(function(){
 					if(App.Data.debug_messages[key]){
-						// Stil exists
+						// Still exists
 						App.Utils.Notification.debug.temp('Bad: ' + App.Data.debug_messages[key].text);
 						App.Utils.Notification.debug.remove(key);
 					}
@@ -1059,7 +1059,7 @@ var Api = {
 				var searchQueryOptions = {
 					data: {
 						type: "multi",
-						searches: {} // object
+						multiple: {} // object
 					},
 					success: function(response){
 						response = JSON.parse(response);
@@ -1088,7 +1088,7 @@ var Api = {
 				_.each(searchesToRun, function(search, idx){
 					// search[0] = dfd, search[1] = queryOptions
 
-					searchQueryOptions.data.searches[idx] = search[1].data;
+					searchQueryOptions.data.multiple[idx] = search[1].data;
 				});
 
 				// Run query
@@ -1143,12 +1143,13 @@ var Api = {
 
 		// Chain to _return
 
-		// console.log(JSON.stringify(queryOptions.data));
 
-		// Want responses? 
+		var dfd = $.Deferred();
+
+
 		if(queryOptions.response){
 
-			// overwrite the success function with our own
+			// overwrite the success function with our own response function
 			queryOptions._success = queryOptions.success || null;
 
 			queryOptions.success = function(bodyResponse){
@@ -1188,14 +1189,80 @@ var Api = {
 
 			}
 
-			return Api.query('/api/event',queryOptions);
+		}
+
+
+		if(App.Data.eventTimer){
+			// already started timer
+			// - add to current bucket
+			
+			App.Data.eventTimerBucket.push([dfd, queryOptions]);
 
 		} else {
 
-			// Normal
-			return Api.query('/api/event',queryOptions);
+			// Start timer
+			App.Data.eventTimer = 1;
+			App.Data.eventTimerBucket = [];
+
+			App.Data.eventTimerBucket.push([dfd, queryOptions]);
+
+			// Start waiting period for new searchOptions
+			setTimeout(function(){
+				// Turn off timer
+				App.Data.eventTimer = 0;
+
+				// Clone timer bucket
+				var queriesToRun = App.Data.eventTimerBucket.splice(0);
+
+				// Create search query
+				// - iterate through each possible query
+				var reqData = {};
+				var runQueryOptions = {
+					data: {
+						type: "multi",
+						multiple: {} // object
+					},
+					success: function(response){
+						response = JSON.parse(response);
+
+						// query has returned
+						// - parse out the deferreds according to the indexKey
+
+						// resolve each dfd accordingly
+
+						_.each(response.data, function(elemData, idx){
+							// idx refers to the index of the queriesToRun
+							// console.log('elemData');
+							// console.log(elemData);
+
+							// Resolve
+							queriesToRun[idx][0].resolve(elemData);
+
+							// Call success function
+							// console.log(queriesToRun[idx]);
+							queriesToRun[idx][1].success(JSON.stringify(elemData));
+
+						});
+
+					}
+				};
+				_.each(queriesToRun, function(query, idx){
+					// search[0] = dfd, search[1] = queryOptions
+
+					runQueryOptions.data.multiple[idx] = query[1].data;
+				});
+
+				// Run query
+				Api.query('/api/event',runQueryOptions);
+
+			}, 100);
 
 		}
+
+		// Return a deferred
+		return dfd.promise();
+
+
 
 	},
 
@@ -1244,7 +1311,15 @@ var Api = {
 		switch(url){
 			
 			case '/api/event':
-				debug_message = url + ': ' + queryOptions.data.event;
+				if(queryOptions.data.type && queryOptions.data.type == 'multi'){
+					// multiple
+					// - see if all one type?
+					debug_message = url + ': ' + 'multiple';
+				} else {
+					// normal, with model
+					debug_message = url + ': ' + queryOptions.data.event;
+				}
+
 				break;
 
 			case '/api/event/remove':
