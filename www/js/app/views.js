@@ -754,593 +754,6 @@ App.Views.Body = Backbone.View.extend({
 });
 
 
-App.Views.Undecided = Backbone.View.extend({
-	
-	className: 'undecided_thread_inside_view',
-
-	last_scroll_position: 0,
-
-	events: {
-		// 'click .save' : 'save',
-		// 'click .preview' : 'preview'
-		// 'click #back' : 'go_back',
-		// 'click .sender' : 'approve',
-		// 'click .sender_status a' : 'status_change'
-
-		'click .thread-preview' : 'view_email'
-
-	},
-
-	initialize: function(options) {
-		_.bindAll(this, 'render');
-		var that = this;
-
-	},
-
-
-	refresh_data: function(){
-		// Refresh the data for the view
-
-	},
-
-
-	view_email: function(ev){
-		// View an individual email
-		var elem = ev.currentTarget;
-		var threadElem = $(elem).parents('.thread');
-
-		// - probably have some of the info cached already (all relevant headers)
-
-		// Get Thread id
-		var id = $(threadElem).attr('data-id');
-
-		// Set last scroll position
-		this.last_scroll_position = $('.threads_holder').scrollTop();
-		this.$el.parents('.main_body').attr('last-scroll-position',this.last_scroll_position);
-
-		// Launch view for that Thread
-		Backbone.history.loadUrl('view_thread/' + id + '/undecided');
-
-		return false;
-
-	},
-
-
-	render_init: function(){
-		// Render the loading screen
-		var that = this;
-
-		// Template
-		var template = App.Utils.template('t_undecided_init');
-
-		// Write HTML
-		this.$el.html(template());
-
-		return this;
-
-	},
-
-	render_threads: function(undecided){
-		
-		// Render the loading screen
-		var that = this;
-
-		// Template
-		var template = App.Utils.template('t_undecided');
-
-		// Write HTML
-		this.$el.html(template(undecided));
-
-		// Change size of window based on display size
-		$('.undecided_thread_inside_view').css({
-			height: App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-		$('.undecided_threads').css({
-			"max-height": App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-
-		// Scroll to bottom
-		$('.undecided_threads').scrollTop($(document).height());
-
-		// Draggable
-		$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
-		$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
-		$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
-		$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
-		$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
-		$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
-
-		return this;
-		
-	},
-
-
-	refresh_and_render_threads: function(){
-		var that =  this;
-
-		that.collection = new App.Collections.UndecidedThreads();
-		that.collection.fetchUndecided({
-			success: function(threads) {
-				// Does not return models, just JSON data objects
-				clog('back with result');
-					
-				// Store locally
-				App.Utils.Storage.set('undecided_threads_and_emails',threads);
-
-				// Render
-				that.render_threads(threads);
-			}
-		});
-	},
-
-	render: function() {
-		var that = this;
-
-		// Render initial body
-		this.render_init();
-
-		// Do we already have some data?
-		App.Utils.Storage.get('undecided_threads_and_emails')
-			.then(function(threads){
-
-				if(threads != null){
-					// Have some local data
-					// Trigger a refresh of the data
-					// - when the data is refreshed, the view gets refreshed as well
-					
-					that.render_threads(threads);
-
-				}
-
-				that.refresh_and_render_threads();
-
-			});
-
-
-
-		// How old is it?
-		// Do we need to do a refresh?
-
-		// View is based on what data we do have, and a view makes sure the new data is being found? 
-
-
-
-
-
-		return;
-
-
-
-		// Template
-		// var template = App.Utils.template('t_undecided');
-
-		// // Write HTML
-		// this.$el.html(template());
-
-		// this.$('.sender_status a[data-status="pending"]').trigger('click');
-
-		// Build Search SubView
-		// - todo...
-
-
-		//this.options.senders
-		// $(this.el).html(template());
-
-
-
-		// Resize window
-		// var oTop = $('#file_list').offset().top;
-		// var viewportHeight = $(window).height();
-		// $('#file_list').height(viewportHeight - oTop - 1 + 'px');
-		
-		var threads = new App.Collections.UndecidedThreads();
-		threads.fetchUndecided({
-			success: function(threads) {
-				// $(that.el).html(_.template(guestbookListTemplate, {messages: messages.models, _:_}));
-				clog('threads');
-				clog(threads);
-				that.render_threads(threads);
-			}
-		});
-
-
-		// // See if data is in the cache
-		// var cache = false;
-		// if(cache){
-		// 	// Get data from cache
-		// 	// - render immediately
-		// 	this.render_threads();
-
-		// } else {
-		// 	// Not already cached
-		// 	that.render_init();
-		// 	App.Plugins.Minimail.getUndecided()
-		// 		.then(function(undecided){
-		// 			that.render_threads(undecided);
-		// 		})
-		// 		.fail(function(err){
-		// 			clog('Failed loading Undecided');
-		// 		});
-		// }
-
-		return this;
-	}
-});
-
-
-App.Views.UndecidedThread = Backbone.View.extend({
-	
-	className: 'undecided_thread_view',
-
-	events: {
-		'click .btn[data-action="back"]' : 'go_back',
-		'click .email_holder .email_body .ParsedDataShowAll span.expander' : 'email_folding'
-	},
-
-	initialize: function(options) {
-		_.bindAll(this, 'render');
-		var that = this;
-		// this.el = this.options.el;
-
-		// Get any local information we have
-		// After getting local info, and if we have enough, show the thing
-		// Get remote info, merge with Local when it arrives
-
-		// Render the information we have on this Thread
-
-		this.threadid = this.options.threadid
-
-		var thread = new App.Models.Thread({
-			_id: this.threadid
-		});
-
-		threads.fetchUndecided({
-			success: function(threads) {
-				// $(that.el).html(_.template(guestbookListTemplate, {messages: messages.models, _:_}));
-				clog('threads');
-				clog(threads);
-				that.render_threads(threads);
-			}
-		});
-
-		// // Render the base view
-		// var thread_cached = false;
-		// if(thread_cached){
-		// 	// Thread is in memory
-		// 	// - display base view including Thread
-		// 	// - todo...
-		// } else {
-		// 	// No Thread in memory
-
-		// 	// Display base outline
-		// 	// Fetch Thread and Emails for thread
-
-		// 	App.Plugins.Minimail.getThreadAndEmails(this.options.threadid)
-		// 		.then(function(returnThread){
-		// 			that.render_content(returnThread);
-		// 		})
-		// 		.fail(function(err){
-		// 			clog('Failed getThreadAndEmails');
-		// 			clog(err);
-		// 		});
-		// }
-
-	},
-
-	go_back: function(ev){
-		// Going back to mailbox
-		// - highlight the correct row we were on? (v2)
-
-		// Re-show .main_body
-		$('.main_body').removeClass('nodisplay');
-
-		// Scroll to correct position
-		var scrollTo = 0;
-		if($('.main_body').attr('last-scroll-position')){
-			scrollTo = $('.main_body').attr('last-scroll-position');
-		}
-		$('.undecided_threads').scrollTop(scrollTo);
-
-		// Close myself
-		this.close();
-
-		return false;
-	},
-
-
-	email_folding: function (ev){
-		// Display any hidden emails (previous parts of the conversation)
-
-		var elem = ev.currentTarget;
-
-		var content_holder = $(elem).parents('.email_body');
-		//var count = $(content_holder).find('.ParsedDataContent').length;
-
-		// Toggle
-		if($(content_holder).hasClass('showAllParsedData')){
-			$(content_holder).removeClass('showAllParsedData')
-			
-			$(content_holder).find('.ParsedDataContent:not([data-level="0"])').hide();
-
-			$(elem).text('...');
-		} else {
-			$(content_holder).addClass('showAllParsedData')
-
-			$(content_holder).find('.ParsedDataContent:not([data-level="0"])').show();
-
-			$(elem).text('Hide');
-		}
-
-	},
-
-	render: function() {
-		var that = this;
-		// Data
-		// var data = this.options.accounts.UserGmailAccounts;
-
-		// Should start the updater for accounts
-		// - have a separate view for Accounts?
-
-		// Template
-		var template = App.Utils.template('t_common_thread_view');
-
-		// Write HTML
-		this.$el.html(template());
-
-		// Scroll to top
-		alert('top');
-		// $(window).scrollTop(0);
-
-		return this;
-	},
-
-	render_content: function(ThreadAndEmails){
-		// Render partial
-
-		// Template
-		var template = App.Utils.template('t_common_thread_view_content');
-
-		// Remove loading
-		this.$('.loading').remove();
-
-		// Write HTML
-		this.$('.body_container').html(template(ThreadAndEmails));
-
-	}
-
-});
-
-
-App.Views.Delayed = Backbone.View.extend({
-	
-	className: 'delayed_thread_inside_view',
-
-	last_scroll_position: 0,
-
-	events: {
-		// 'click .save' : 'save',
-		// 'click .preview' : 'preview'
-		// 'click #back' : 'go_back',
-		// 'click .sender' : 'approve',
-		// 'click .sender_status a' : 'status_change'
-
-		'click .thread-preview' : 'view_email'
-
-	},
-
-	initialize: function(options) {
-		_.bindAll(this, 'render');
-		var that = this;
-	},
-
-
-	render_init: function(){
-		// Render the loading screen
-		var that = this;
-
-		// Template
-		var template = App.Utils.template('t_delayed_init');
-
-		// Write HTML
-		this.$el.html(template());
-
-		return this;
-
-	},
-
-
-	view_email: function(ev){
-		// View an individual email
-		var elem = ev.currentTarget;
-		var threadElem = $(elem).parents('.thread');
-
-		// - probably have some of the info cached already (all relevant headers)
-
-		// Get Thread id
-		var id = $(threadElem).attr('data-id');
-
-		// Set last scroll position
-		this.last_scroll_position = $(window).scrollTop();
-		this.$el.parents('.main_body').attr('last-scroll-position',this.last_scroll_position);
-
-		// Launch view for that Thread
-		Backbone.history.loadUrl('view_thread/' + id + '/delayed');
-
-		return false;
-
-	},
-
-	render_threads: function(threads){
-		
-		// Render the loading screen
-		var that = this;
-
-		// Template
-		var template = App.Utils.template('t_delayed');
-
-		// Write HTML
-		this.$el.html(template(threads));
-
-		// Change size of window based on display size
-		$('.delayed_thread_inside_view').css({
-			height: App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-		$('.delayed_threads').css({
-			"max-height": App.Data.xy.win_height - 60,
-			width: App.Data.xy.win_width
-		});
-
-		// Scroll to bottom
-		$('.delayed_threads').scrollTop($('.delayed_threads').height());
-
-		// Draggable
-		$(".delayed_thread_inside_view .thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
-		$(".delayed_thread_inside_view .thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
-		$(".delayed_thread_inside_view .thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
-		$(".delayed_thread_inside_view .thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
-		$(".delayed_thread_inside_view .thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
-		$(".delayed_thread_inside_view .thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
-
-		return this;
-		
-	},
-
-
-	refresh_and_render_threads: function(){
-		var that =  this;
-
-		that.collection = new App.Collections.DelayedThreads();
-		that.collection.fetchDelayed({
-			success: function(threads) {
-				// Does not return models, just JSON data objects
-				clog('back with result');
-					
-				// Store locally
-				App.Utils.Storage.set('delayed_threads_and_emails',threads);
-
-				// Render
-				that.render_threads(threads);
-			}
-		});
-	},
-
-	render: function() {
-		var that = this;
-
-		// Template
-		// var template = App.Utils.template('t_undecided');
-
-		// // Write HTML
-		// this.$el.html(template());
-
-		// this.$('.sender_status a[data-status="pending"]').trigger('click');
-
-		// Build Search SubView
-		// - todo...
-
-
-		//this.options.senders
-		// $(this.el).html(template());
-
-
-		// $("ul#file_list").selectable();
-		// $("ul#file_list li").click(function(){
-		// 	if( !$(this).hasClass("ui-selected")){
-		// 		$(this).addClass("ui-selected")
-		// 		if(!App.Data.Keys.shift && !App.Data.Keys.meta){
-		// 			$(this).siblings().removeClass("ui-selected");
-		// 		}
-		// 	} else {
-		// 		if(!App.Data.Keys.shift && !App.Data.Keys.meta){
-		// 			$(this).siblings().removeClass("ui-selected");
-		// 		}
-		// 	}
-		// });
-		// $("ul#file_list li").draggable({
-		// 	appendTo: "body",
-		// 	helper: "clone",
-		// 	start: function(ev, ui) {        
-		// 		if($(this).hasClass("ui-selected")){
-		// 			// Great, just continue dragging
-
-		// 		} else {
-		// 			if(!App.Data.Keys.shift && !App.Data.Keys.meta){
-		// 				$(this).addClass("ui-selected").siblings().removeClass("ui-selected");
-		// 			} else {
-		// 				$(this).addClass("ui-selected");
-		// 			}
-		// 		}
-		// 	}
-		// });
-
-		// Resize window
-		// var oTop = $('#file_list').offset().top;
-		// var viewportHeight = $(window).height();
-		// $('#file_list').height(viewportHeight - oTop - 1 + 'px');
-		
-
-
-		var that = this;
-
-		// Render initial body
-		this.render_init();
-
-		// Do we already have some data?
-		App.Utils.Storage.get('delayed_threads_and_emails')
-			.then(function(threads){
-
-				if(threads != null){
-					// Have some local data
-					// Trigger a refresh of the data
-					// - when the data is refreshed, the view gets refreshed as well
-					
-					clog('HAVE SOME DATA');
-					clog(threads);
-
-					that.render_threads(threads);
-
-				} else {
-					clog('NO LOCAL DATA');
-				}
-
-				that.refresh_and_render_threads();
-
-			});
-
-
-
-
-		return this;
-
-
-		// See if data is in the cache
-		var cache = false;
-		if(cache){
-			// Get data from cache
-			// - render immediately
-			this.render_threads();
-
-		} else {
-			// Not already cached
-			clog('render_init');
-			that.render_init();
-			App.Plugins.Minimail.getDelayDue()
-				.then(function(threads){
-					that.render_threads(threads);
-				})
-				.fail(function(err){
-					clog('Failed loading Delayed');
-				});
-		}
-
-		return this;
-	}
-});
-
-
 App.Views.CommonThread = Backbone.View.extend({
 	
 	className: 'common_thread_view is-loading',
@@ -5081,10 +4494,6 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		_.bindAll(this, 'after_multi_delay_modal');
 		_.bindAll(this, 'mass_action');
 		_.bindAll(this, 'multi_options');
-		// _.bindAll(this, 'after_delay_modal');
-		// _.bindAll(this, 'refresh_and_render_threads');
-		// _.bindAll(this, 'addDelayed');
-		// _.bindAll(this, 'allDelayed');
 		
 		// App.Events.bind('new_email',this.refresh_and_render_threads);
 
@@ -5165,17 +4574,17 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			window.setTimeout(function(){
 				console.log('cacheListener fired');
 				// go through "waiting_to_remove"
-				_.each(that._waitingToRemove, function(elem, i){
-					// Remove Thread's subView
-					console.log('removing subview');
-					console.log(elem);
-					console.log(that._subViews);
+				// _.each(that._waitingToRemove, function(elem, i){
+				// 	// // Remove Thread's subView
+				// 	// console.log('removing subview');
+				// 	// console.log(elem);
+				// 	// console.log(that._subViews);
 
-					// Get subview to remove
-					that._subViews = _(that._subViews).without(elem);
-					$(elem.el).remove();
+				// 	// // Get subview to remove
+				// 	// that._subViews = _(that._subViews).without(elem);
+				// 	// $(elem.el).remove();
 
-				});
+				// });
 
 				// that.delayedCollection.fetchDelayed();
 				that.useCollection.fetchDefault();
@@ -5212,10 +4621,6 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// - it should look nice while adding/removing! 
 
 		// go through "waiting_to_remove"
-		// alert('refreshing');
-		// console.log('waiting to remove');
-		// console.log(this._waitingToRemove);
-		// console.log(this._waitingToRemove.length);
 		that.remove_waitingToRemove();
 
 		// Trigger fetches
@@ -5230,30 +4635,30 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		this.trigger('check_multi_select');
 
 		// Print out number of views
-		console.log('number of views__');
+		console.log('number of views_1_');
 		console.log(that.useCollection.length);
 
 		return;
 
 	},
 
-	refresh_fetch: function(){
-		// Fetch new emails after a refresh
-		var that = this;
+	// refresh_fetch: function(){
+	// 	// Fetch new emails after a refresh
+	// 	var that = this;
 
-		// Trigger fetches
-		that.useCollection.fetchDefault();
+	// 	// Trigger fetches
+	// 	that.useCollection.fetchDefault();
 
-		// At inbox zero?
-		if(that.useCollection.length == 0){
-			that.check_inbox_zero();
-		}
+	// 	// At inbox zero?
+	// 	if(that.useCollection.length == 0){
+	// 		that.check_inbox_zero();
+	// 	}
 
-		// Print out number of views
-		console.log('number of views__');
-		console.log(that.useCollection.length);
+	// 	// Print out number of views
+	// 	console.log('number of views_2_');
+	// 	console.log(that.useCollection.length);
 
-	},
+	// },
 
 	reset_threads: function(threads, options){
 		var that = this; // not the view, passing context to 'add'
@@ -5279,7 +4684,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		if(that.useCollection.length == 0){
 			// alert('both zero');
 			// console.warn('zero1');
-			that.check_inbox_zero();
+			// that.check_inbox_zero();
 		}
 
 		// Scroll to bottom
@@ -5294,10 +4699,53 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Got a new Thread._id, so we need to go get the corresponding ThreadFull model
 		console.log('add_thread');
 
-		// // Full Thread
+		// Add to the DOM
+		that.$('.inbox_zero').remove();
+
+		// Get index (position) of this Thread
+		var idx = that.useCollection.indexOf(thread);
+
+		// Create the View
+		var dv = new App.Views.SubCommonThread({
+			model : thread,
+			threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
+			idx_in_collection: idx,
+			fadein: true,
+			parentView: that
+		});
+
+		var dvView = dv.render().el;
+
+		// Add to the correct place
+		// - not actually rendering yet though
+		var prev = that.$('.all_threads').find('.thread:eq('+idx+')');
+		// prev = that.$('li:eq(' + idx + ')');
+		console.log('prev');
+		console.log(prev);
+		if (prev.length > 0) {
+			prev.after(dvView); // render after
+		} else {
+			that.$('.all_threads').prepend(dvView);
+		}
+
+		// Add to subViews
+		that._subViews.push(dv);
+
+		// Re-sort the views we have
+		that._subViews = _.sortBy(that._subViews,function(sV){
+			return sV.options.idx_in_collection;
+		});
+
+
+
+
+
+
+		// Full Thread
 		thread.Full = new App.Models.ThreadFull({
 			_id: thread.toJSON()._id
 		});
+
 
 		// Checking if the Thread is ready to be displayed
 		// - seeing if it actually should be displayed too
@@ -5317,91 +4765,96 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			}
 			thread.Rendered = true;
 
-			// Remove .inbox_zero if it exists
-			that.$('.inbox_zero').remove();
+			// Fire the render_ready on the dvView
+			dv.trigger('render_ready');
+
+			// // Remove .inbox_zero if it exists
+			// // - move this to the actual "I'm ready to render" method
+			// that.$('.inbox_zero').remove();
 			
-			console.log('Thread is ready to be rendered');
+			// console.log('Thread is ready to be rendered');
 
-			// Get index (position) of this Thread
-			var idx = that.useCollection.indexOf(thread);
+			// // Get index (position) of this Thread
+			// var idx = that.useCollection.indexOf(thread);
 
-			// Create the View
-			var dv = new App.Views.SubCommonThread({
-				model : thread,
-				threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
-				idx_in_collection: idx,
-				fadein: true,
-				parentView: that
-			});
+			// // Create the View
+			// var dv = new App.Views.SubCommonThread({
+			// 	model : thread,
+			// 	threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
+			// 	idx_in_collection: idx,
+			// 	fadein: true,
+			// 	parentView: that
+			// });
 
-			// Add to views
-			that._subViews.push(dv);
+			// // Add to views
+			// that._subViews.push(dv);
 
-			// Re-sort the views we have
-			that._subViews = _.sortBy(that._subViews,function(sV){
-				return sV.options.idx_in_collection;
-			});
+			// // Re-sort the views we have
+			// that._subViews = _.sortBy(that._subViews,function(sV){
+			// 	return sV.options.idx_in_collection;
+			// });
 
-			// Figure out the index of this view
-			var thread_idx = that._subViews.indexOf(dv);
-			// console.warn('thread_idx: ' + thread.Full.toJSON().original.subject);
-			// console.log(thread_idx);
-			// console.dir(that._subViews[this.threadType]);
+			// // Figure out the index of this view
+			// var thread_idx = that._subViews.indexOf(dv);
+			// // console.warn('thread_idx: ' + thread.Full.toJSON().original.subject);
+			// // console.log(thread_idx);
+			// // console.dir(that._subViews[this.threadType]);
 
-			// Render this fucker in the correct place meow
+			// // Render this fucker in the correct place meow
 
-			// If the view has been rendered, then immediately append views
-			if(that._rendered){
-				// Insert it into the correct place
-				// - at bottom
+			// // If the view has been rendered, then immediately append views
+			// if(that._rendered){
+			// 	// Insert it into the correct place
+			// 	// - at bottom
 
-				// What is already displayed?
-				// - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
-				if(_.size(that._subViews) != 1){
-					// Already displayed at least one, so we need to figure out where this view is going
+			// 	// What is already displayed?
+			// 	// - we are going to .before it to the correct elements (or .append to .all_threads if none are showing yet)
+			// 	if(_.size(that._subViews) != 1){
+			// 		// Already displayed at least one, so we need to figure out where this view is going
 
-					// // iterate over existing views to get the index, and display based on that order? 
-					// // - they are already ordered in the collection, but not in the view
-					// console.info('already 1 or more');
-					// console.log('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')');
+			// 		// // iterate over existing views to get the index, and display based on that order? 
+			// 		// // - they are already ordered in the collection, but not in the view
+			// 		// console.info('already 1 or more');
+			// 		// console.log('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')');
 
-					// // Find the rendered subView that is directly before this one
-					// // - just going to .after on that one
-					// var insertPosition = 1; // at the beginning!
-					// var diff = 10000;
-					// _.each(that._subViews[this.threadType], function(subView, idx, lst){
+			// 		// // Find the rendered subView that is directly before this one
+			// 		// // - just going to .after on that one
+			// 		// var insertPosition = 1; // at the beginning!
+			// 		// var diff = 10000;
+			// 		// _.each(that._subViews[this.threadType], function(subView, idx, lst){
 
-					// });
+			// 		// });
 					
-					console.log('dsize != 1: ' + _.size(that._subViews));
+			// 		console.log('dsize != 1: ' + _.size(that._subViews));
+			// 		console.log('thread_idx:' + thread_idx);
 
-					var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+threadType+'"]:nth-of-type('+thread_idx+')');
-					console.log($elem.length);
-					$elem.after(dv.render().el);
+			// 		var $elem = that.$('.all_threads').find('.thread[data-thread-type="'+threadType+'"]:nth-of-type('+thread_idx+')');
+			// 		console.log($elem.length);
+			// 		$elem.after(dv.render().el);
 
-					// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')').after(dv.render().el);
-					// that.$('.all_threads').append(dv.render().el);
-				} else {
-					// No other ones, just append it (lowest on the list)
-					// console.info('no other ones');
+			// 		// that.$('.all_threads').find('.thread[data-thread-type="'+this.threadType+'"]:nth-of-type('+idx+')').after(dv.render().el);
+			// 		// that.$('.all_threads').append(dv.render().el);
+			// 	} else {
+			// 		// No other ones, just append it (lowest on the list)
+			// 		// console.info('no other ones');
 
-					// Is the structure already set up?
-					if(!that.$('.all_threads').length){
-						console.log('rendering all_threads structure');
-						that.render_structure();
-					}
+			// 		// Is the structure already set up?
+			// 		if(!that.$('.all_threads').length){
+			// 			console.log('rendering all_threads structure');
+			// 			that.render_structure();
+			// 		}
 
-					that.$('.all_threads').append(dv.render().el);
-				}
+			// 		that.$('.all_threads').append(dv.render().el);
+			// 	}
 
-				// Resize the scrollable part (.all_threads)
-				that.resize_fluid_page_elements();
-				that.resize_scroller();
+			// 	// Resize the scrollable part (.all_threads)
+			// 	that.resize_fluid_page_elements();
+			// 	that.resize_scroller();
 
-				// Scroll to bottom
-				that.$('.scroller').scrollTop(10000);
+			// 	// Scroll to bottom
+			// 	that.$('.scroller').scrollTop(10000);
 
-			}
+			// }
 
 			// // And add it to the collection so that it's easy to reuse.
 			// that._subViews[this.threadType].push(dv);
@@ -5493,9 +4946,14 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		
 		console.log('remove_thread');
 
-		var viewToRemove = _(that._subViews).select(function(cv) { return cv.model === model; });
-		// that._subViews[this.threadType] = _(that._subViews[this.threadType]).without(viewToRemove);
+		var viewToRemove = _(that._subViews).filter(function(cv) { return cv.model === model; });
+		if(viewToRemove.length < 1){
+			return;
+		}
+		viewToRemove = viewToRemove[0];
 
+		// that._subViews[this.threadType] = _(that._subViews[this.threadType]).without(viewToRemove);
+		console.log(viewToRemove);
 		// Change the view's opacity:
 		// - or change based on whatever happened to it?
 		// - also depends on if it was a remote change, right? 
@@ -5889,9 +5347,40 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			if(_.contains(incl_thread_ids, $(threadElem).attr('data-id'))){
 				// Affected this one!
 
-				var viewToRemove = _(that._subViews).select(function(cv) { 
+				console.log('looking at views: ' + that.threadType);
+				var viewToRemove = _(that._subViews).filter(function(cv) { 
+					console.log(cv.model.get('_id'));
 					return cv.model.get('_id') === $(threadElem).attr('data-id'); 
 				});
+
+				// Returned an array, damnit
+				if(viewToRemove.length > 0){
+					viewToRemove = viewToRemove[0];
+				} else {
+					// Didn't find the view
+					console.log('Did not find the view in ' + that.threadType);
+					return;
+				}
+
+				// Sometimes is null
+				// - dunno why the fuck
+				if(!viewToRemove || viewToRemove == null){
+					console.log('ERROR - NULL viewToRemove');
+					console.log(viewToRemove);
+					return;
+				}
+
+				// see if .el is also valid
+				if(!viewToRemove.el){
+					console.log('ERROR2 - Null viewToRemove.el');
+					console.log(viewToRemove);
+					console.log(viewToRemove.el);
+					return;
+				}
+
+				console.log('found view');
+				console.log($(threadElem).attr('data-id'));
+				console.log(viewToRemove);
 
 				// Change the view's opacity:
 				$(viewToRemove.el).css('opacity', 0.2);
@@ -5986,9 +5475,6 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 	render_threads: function(threads){
 		
-		// clog('threads');
-		// clog(threads);
-
 		// Render the loading screen
 		var that = this;
 
@@ -6011,9 +5497,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 	check_inbox_zero: function(){
 		// See if we should render inbox-zero
-		// - really, this is what I had it here?
 		if(this.useCollection.length == 0){
 			this.render_zero();
+			this.remove_waitingToRemove();
 		}
 
 	},
@@ -6040,17 +5526,35 @@ App.Views.Inbox_Base = Backbone.View.extend({
 	remove_waitingToRemove: function(){
 		 var that = this;
 
+		 console.log('Trying remove_waitingToRemove');
 		_.each(this._waitingToRemove, function(elem, i){
 			// Remove Thread's subView
-			
+
+			console.log('remove_waitingToRemove');
+			// console.log(elem[0]);
+			// console.log(elem);
+			// console.log(elem.toString());
+			// console.log(elem.el);
+			// console.log(elem.el);
+
+			// // Get subview to remove
+			// that._subViews = _(that._subViews).without(elem[0]);
+
+			// // Listen for transition end before removing the element entirely
+			// $(elem[0].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+			// 	$(elem[0].el).remove();
+			// });
+			// $(elem[0].el).addClass('closing_nicely');
+
 			// Get subview to remove
-			that._subViews = _(that._subViews).without(elem[0]);
+			that._subViews = _(that._subViews).without(elem);
 
 			// Listen for transition end before removing the element entirely
-			$(elem[0].el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
-				$(elem[0].el).remove();
+			$(elem.el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+				console.log("__looking to remove");
+				elem.remove();
 			});
-			$(elem[0].el).addClass('closing_nicely');
+			$(elem.el).addClass('closing_nicely');
 
 		});
 
@@ -6278,7 +5782,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 		// Fade in?
 		if(this.options.fadein){
-			this.el.className = this.className + ' fade-in';
+			// this.el.className = this.className + ' fade-in';
 		}
 
 		// threadType
@@ -6296,6 +5800,9 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 		// Listen for rebinding events
 		this.on('rebind', this.rebind, this);
+
+		// Listen for render_ready
+		this.on('render_ready', this.render_ready, this);
 	},
 
 	beforeClose: function(){
@@ -6316,6 +5823,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			this.$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
 			this.$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
 			this.$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
+
 			
 		} else {
 
@@ -6325,11 +5833,14 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			
 		}
 
+		// React to the view being done or delayed
+		// this.$(".thread-preview").on('done_or_delay');
+
 
 	},
 
 	after_delay_modal: function(wait, save_text){
-		
+		alert('How did you get here?');
 		var that = this;
 
 		// Show multi-options
@@ -6636,8 +6147,10 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 	},
 
-	render: function(){
+	render_ready: function(){
 		var that = this;
+
+		this.$el.removeClass('preloading');
 
 		this.$el.attr('data-id', this.model.get('_id')); // fix, Thread._id
 		this.$el.attr('data-thread-type', this.options.threadType);
@@ -6675,6 +6188,20 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 
 		return this;
+	}, 
+
+	render: function(){
+		// Render a "loading" thingy
+		var that = this;
+
+		var template = App.Utils.template('t_loading_common_thread');
+
+		this.$el.addClass('preloading');
+		this.$el.html(template());
+
+		return this;
+
+
 	}
 
 });
@@ -10381,6 +9908,37 @@ App.Views.BodyLogin = Backbone.View.extend({
 	}
 });
 
+App.Views.BodyUnreachable = Backbone.View.extend({
+	
+	el: 'body',
+
+	events: {
+		'click .retry' : 'reload'
+
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+
+	},
+
+	reload: function(){
+		// Reload the page
+		// - easiest way, simpler than reloading all the fetch calls
+		window.location = window.location.href;
+	},
+
+	render: function() {
+
+		var template = App.Utils.template('t_body_unreachable');
+
+		// Write HTML
+		$(this.el).html(template());
+
+		return this;
+	}
+});
+
 
 App.Views.Modal = Backbone.View.extend({
 	
@@ -10525,10 +10083,6 @@ App.Views.DebugMessages = Backbone.View.extend({
 		// Get debug messages
 		// - already in App.Data.debug_messages
 
-
-		// Build from template
-		var template = App.Utils.template('t_debug_messages');
-
 		// Get data and sort it
 		// - sort by date
 		// - newest item is at the bottom?
@@ -10539,6 +10093,16 @@ App.Views.DebugMessages = Backbone.View.extend({
 			direction: 'asc',
 			type: 'date'
 		});
+
+		// Displaying debug output, or just a "refreshing" thing? 
+
+		// Build from template
+		var template;
+		if(1==0){
+			template = App.Utils.template('t_debug_messages');
+		} else {
+			template = App.Utils.template('t_debug_messages_production');
+		}
 
 		// Write HTML
 		$(this.el).prepend(template(App.Data.debug_messages));
