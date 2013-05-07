@@ -111,7 +111,7 @@
 	<script src="js/app/helpers.js"></script>
 
 
-	<script type="text/javascript">
+	<script type="text/javascript" async="true">
 		
 		var forge_enabled_if_available = true;
 
@@ -193,6 +193,29 @@
 				<p class="scan_login">
 					<button class="btn btn-info btn-large">QR Code Login</button>
 				</p>
+
+			</div>
+
+		</div>
+
+	</script>
+
+	<script id="t_body_unreachable" type="text/x-handlebars-template">
+
+		<div class="container">
+
+			<div class="intro_window">
+
+				<h3>
+					Unable to reach server
+				</h3>
+
+				<br />
+
+				<p class="login">
+					<button class="btn btn-info btn-large retry">Retry</button>
+				</p>
+
 
 			</div>
 
@@ -983,6 +1006,12 @@
 
 		<div class="loading"></div>
 
+	</script>
+
+	<script id="t_loading_common_thread" type="text/x-handlebars-template">
+		<div>
+			Loading
+		</div>
 	</script>
 
 	
@@ -2511,6 +2540,20 @@
 				</div>
 			{{/compare_size}}
 		</div>
+	</script>
+	<script id="t_debug_messages_production" type="text/x-handlebars-template">
+		{{#compare_size this ">" 0}}
+			<div id="debug-messages" class="production fade-in">
+				
+				<ul class="spinner">
+				    <li></li>
+				    <li></li>
+				    <li></li>
+				    <li></li>
+				</ul>
+				
+			</div>
+		{{/compare_size}}
 	</script>
 
 
