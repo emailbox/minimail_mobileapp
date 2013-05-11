@@ -132,7 +132,14 @@ App.Models.EmailFull = App.Models.EmailBoxModel.extend({
 				conditions: {
 					'_id' : this.id
 				},
-				fields: [],
+				fields: [
+					'app',
+					'attributes',
+					'common',
+					'original',
+					'-original.HtmlBody',
+					'-original.ParsedDataHtml'
+				],
 				limit: 1
 			}
 		});
