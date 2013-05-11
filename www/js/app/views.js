@@ -2296,6 +2296,9 @@ App.Views.CommonReply = Backbone.View.extend({
 		// emit a cancel event to the parent
 		this.ev.trigger('cancel');
 
+		// clear interval that checks for keyboard open/close
+		clearInterval(this.checkingForKeyboard);
+
 		return false;
 	},
 
@@ -3279,6 +3282,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 		$('.threads_holder').scrollTop(scrollTo);
 
 		// this.after_sent();
+
+		// clear interval that checks for keyboard open/close
+		clearInterval(this.checkingForKeyboard);
 		
 		// Close myself
 		this.close();
