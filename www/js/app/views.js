@@ -768,6 +768,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		'click .reply' : 'reply',
 		'click .forward' : 'forward',
 
+		'click .email_holder .time_and_more .html_view' : 'html_view',
 		'click .email_holder .email_body .ParsedDataShowAll span.expander' : 'email_folding',
 		'click .email_holder .email_body .ParsedDataShowAll span.edit' : 'edit_email'
 	},
@@ -885,23 +886,6 @@ App.Views.CommonThread = Backbone.View.extend({
 			ids: [this.options.threadid],
 			cachePrefix: this.options.threadid
 		});
-
-
-
-		// // Set up delayed thread caching mechanism
-		// that.EmailsFull = new App.Collections.EmailsFull();
-		// that.EmailsFull.on('reset', this.reset_EmailsFull, this); // completely changed collection (triggers add/remove)
-		// that.EmailsFull.on('sync', this.sync_EmailsFull, this); // completely changed collection (triggers add/remove)
-		// that.EmailsFull.on('add', this.add_EmailsFull, this); // added a new ThreadId
-		// that.EmailsFull.on('remove', this.remove_EmailsFull, this); // removed a ThreadId
-		// that.EmailsFull.on('change', this.change_EmailsFull, this); // an attribute on one changed
-		// that.EmailsFull.fetch_by_thread_id({
-		// 	ids: [that.options.threadid],
-		// 	cachePrefix: that.options.threadid
-		// });
-
-
-
 
 		// // Event bindings
 		// // - also bound at the top of initialize
@@ -1066,12 +1050,21 @@ App.Views.CommonThread = Backbone.View.extend({
 		that.$el.addClass('nodisplay');
 
 		// Build the subview
+
+		var data = {
+			Thread: that.threadFull.toJSON(),
+			Email: that.threadEmails.toJSON()
+		};
+
 		that.subViewReply = new App.Views.CommonReply({
-			threadid: this.threadid
+			threadid: this.threadid,
+			ThreadModel: that.threadFull,
+			EmailModels: that.threadEmails
 		});
+
 		// Add to window and render
 		$('body').append(that.subViewReply.$el);
-		that.subViewReply.render();
+		// that.subViewReply.render(); // necessary? (no)
 
 		// Listen for events
 
@@ -1139,11 +1132,13 @@ App.Views.CommonThread = Backbone.View.extend({
 
 	email_folding: function (ev){
 		// Display any hidden emails (previous parts of the conversation)
-
-		var elem = ev.currentTarget;
+		var elem = ev.currentTarget,
+			that = this;
 
 		var content_holder = $(elem).parents('.email_body');
 		//var count = $(content_holder).find('.ParsedDataContent').length;
+
+		// console.log(this.threadEmails);
 
 		// Toggle
 		if($(content_holder).hasClass('showAllParsedData')){
@@ -1160,7 +1155,72 @@ App.Views.CommonThread = Backbone.View.extend({
 			$(elem).text('Hide');
 		}
 
+		return false;
+
 	},
+
+
+	html_view: function(ev){
+		// Render a pretty HTML view
+		// - break it out into a beautiful view? (not crammed in)
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Get correct threadEmail
+		var $parentEmail = $(elem).parents('.email');
+			threadId = $parentEmail.attr('data-id');
+
+		var email = this.threadEmails.get(threadId);
+		// console.log(email);
+		var tmpHtml = email.toJSON().original.HtmlBodyOriginal;
+
+		function stripScripts(s) {
+			var div = document.createElement('div');
+			div.innerHTML = s;
+			var scripts = div.getElementsByTagName('script');
+			var i = scripts.length;
+			while (i--) {
+				scripts[i].parentNode.removeChild(scripts[i]);
+			}
+			return div.innerHTML;
+		}
+
+		tmpHtml = stripScripts(tmpHtml);
+
+		// Display HtmlEmail Subview
+		var subView = new App.Views.HtmlEmail({
+			html: tmpHtml
+		});
+		$('body').append(subView.$el);
+		subView.render();
+
+
+		// $('body').append('<div id="fucker" class=""></div>');
+		// $("#fucker").html(tmpHtml);
+
+		// // var allowTaint = confirm('Allow images?');
+		// var allowTaint = true;
+
+		// html2canvas($("#fucker"), {
+		// 	logging: true,
+		// 	width: 800,
+		// 	allowTaint: allowTaint,
+		// 	letterRendering: true,
+		// 	timeout: 5000,
+		// 	useCORS: true,
+		// 	onrendered: function(canvas) {
+		// 		console.info('onrendered');
+		// 		// canvas is the final rendered <canvas> element
+		// 		$parentEmail.find('.email_body').addClass('nodisplay');
+		// 		$parentEmail.find('.details').after(canvas);
+		// 		$('#fucker').remove();
+		// 	}
+		// });
+
+		return false;
+	},
+
 
 	edit_email: function(ev){
 		// Edit an email
@@ -1333,6 +1393,8 @@ App.Views.CommonEditEmail = Backbone.View.extend({
 
 		// Render the information we have on this Thread
 		this.emailid = this.options.emailid
+
+		alert('broken!!!');
 
 	},
 
@@ -2092,51 +2154,114 @@ App.Views.CommonReply = Backbone.View.extend({
 	disable_buttons: false,
 
 	initialize: function(options) {
+		var that = this;
 		_.bindAll(this, 'render');
 		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'cancel');
-		var that = this;
+		
 		// this.el = this.options.el;
 
-		// Get any local information we have
-		// After getting local info, and if we have enough, show the thing
-		// Get remote info, merge with Local when it arrives
-
-		// Render the information we have on this Thread
-		this.threadid = this.options.threadid
-
-		// Get the data that we do have for the thing
-		// - re-render after we get the whole thing! 
-		// App.Utils.Storage.
-
-		// Get the data difference from what we have
-		// - diff and patch
-		// - already know the fields we would have requested (that doesn't change at all?)
+		// Are the models already set?
+		// - expecting them to be, should have a fallback for if they are not set
 
 
-		// // Render the base view
-		// var thread_cached = false;
-		// if(thread_cached){
-		// 	// Thread is in memory
-		// 	// - display base view including Thread
-		// 	// - todo...
-		// } else {
-		// 	// No Thread in memory
+		if(!this.options.ThreadModel || !this.options.EmailModels){
+			// Not set
+			// - handle this later
+			// - render a "getting data" view
 
-		// 	// Display base outline
-		// 	// Fetch Thread and Emails for thread
+			// Render loading
+			alert('thread not ready for reply');
+			this.render_init();
 
-		// 	App.Plugins.Minimail.getThreadAndEmails(this.options.threadid)
-		// 		.then(function(returnThread){
-		// 			that.render_content(returnThread);
-		// 		})
-		// 		.fail(function(err){
-		// 			clog('Failed getThreadAndEmails');
-		// 			clog(err);
-		// 		});
-		
+			// Get Full Thread
+			this.threadFull = new App.Models.ThreadFull({
+				_id: this.options.threadid
+			});
 
-		// }
+			// Checking if the Thread is ready to be displayed
+			// - seeing if it actually should be displayed too
+			this.threadFull.on('check_display_ready', function(){
+
+				// Must have Full ready
+				if(!that.threadFull.FullReady || !that.threadFull.EmailReady){
+					// console.warn('thread.check_display_ready = not ready');
+					return;
+				}
+				// Already rendered this Thread?
+				if(that.threadFull.Rendered){
+					// Show the change in the view
+					console.warn('Already rendered (need to change the view!)');
+					return;
+				}
+				that.threadFull.Rendered = true;
+
+				// Render the view!
+				this.ready_to_render = true;
+				that.render();
+
+			}, this);
+
+			// Listen for "change" event
+			this.threadFull.on('change', function(threadFull){
+				// Mark thread as ready
+				// - this fires immediately if anything is cached
+				// - otherwise it fires if something is different from the cached version
+				if(!that.threadFull.FullReady){
+					that.threadFull.FullReady = true;
+					that.threadFull.trigger('check_display_ready');
+				}
+			}, this);
+
+			this.threadFull.fetchFull();
+
+			// Emails for Thread
+			// - we want to know after all the emails have been loaded for the Thread
+			this.threadEmails = new App.Collections.EmailsFull();
+
+			this.threadEmails.on('reset', function(){
+				// never fires, what the fuck!!!!
+				console.log('reset, NEVER FUCKING FIRES');
+				if(!that.threadFull.EmailReady){
+					that.threadFull.EmailReady = true;
+					that.threadFull.trigger('check_display_ready');
+				}
+			}, this); // completely changed collection (triggers add/remove)
+
+			this.threadEmails.on('sync', function(threadFull){
+				// Fires after add/remove have completed?
+				// console.info('EmailSync');
+				if(this.threadEmails.length && !that.threadFull.EmailReady){
+					that.threadFull.EmailReady = true;
+					that.threadFull.trigger('check_display_ready');
+				}
+			}, this); // completely changed collection (triggers add/remove)
+
+			this.threadEmails.on('add', function(emailFullModel){
+				// Got a new email while the view is displayd, probably want to show a "display new email" type of popup (like gmail)
+				// console.log('EmailAdd');
+				// console.log(emailFullModel.toJSON()._id);
+			}, this); // added a new EmailFull
+			
+			this.threadEmails.on('change', function(emailFullModel){
+				console.log('EmailChange');
+			}, this); // an email is slightly different now (re-render)
+			
+			// trigger EmailFull collection retrieving
+			this.threadEmails.fetch_by_thread_id({
+				ids: [this.options.threadid],
+				cachePrefix: this.options.threadid
+			});
+
+		} else {
+			// Thread and Emails already set
+			// - render reply view as expected
+
+			this.ready_to_render = true;
+			this.render();
+
+		}
+
 
 	},
 
@@ -2145,7 +2270,6 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		// unbind events
 		this.ev.unbind();
-
 
 		App.Utils.BackButton.debubble(this.backbuttonBind);
 
@@ -2712,7 +2836,16 @@ App.Views.CommonReply = Backbone.View.extend({
 
 
 	render_init: function(){
+		// Render loading thread
 
+		// Template
+		var template = App.Utils.template('t_common_loading');
+
+		// Write HTML
+		this.$el.html(template());
+
+
+		return this;
 	},
 
 	render_thread: function(){
@@ -2727,10 +2860,12 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		// build the data
 		var data = {
-			Thread: App.Data.Store.Thread[this.threadid],
-			Email: _.filter( App.Data.Store.Email,function(email){
-					if(email.attributes.thread_id == that.threadid) return true;
-				})
+			// Thread: App.Data.Store.Thread[this.threadid],
+			// Email: _.filter( App.Data.Store.Email,function(email){
+			// 		if(email.attributes.thread_id == that.threadid) return true;
+			// 	})
+			Thread: this.options.ThreadModel.toJSON(),
+			Email: this.options.EmailModels.toJSON()
 		};	
 
 		// Figure out who I'm replying to
@@ -2761,6 +2896,7 @@ App.Views.CommonReply = Backbone.View.extend({
 			return addresses;
 		});
 		
+		// merging participants? seems clumsy
 		var tmp_participants2 = [];
 		_.each(tmp_participants,function(p1){
 			_.each(p1,function(p2){
@@ -2782,22 +2918,52 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		data.Participants = tmp_participants2;
 
-
-		// Sort Email
-		data.Email = App.Utils.sortBy({
-			arr: data.Email,
-			path: 'common.date_sec',
-			direction: 'asc',
-			type: 'num'
-
-		});
-
-		// Set for this view object
-		this.thread_data = data;
-
-
 		// Write HTML
 		this.$el.html(template(data));
+
+		// Listen for textarea focus
+		// - remove all the other elements, make it all about the composing experience? (show/hide button?)
+		this.$('textarea').on('focus',function(){
+			// alert('focused');
+			// that.$('.addresses').hide();
+			that.$('.header, .addresses').hide();
+			that.$('.body_container').removeClass('nudge_down');
+		});
+		this.$('textarea').on('blur',function(){
+			// alert('unfocused');
+			// that.$('.addresses').show();
+		});
+
+		this.checkingForKeyboard = setInterval(function(){
+			// Get window height
+			// - compare to expected height or width (portrait or landscape)
+			var win_height = $(window).height();
+			if(win_height != App.Data.xy.win_height && win_height != App.Data.xy.win_width){
+				// Keyboard is out
+				if(!that.keyboard_out){
+					that.keyboard_out = true;
+					that.trigger('keyboard_out');
+				}
+			} else {
+				if(that.keyboard_out){
+					that.keyboard_out = false;
+					that.trigger('keyboard_in');
+				}
+			}
+
+		},500);
+
+		// Hiding elements on keyboard out
+		that.on('keyboard_out',function(){
+			that.$('.header, .addresses').hide();
+			that.$('.body_container').removeClass('nudge_down');
+		});
+
+		// Showing elements when keyboard hidden
+		that.on('keyboard_in',function(){
+			that.$('.header, .addresses').show();
+			that.$('.body_container').addClass('nudge_down');
+		});
 
 		// Focus on textarea
 		// this.$('.textarea').focus();
@@ -2812,40 +2978,49 @@ App.Views.CommonReply = Backbone.View.extend({
 	render: function() {
 		var that = this;
 
-		var data = App.Data.Store.Thread[this.threadid];
-		if(data == undefined){
-			alert('thread data not set, not loading');
-			// Thread not set at all
-			// - get it and start replying
-			//		- should be able to start replying right away, load details in a minute
-			
-			// Template
-			var template = App.Utils.template('t_common_loading');
+		// Render if data is ready
+		if(this.ready_to_render){
 
-			// Write HTML
-			this.$el.html(template());
+			this.render_thread();
 
-
-			return this;
 		} else {
-			// Just render the Thread data (we should have it)
-			
-			var tmp_emails = new App.Collections.Emails();
-			tmp_emails.fetch_for_thread({
-				thread_id: that.threadid,
-				success: function(emails){
-					// Anything different from the existing look?
-					// - update the View with new data
-					
-					clog('re-rendering Thread');
-					// that.render();
-
-				}
-			});
-
-			that.render_thread();
-
+			this.render_loading();
 		}
+
+		// var data = App.Data.Store.Thread[this.threadid];
+		// if(data == undefined){
+		// 	alert('thread data not set, not loading');
+		// 	// Thread not set at all
+		// 	// - get it and start replying
+		// 	//		- should be able to start replying right away, load details in a minute
+			
+		// 	// Template
+		// 	var template = App.Utils.template('t_common_loading');
+
+		// 	// Write HTML
+		// 	this.$el.html(template());
+
+
+		// 	return this;
+		// } else {
+		// 	// Just render the Thread data (we should have it)
+			
+		// 	var tmp_emails = new App.Collections.Emails();
+		// 	tmp_emails.fetch_for_thread({
+		// 		thread_id: that.threadid,
+		// 		success: function(emails){
+		// 			// Anything different from the existing look?
+		// 			// - update the View with new data
+					
+		// 			clog('re-rendering Thread');
+		// 			// that.render();
+
+		// 		}
+		// 	});
+
+		// 	that.render_thread();
+
+		// }
 
 		// Bind to backbutton
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
@@ -3506,7 +3681,54 @@ App.Views.CommonCompose = Backbone.View.extend({
 		this.$el.html(template());
 
 		// Focus
-		this.$('#subject').focus();
+		// this.$('#subject').focus(); // never seems to work
+
+
+		// Listen for textarea focus
+		// - remove all the other elements, make it all about the composing experience? (show/hide button?)
+		this.$('textarea').on('focus',function(){
+			// alert('focused');
+			// that.$('.addresses').hide();
+			that.$('.header, .addresses').hide();
+			that.$('.body_container').removeClass('nudge_down');
+		});
+		this.$('textarea').on('blur',function(){
+			// alert('unfocused');
+			// that.$('.addresses').show();
+		});
+
+		this.checkingForKeyboard = setInterval(function(){
+			// Get window height
+			// - compare to expected height or width (portrait or landscape)
+			var win_height = $(window).height();
+			if(win_height != App.Data.xy.win_height && win_height != App.Data.xy.win_width){
+				// Keyboard is out
+				if(!that.keyboard_out){
+					that.keyboard_out = true;
+					that.trigger('keyboard_out');
+				}
+			} else {
+				if(that.keyboard_out){
+					that.keyboard_out = false;
+					that.trigger('keyboard_in');
+				}
+			}
+
+		},500);
+
+		// Hiding elements on keyboard out
+		that.on('keyboard_out',function(){
+			that.$('.header, .addresses').hide();
+			that.$('.body_container').removeClass('nudge_down');
+		});
+
+		// Showing elements when keyboard hidden
+		that.on('keyboard_in',function(){
+			that.$('.header, .addresses').show();
+			that.$('.body_container').addClass('nudge_down');
+		});
+
+
 
 		// Bind to backbutton
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
@@ -4010,7 +4232,7 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 	click_delay: function(ev){
 		// Delay older messages
-		// - displayes DelayModal
+		// - displays DelayModal
 
 		var that = this,
 			elem = ev.currentTarget;
@@ -5088,6 +5310,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		}
 		
 		// Run update command
+		// - updates them all at once
 		Api.update({
 			data: {
 				model: 'Thread',
@@ -5435,7 +5658,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 				}
 
-				waitTime += 100;
+				waitTime += 10;
 
 			}
 
@@ -5550,10 +5773,14 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			that._subViews = _(that._subViews).without(elem);
 
 			// Listen for transition end before removing the element entirely
-			$(elem.el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
-				console.log("__looking to remove");
-				elem.remove();
-			});
+			// $(elem.el).bind("transitionend webkitTransitionEnd oTransitionEnd MSTransitionEnd", function(){
+			// 	console.log("__looking to remove");
+			// 	elem.remove();
+			// });
+			setTimeout(function(){
+					elem.remove();
+					$(elem.el).remove();
+				},500);
 			$(elem.el).addClass('closing_nicely');
 
 		});
@@ -10139,6 +10366,7 @@ App.Views.DelayModal = Backbone.View.extend({
 		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'cancel');
 		_.bindAll(this, 'save_delay');
+		_.bindAll(this, 'time_scroller_and_cal');
 
 		this.threadView = $(this.options.context).parents('.thread');
 		this.threadid = this.options.threadid;
@@ -10183,74 +10411,85 @@ App.Views.DelayModal = Backbone.View.extend({
 			return false;
 		}
 
-		// Get "wait" selected
-		var waitType = $(elem).attr('data-type');
+		// Is pick-a-date?
+		if($(elem).hasClass('pickadate')){
 
-		var save_text = $.trim($(elem).text());
+			// put the current date-time
+			this.time_scroller_and_cal(new Date());
 
-		// Get delay options (later today, etc.)
-		var delay_options = App.Plugins.Minimail.getDelayOptions();
-		
-		// Get option from delay_options
-		var wait = null,
-			tmp_delay = null;
-		$.each(delay_options,function(i,val){
+		} else {
+
+			// Get "wait" selected
+			var waitType = $(elem).attr('data-type');
+
+			var save_text = $.trim($(elem).text());
+
+			// Get delay options (later today, etc.)
+			var delay_options = App.Plugins.Minimail.getDelayOptions();
 			
-			if(waitType == val.key){
-				// using this one
-				wait = val.wait;
-				tmp_delay = val;
-			}
-		});
-		if(wait == null){
-			// alert('Invalid type used');
-			this.close();
-			return;
-		}
-
-		// Delay it
-		// - no option, just using the delay right away
-		that.save_delay(wait, tmp_delay.name);
-
-		return;
-
-		// Date
-		// var arr = this.$("#date").mobiscroll().parseValue(wait);
-		// console.log('hello');
-		
-		// // var mobi_inst = $('#date').mobiscroll('getInst');
-		// var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
-		// this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
-
-		var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
-		this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
-
-		// Trigger date confirmation
-		window.setTimeout(function(){
-			that.$('.options').addClass('nodisplay');
-			that.$('.choose_datetime').removeClass('nodisplay');
-		
-			// Full calendar
-			$('#calendar').fullCalendar({
-				// put your options and callbacks here
-				// defaultView: 'month',
-				dayClick: function(date) {
-					// Select that date on calendar
-					$('.fc-state-highlight').removeClass('fc-state-highlight');
-					$(this).addClass('fc-state-highlight');
+			// Get option from delay_options
+			var wait = null,
+				tmp_delay = null;
+			$.each(delay_options,function(i,val){
+				
+				if(waitType == val.key){
+					// using this one
+					wait = val.wait;
+					tmp_delay = val;
 				}
 			});
+			if(wait == null){
+				// alert('Invalid type used');
+				this.close();
+				return;
+			}
 
-			// Add button class (hacky)
-			// $('.fc-button').addClass('btn');
+			// Delay it
+			// - no option, just using the delay right away
+			that.save_delay(wait, tmp_delay.name);
 
-			// // $('.fc-button-today').click();
-			// window.setTimeout(function(){
-			// 	// $('#calendar').fullCalendar('today');
-			// 	// $('.fc-button-today').trigger('click');
-			// 	$('#calendar').fullCalendar('render');
-			// },300);
-		},100);
+		}
+
+
+		// return;
+
+		// // Date
+		// // var arr = this.$("#date").mobiscroll().parseValue(wait);
+		// // console.log('hello');
+		
+		// // // var mobi_inst = $('#date').mobiscroll('getInst');
+		// // var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		// // this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
+
+		// var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
+		// this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
+
+		// // Trigger date confirmation
+		// window.setTimeout(function(){
+		// 	that.$('.options').addClass('nodisplay');
+		// 	that.$('.choose_datetime').removeClass('nodisplay');
+		
+		// 	// Full calendar
+		// 	$('#calendar').fullCalendar({
+		// 		// put your options and callbacks here
+		// 		// defaultView: 'month',
+		// 		dayClick: function(date) {
+		// 			// Select that date on calendar
+		// 			$('.fc-state-highlight').removeClass('fc-state-highlight');
+		// 			$(this).addClass('fc-state-highlight');
+		// 		}
+		// 	});
+
+		// 	// Add button class (hacky)
+		// 	// $('.fc-button').addClass('btn');
+
+		// 	// // $('.fc-button-today').click();
+		// 	// window.setTimeout(function(){
+		// 	// 	// $('#calendar').fullCalendar('today');
+		// 	// 	// $('.fc-button-today').trigger('click');
+		// 	// 	$('#calendar').fullCalendar('render');
+		// 	// },300);
+		// },100);
 
 		return false;
 	},
@@ -10291,6 +10530,14 @@ App.Views.DelayModal = Backbone.View.extend({
 			this.close();
 			return;
 		}
+
+		this.time_scroller_and_cal(wait);
+
+	},
+
+
+	time_scroller_and_cal: function(wait){
+		var that = this;
 
 		// Set values for time scroller
 		var parsedScrollValues = App.Plugins.Minimail.formatTimeForScroll(wait);
@@ -10613,5 +10860,129 @@ App.Views.DelayModal = Backbone.View.extend({
 	}
 
 });
+
+
+App.Views.HtmlEmail = Backbone.View.extend({
+
+	className: 'big_html_email',
+
+	events: {
+		
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'cancel');
+		// _.bindAll(this, 'beforeClose');
+		// _.bindAll(this, 'cancel');
+		// _.bindAll(this, 'save_delay');
+
+		// this.threadView = $(this.options.context).parents('.thread');
+		// this.threadid = this.options.threadid;
+
+	},
+
+	beforeClose: function(){
+		// Kill back button grabber
+		var that = this;
+
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+
+		return;
+	},
+
+	cancel: function(ev){
+		// Remove overlay
+		this.close();
+
+		return false;
+	},
+
+	render: function() {
+		var that = this;
+
+		// Build from template
+		var template = App.Utils.template('t_html_email_view');
+
+		// Write HTML
+		this.$el.html(template());
+
+		var $useBody;
+
+		// slider
+		$(".noUiSlider").noUiSlider({
+			range: [20, 200] // 2% to 200%
+			,start: 100
+			,handles: 1
+			,slide: function(){
+				// percentage: $(this).val();
+
+				var newVal = $(this).val() / 100;
+
+				$useBody.css({
+
+			 	 zoom: newVal,
+				  "-moz-transform": "scale("+newVal+")",
+				  "-moz-transform-origin" : "0 0",
+				  "-webkit-transform" : "scale("+newVal+")",
+				  "-webkit-transform-origin" : "0 0"
+
+	  			});
+			}
+		});
+		// $( ".slider" ).slider();
+
+		// Create frame
+		var $frame = $('<iframe id="email_html">');
+
+		// Append frame to this el
+		this.$('.html_email').append($frame);
+
+
+		setTimeout( function() {
+			var doc = $frame[0].contentWindow.document;
+
+			doc.open();
+			doc.write(that.options.html);
+
+			// var $html = $('html',doc);
+			// console.log(that.options.html);
+			// $html.html(that.options.html);
+
+			// var viewPortTag=doc.createElement('meta');
+			// viewPortTag.id="viewport";
+			// viewPortTag.name = "viewport";
+			// viewPortTag.content = "width=device-width, initial-scale=2.0, maximum-scale=5.0, minimum-scale=0.5, user-scalable=1;";
+
+			// doc.getElementsByTagName('head')[0].appendChild(viewPortTag);
+			
+
+  			var $html = $('html',doc);
+  			$useBody = $('body',doc);
+  			
+
+
+
+
+			// console.info('end viewporttag');
+
+			// var meta = $('meta[name=viewport]', doc);
+			// $(meta).attr('content', 'device-width, initial-scale=0.5, minimum-scale=0.5, maximum-scale=5');
+
+		}, 1 );
+
+		// Create iframe and display it
+
+		// Bind to back button
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
+
+		// Turn on tap watching
+		// App.Utils.WatchCustomTap(that.$('.option'));
+
+		return this;
+	}
+
+});
+
 
 
