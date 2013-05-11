@@ -950,7 +950,7 @@ App.Collections.LaterThreads = Backbone.Collection.extend({
 	sync: Backbone.cachingSync(emailbox_sync_collection, 'later1'),
 
 	comparator: function( Thread ) {
-		return -1 * Thread.toJSON().app.AppPkgDevMinimail.wait_until;
+		return Thread.toJSON().app.AppPkgDevMinimail.wait_until;
 	},
 
 	fetchDefault: function(options){
