@@ -4,7 +4,7 @@
 
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
     <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=10.0, minimum-scale=1.0, user-scalable=1">
 
 	<title>
 		minimail
@@ -51,6 +51,8 @@
 	
 	<link href="css/jqcloud.css" type="text/css" rel="stylesheet">
 	<link href="css/fullcalendar.css" type="text/css" rel="stylesheet">
+	<link href="css/nouislider.fox.css" type="text/css" rel="stylesheet">
+	
 
 	<script src="js/app/creds.js"></script>
 
@@ -81,6 +83,8 @@
 	<script src="js/libs/jquery.base64.js"></script>
 	
 	<!--<script src="js/libs/jquery.masonry-2.1.05.min.js"></script>-->
+	<!-- <script src="js/libs/html2canvas.js"></script> -->
+	<script src="js/libs/jquery.nouislider.js"></script>
 	<script src="js/libs/jquery.imagesloaded.min.js"></script>
 	<script src="js/libs/jquery.transit.min.js"></script>
 	<script src="js/libs/jquery.scrollTo.min.js"></script>
@@ -553,6 +557,19 @@
 	</script>
 
 
+	<script id="t_html_email_view" type="text/x-handlebars-template">
+
+
+		<div class="overlay">
+			&nbsp;
+		</div>
+		<div class="html_email"></div>
+		<div class="slider_holder">
+			<div class="noUiSlider"></div>
+		</div>
+
+	</script>
+
 
 	<script id="t_delay_modal" type="text/x-handlebars-template">
 
@@ -580,10 +597,8 @@
 
 				{{/each}}
 
-				<div class="nodisplay">
 				<div class="option pickadate">
-					Pick a Date<input id="pickadate" type="datetime" class="invisible2"/>
-				</div>
+					Pick a Date
 				</div>
 
 			</div>
@@ -991,7 +1006,7 @@
 			<div class="btn-group">
 				<button data-action="done" class="btn done">Done + Above</button>
 				<button data-action="delay" class="btn delay">Delay + Above</button>
-				<button data-action="reply" class="btn reply">Reply</button>
+				<!--<button data-action="reply" class="btn reply">Reply</button>-->
 			</div>
 			<div class="btn-group">
 				<button data-action="note" class="btn note">Note</button>
@@ -1010,7 +1025,7 @@
 
 	<script id="t_loading_common_thread" type="text/x-handlebars-template">
 		<div>
-			Loading
+			Loading Thread
 		</div>
 	</script>
 
@@ -1116,6 +1131,9 @@
 									{{thread_from_pretty this}}
 								</div>
 								<div class="time_and_more">
+									<div class="html_view"> 
+										&nbsp;
+									</div>
 									{{display_shorttime common.date}}
 								</div>
 
@@ -1288,6 +1306,7 @@
 
 				</div>
 
+				<!--
 				<div class="attachments compose_attachments">
 
 					<div class="add_attachment btn">
@@ -1305,6 +1324,7 @@
 				<div class="file_attachments">
 
 				</div>
+				-->
 
 			</div>
 
@@ -1385,6 +1405,7 @@
 
 			</div>
 
+			<!--
 			<div class="attachments compose_attachments">
 
 				<div class="add_attachment btn">
@@ -1402,6 +1423,7 @@
 			<div class="file_attachments">
 
 			</div>
+			-->
 
 		</div>
 
