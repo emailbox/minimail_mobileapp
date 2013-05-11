@@ -769,6 +769,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		'click .forward' : 'forward',
 
 		'click .email_holder .time_and_more .html_view' : 'html_view',
+		// 'click .email_holder .details' : 'html_view',
 		'click .email_holder .email_body .ParsedDataShowAll span.expander' : 'email_folding',
 		'click .email_holder .email_body .ParsedDataShowAll span.edit' : 'edit_email'
 	},
@@ -5245,6 +5246,8 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Displays (or hides) multi-select options
 		var that = this;
 
+		// Add backbutton tracking if we are displaying the multi_options
+
 		// See if there are any views that are multi-selected
 		if(this.$('.multi-selected').length > 0){
 			this.show_multi_options = true;
@@ -5387,6 +5390,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
+		// Get selected Threads
 		var incl_thread_ids = [];
 		$('.multi-selected').each(function(i, threadElem){
 			// Wait for this element to get triggered
@@ -5402,17 +5406,19 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		// Make sure some are included
 		if(!incl_thread_ids || incl_thread_ids.length < 1){
-			alert('None Selected');
+			alert('None Selected (error?)');
 			return false;
 		}
 
-		// Show multi-options
+		// Hide multi-options
 		$('.multi_select_options').addClass('nodisplay');
 
 		// Display delay_modal Subview
 		var subView = new App.Views.DelayModal({
 			context: that,
-			onComplete: that.after_multi_delay_modal
+			onComplete: function(wait, save_text){
+				that.after_multi_delay_modal(wait, save_text, incl_thread_ids);
+			}
 		});
 		$('body').append(subView.$el);
 		subView.render();
@@ -5421,7 +5427,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 	},
 
-	after_multi_delay_modal: function(wait, save_text){
+	after_multi_delay_modal: function(wait, save_text, incl_thread_ids){
 		var that = this;
 
 		// Show multi-options
@@ -5432,18 +5438,20 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			return false;
 		}
 
-		var incl_thread_ids = [];
-		$('.multi-selected').each(function(i, threadElem){
-			// Wait for this element to get triggered
-			var $threadParent = $(threadElem).parent();
-			incl_thread_ids.push($threadParent.attr('data-id'));
-		});
+		// var incl_thread_ids = [];
+		// $('.multi-selected').each(function(i, threadElem){
+		// 	// Wait for this element to get triggered
+		// 	var $threadParent = $(threadElem).parent();
+		// 	incl_thread_ids.push($threadParent.attr('data-id'));
+		// });
 
-		// Make sure some are included
-		if(!incl_thread_ids || incl_thread_ids.length < 1){
-			alert('None Selected');
-			return false;
-		}
+		// // Make sure some are included
+		// if(!incl_thread_ids || incl_thread_ids.length < 1){
+		// 	alert('None Selected');
+		// 	return false;
+		// }
+
+		console.log(JSON.stringify(incl_thread_ids));
 
 		// Figure out delay in seconds
 		var now_sec = parseInt(new Date().getTime() / 1000);
@@ -5456,53 +5464,81 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Fire event to be run in the future when these are due
 		// - causes a bunch of events to fire at one time?
 		// - what if one of the due ones cancels?? (breaks it)
-		Api.event({
-			data: {
-				event: 'Minimail.wait_until_fired',
-				delay: delay_seconds,
-				obj: {
-					text: "Emails are due"
+		var runEvent = function(){
+			Api.event({
+				data: {
+					event: 'Minimail.wait_until_fired',
+					delay: delay_seconds,
+					obj: {
+						text: "Emails are due"
+					}
+				},
+				error: function(response){
+					// Failed to save, need to try again with a better connection
+					// alert('Failed saving, please try again');
+
+					// Emit "refresh" event
+					that.trigger('refresh');
+
+					// Re-run the event if it was a timeout
+					if(response.status == 504 || response.status == 0){
+						console.log('TIMEOUT');
+						runEvent();
+					} else {
+						alert('Failed triggering event');
+					}
+
+					return false;
+				},
+				success: function(response){
+					
+					console.log('Success from Api.event');
+					response = JSON.parse(response);
+
+					console.log(JSON.stringify(response));
+
+					if(response.code != 200){
+						// Failed launching event
+						alert('Failed launching event');
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+		}
+		runEvent();
+
+
+		// Update data
+		var updateData = {
+			model: 'Thread',
+			conditions: {
+				'_id' : {
+					'$in' : incl_thread_ids
 				}
 			},
+			multi: true, 
+			paths: {
+				"$set" : {
+					"app.AppPkgDevMinimail.wait_until" : in_seconds,
+					// "app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+					"app.AppPkgDevMinimail.done" : 0
+				}
+			}
+		};
+
+		// - skipping saving the event_id
+		Api.update({
+			data: updateData,
 			success: function(response){
 				response = JSON.parse(response);
-
-				console.log(JSON.stringify(response));
-
 				if(response.code != 200){
-					// Failed launching event
-					alert('Failed launching event');
-					dfd.reject(false);
-					return;
+					// Shoot
+					alert('Failed updating threads!');
 				}
-
-				// Save new delay also
-				Api.update({
-					data: {
-						model: 'Thread',
-						conditions: {
-							'_id' : {
-								'$in' : incl_thread_ids
-							}
-						},
-						multi: true, 
-						paths: {
-							"$set" : {
-								"app.AppPkgDevMinimail.wait_until" : in_seconds,
-								"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
-								"app.AppPkgDevMinimail.done" : 0
-							}
-						}
-					},
-					success: function(response){
-						response = JSON.parse(response);
-						if(response.code != 200){
-							// Shoot
-							alert('Failed updating threads!');
-						}
-					}
-				});
-
+				// console.log(JSON.stringify(updateData));
+				// console.log(JSON.stringify(response));
 			}
 		});
 
