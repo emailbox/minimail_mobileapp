@@ -2300,8 +2300,8 @@ input.prefilters_select[readonly] {
 
 .common_thread_view .email_holder .details .time_and_more .html_view {
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 36px;
+  height: 20px;
   border: 1px solid #444;
 }
 
