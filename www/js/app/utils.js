@@ -1013,11 +1013,12 @@ App.Utils = {
 var Api = {
 
 	defaults: {
-			cache: false,
-			type: 'POST',
-			data: '',
-			dataType: 'html',
-			contentType: "application/json; charset=utf-8"
+		cache: false,
+		type: 'POST',
+		data: '',
+		dataType: 'html',
+		timeout: 5000,
+		contentType: "application/json; charset=utf-8"
 	},
 
 	queue: $.manageAjax.create('cacheQueue', {
@@ -1082,6 +1083,19 @@ var Api = {
 							searchesToRun[idx][1].success(JSON.stringify(elemData));
 
 						});
+
+					},
+					error: function(response){
+						// What was the error?
+						// - pass it along to responses
+						
+						_.each(queriesToRun, function(elemData){
+							elemData[0].reject(response);
+							if(elemData[1].error){
+								elemData[1].error(response);
+							}
+						});
+						
 
 					}
 				};
@@ -1155,6 +1169,7 @@ var Api = {
 			queryOptions.success = function(bodyResponse){
 
 				responseObj = JSON.parse(bodyResponse);
+				// console.log(JSON.stringify(bodyResponse));
 				var event_id = responseObj.data.event_id;
 
 				// Iterate over response listeners to create
@@ -1225,6 +1240,9 @@ var Api = {
 					success: function(response){
 						response = JSON.parse(response);
 
+						console.log('Event response');
+						console.log(JSON.stringify(response));
+
 						// query has returned
 						// - parse out the deferreds according to the indexKey
 
@@ -1243,6 +1261,19 @@ var Api = {
 							queriesToRun[idx][1].success(JSON.stringify(elemData));
 
 						});
+
+					},
+					error: function(response){
+						// What was the error?
+						// - pass it along to responses
+						
+						_.each(queriesToRun, function(elemData){
+							elemData[0].reject(response);
+							if(elemData[1].error){
+								elemData[1].error(response);
+							}
+						});
+						
 
 					}
 				};
@@ -1294,7 +1325,7 @@ var Api = {
 				// Not logged in?
 				clog('API failed');
 				// e = JSON.parse(e);
-				if(e.code == 401){
+				if(e.code == 401 || e.status == 401){ // which one?
 					// Fully logout
 					Backbone.history.loadUrl('logout');
 				}
