@@ -2915,12 +2915,12 @@ button.close {
   border: 1px solid #cccccc;
   *border: 0;
   border-bottom-color: #b3b3b3;
-  -webkit-border-radius: 4px;
+  /*-webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   border-radius: 4px;
   -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
+  -moz-border-radius: 4px;*/
+  /*border-radius: 4px;*/
   *margin-left: .3em;
   *margin-left: .3em;
   /*
@@ -3015,12 +3015,12 @@ button.close {
   padding: 9px 14px;
   font-size: 15px;
   line-height: normal;
-  -webkit-border-radius: 5px;
+  /*-webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
-  border-radius: 5px;
+  border-radius: 5px;*/
 }
 .btn-large [class^="icon-"] {
   margin-top: 1px;
@@ -3029,12 +3029,12 @@ button.close {
   padding: 9px 14px;
   font-size: 26px;
   line-height: normal;
-  -webkit-border-radius: 5px;
+  /*-webkit-border-radius: 5px;
   -moz-border-radius: 5px;
   border-radius: 5px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
-  border-radius: 5px;
+  border-radius: 5px;*/
 }
 .btn-xlarge [class^="icon-"] {
   margin-top: 2px;
@@ -3771,39 +3771,39 @@ input[type="submit"].btn.btn-mini {
 }
 .btn-group > .btn:first-child {
   margin-left: 0;
-  -webkit-border-top-left-radius: 4px;
+ /* -webkit-border-top-left-radius: 4px;
   -moz-border-radius-topleft: 4px;
   border-top-left-radius: 4px;
   -webkit-border-bottom-left-radius: 4px;
   -moz-border-radius-bottomleft: 4px;
-  border-bottom-left-radius: 4px;
+  border-bottom-left-radius: 4px;*/
 }
 .btn-group > .btn:last-child,
 .btn-group > .dropdown-toggle {
-  -webkit-border-top-right-radius: 4px;
+  /*-webkit-border-top-right-radius: 4px;
   -moz-border-radius-topright: 4px;
   border-top-right-radius: 4px;
   -webkit-border-bottom-right-radius: 4px;
   -moz-border-radius-bottomright: 4px;
-  border-bottom-right-radius: 4px;
+  border-bottom-right-radius: 4px;*/
 }
 .btn-group > .btn.large:first-child {
   margin-left: 0;
-  -webkit-border-top-left-radius: 6px;
+  /*-webkit-border-top-left-radius: 6px;
   -moz-border-radius-topleft: 6px;
   border-top-left-radius: 6px;
   -webkit-border-bottom-left-radius: 6px;
   -moz-border-radius-bottomleft: 6px;
-  border-bottom-left-radius: 6px;
+  border-bottom-left-radius: 6px;*/
 }
 .btn-group > .btn.large:last-child,
 .btn-group > .large.dropdown-toggle {
-  -webkit-border-top-right-radius: 6px;
+  /*-webkit-border-top-right-radius: 6px;
   -moz-border-radius-topright: 6px;
   border-top-right-radius: 6px;
   -webkit-border-bottom-right-radius: 6px;
   -moz-border-radius-bottomright: 6px;
-  border-bottom-right-radius: 6px;
+  border-bottom-right-radius: 6px;*/
 }
 .btn-group > .btn:hover,
 .btn-group > .btn:focus,
