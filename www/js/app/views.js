@@ -10821,7 +10821,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			// Add button class (hacky)
 			$('.fc-button').addClass('btn');
 
-		},100);
+		},500);
 
 		return false;
 	},
@@ -10981,8 +10981,12 @@ App.Views.DelayModal = Backbone.View.extend({
 			timeFormat: 'h:ii a',
 			setText: 'Save Time',
 			cancelText: "Don't Save",
-			onClose: function(valueText, inst){
+			onCancel: function(valueText, inst){
+
+			},
+			onSelect: function(valueText, inst){
 				that.$('#time_example div').text(valueText);
+				
 			}
 		});
 
