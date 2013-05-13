@@ -769,7 +769,8 @@ App.Views.CommonThread = Backbone.View.extend({
 		'click .forward' : 'forward',
 
 		'click .email_holder .time_and_more .html_view' : 'html_view',
-		// 'click .email_holder .details' : 'html_view',
+		'shorttap .email_holder .details' : 'collapse_email',
+		'longtap .email_holder .details' : 'collapse_emails',
 		'click .email_holder .email_body .ParsedDataShowAll span.expander' : 'email_folding',
 		'click .email_holder .email_body .ParsedDataShowAll span.edit' : 'edit_email'
 	},
@@ -1160,10 +1161,52 @@ App.Views.CommonThread = Backbone.View.extend({
 
 	},
 
+	collapse_email: function(ev){
+		// Collapse/show only this email
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $body = $(elem).parent().find('.email_body');
+
+		if($body.hasClass('nodisplay')){
+			// Show this one
+			$body.removeClass('nodisplay');
+		} else {
+			// Hide this one
+			$body.addClass('nodisplay');
+		}
+
+		return false;
+
+	},
+
+	collapse_emails: function(ev){
+		// Collapse/show all threads the OPPOSITE of whatever this one is
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $body = $(elem).parent().find('.email_body');
+
+		if($body.hasClass('nodisplay')){
+			// Show all
+			that.$('.email_body').removeClass('nodisplay');
+		} else {
+			// Hide all
+			that.$('.email_body').addClass('nodisplay');
+
+			// Show the last one
+			var $last = that.$('.email_holder:last-child .email');
+			$last.find('.email_body').removeClass('nodisplay');
+		}
+
+		return false;
+
+	},
+
 
 	html_view: function(ev){
 		// Render a pretty HTML view
-		// - break it out into a beautiful view? (not crammed in)
+		// - break it out into a beautiful view (not crammed in)
 
 		var that = this,
 			elem = ev.currentTarget;
@@ -1173,7 +1216,7 @@ App.Views.CommonThread = Backbone.View.extend({
 			threadId = $parentEmail.attr('data-id');
 
 		var email = this.threadEmails.get(threadId);
-		// console.log(email);
+		
 		var tmpHtml = email.toJSON().original.HtmlBodyOriginal;
 
 		function stripScripts(s) {
@@ -1218,7 +1261,8 @@ App.Views.CommonThread = Backbone.View.extend({
 		// 		$('#fucker').remove();
 		// 	}
 		// });
-
+	
+		ev.preventDefault();
 		return false;
 	},
 
@@ -1343,7 +1387,9 @@ App.Views.CommonThread = Backbone.View.extend({
 				console.error(e);
 			}
 		});
-
+	
+		// Custom tap
+		App.Utils.WatchCustomTap(that.$('.email_holder .details'));
 
 		// Resize body_container
 		this.resize_fluid_page_elements();
@@ -2146,7 +2192,9 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		'click .add_attachment' : 'add_attachment',
 		'click .file_attachment' : 'remove_attachment',
-		'click .add_photo' : 'add_photo'
+		'click .add_photo' : 'add_photo',
+
+		'click .compose-exit-minimal span' : 'leave_minimal_view'
 
 	},
 
@@ -2298,7 +2346,7 @@ App.Views.CommonReply = Backbone.View.extend({
 		this.ev.trigger('cancel');
 
 		// clear interval that checks for keyboard open/close
-		clearInterval(this.checkingForKeyboard);
+		clearTimeout(this.checkingTimeout);
 
 		return false;
 	},
@@ -2838,6 +2886,13 @@ App.Views.CommonReply = Backbone.View.extend({
 
 	},
 
+	leave_minimal_view: function(){
+		// leaving the minimal view mode
+		this.trigger('keyboard_in');
+
+		return false;
+	},
+
 
 	render_init: function(){
 		// Render loading thread
@@ -2930,15 +2985,18 @@ App.Views.CommonReply = Backbone.View.extend({
 		this.$('textarea').on('focus',function(){
 			// alert('focused');
 			// that.$('.addresses').hide();
-			that.$('.header, .addresses').hide();
-			that.$('.body_container').removeClass('nudge_down');
+			// that.$('.header, .addresses').hide();
+			// that.$('.body_container').removeClass('nudge_down');
+			that.trigger('keyboard_out');
 		});
 		this.$('textarea').on('blur',function(){
 			// alert('unfocused');
 			// that.$('.addresses').show();
+			
+			that.trigger('keyboard_in');
 		});
 
-		this.checkingForKeyboard = setInterval(function(){
+		this.checkingForKeyboard = function checkingTimer(){
 			// Get window height
 			// - compare to expected height or width (portrait or landscape)
 			var win_height = $(window).height();
@@ -2949,22 +3007,26 @@ App.Views.CommonReply = Backbone.View.extend({
 					that.trigger('keyboard_out');
 				}
 			} else {
+				// Keyboard is hidden
 				if(that.keyboard_out){
 					that.keyboard_out = false;
 					that.trigger('keyboard_in');
 				}
 			}
-
-		},500);
+			that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
+		};
+		that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
 
 		// Hiding elements on keyboard out
 		that.on('keyboard_out',function(){
+			// that.$('.compose-exit-minimal').removeClass('nodisplay');
 			that.$('.header, .addresses').hide();
 			that.$('.body_container').removeClass('nudge_down');
 		});
 
 		// Showing elements when keyboard hidden
 		that.on('keyboard_in',function(){
+			// that.$('.compose-exit-minimal').addClass('nodisplay');
 			that.$('.header, .addresses').show();
 			that.$('.body_container').addClass('nudge_down');
 		});
@@ -3052,7 +3114,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 		'click .add_attachment' : 'add_attachment',
 		'click .add_photo' : 'add_photo',
 
-		'click .file_attachment' : 'remove_attachment'
+		'click .file_attachment' : 'remove_attachment',
+
+		'click .compose-exit-minimal span' : 'leave_minimal_view'
 
 	},
 
@@ -3285,7 +3349,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// this.after_sent();
 
 		// clear interval that checks for keyboard open/close
-		clearInterval(this.checkingForKeyboard);
+		clearTimeout(this.checkingTimeout);
 		
 		// Close myself
 		this.close();
@@ -3341,6 +3405,11 @@ App.Views.CommonCompose = Backbone.View.extend({
 		// - Validate sending the email
 		var that = this,
 			elem = ev.currentTarget;
+
+
+		if(!confirm('Are you sure you want to send?')){
+			return false;
+		}
 
 		// Disable buttons
 		$(elem).text('Sending...');
@@ -3678,6 +3747,13 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 	},
 
+	leave_minimal_view: function(){
+		// leaving the minimal view mode
+		this.trigger('keyboard_in');
+
+		return false;
+	},
+
 	render: function() {
 		var that = this;
 
@@ -3696,15 +3772,18 @@ App.Views.CommonCompose = Backbone.View.extend({
 		this.$('textarea').on('focus',function(){
 			// alert('focused');
 			// that.$('.addresses').hide();
-			that.$('.header, .addresses').hide();
-			that.$('.body_container').removeClass('nudge_down');
+			// that.$('.header, .addresses').hide();
+			// that.$('.body_container').removeClass('nudge_down');
+			that.trigger('keyboard_out');
 		});
 		this.$('textarea').on('blur',function(){
 			// alert('unfocused');
 			// that.$('.addresses').show();
+
+			that.trigger('keyboard_in');
 		});
 
-		this.checkingForKeyboard = setInterval(function(){
+		this.checkingForKeyboard = function checkingTimer(){
 			// Get window height
 			// - compare to expected height or width (portrait or landscape)
 			var win_height = $(window).height();
@@ -3715,22 +3794,28 @@ App.Views.CommonCompose = Backbone.View.extend({
 					that.trigger('keyboard_out');
 				}
 			} else {
+				// Keyboard is hidden
 				if(that.keyboard_out){
 					that.keyboard_out = false;
 					that.trigger('keyboard_in');
 				}
 			}
-
-		},500);
+			that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
+		};
+		that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
 
 		// Hiding elements on keyboard out
 		that.on('keyboard_out',function(){
+			// alert('out');
+			// that.$('.compose-exit-minimal').removeClass('nodisplay');
 			that.$('.header, .addresses').hide();
 			that.$('.body_container').removeClass('nudge_down');
 		});
 
 		// Showing elements when keyboard hidden
 		that.on('keyboard_in',function(){
+			// alert('hidden');
+			// that.$('.compose-exit-minimal').addClass('nodisplay');
 			that.$('.header, .addresses').show();
 			that.$('.body_container').addClass('nudge_down');
 		});
@@ -4631,7 +4716,7 @@ App.Views.ThreadOptions = Backbone.View.extend({
 		var template = App.Utils.template('t_all_thread_options');
 
 		// Write HTML
-		this.$el.html(template());
+		// this.$el.html(template());
 
 		return this;
 	}
@@ -4723,6 +4808,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		_.bindAll(this, 'after_multi_delay_modal');
 		_.bindAll(this, 'mass_action');
 		_.bindAll(this, 'multi_options');
+		_.bindAll(this, 'checkCount');
 		
 		// App.Events.bind('new_email',this.refresh_and_render_threads);
 
@@ -5162,12 +5248,18 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		});
 
 		// Update count for number
+		that.checkCount();
+
+	},
+
+	checkCount: function(){
+		var that = this;
+
 		var eventData = {
 			count: that.useCollection.length,
 			type: that.threadType
 		};
 		App.Events.trigger('Main.UpdateCount', eventData);
-
 	},
 
 	remove_thread : function(model) {
@@ -5852,6 +5944,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 			// Scroll to bottom (yeah?)
 			this.$('.scroller').scrollTop(10000);
+
+			// Check inbox_zero
+			this.check_inbox_zero();
 
 			// Multi-select binding 
 			// this.$('.all_threads').on('multi-change',that.multi_options); // now in view.events
@@ -9342,6 +9437,7 @@ App.Views.Settings = Backbone.View.extend({
 		'click .setting[data-setting-type="sync"]' : 'sync_inbox',
 		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
 		'click .setting[data-setting-type="flushcache"]' : 'flushcache',
+		'click .setting[data-setting-type="reload"]' : 'reload',
 		'click .setting[data-setting-type="close"]' : 'closeapp',
 		'click .setting[data-setting-type="logout"]' : 'logout',
 		'click .cancel' : 'cancel'
@@ -9499,7 +9595,26 @@ App.Views.Settings = Backbone.View.extend({
 	closeapp: function(ev){
 		var that = this;
 
-		navigator.app.exitApp();
+		try {
+			// android
+			navigator.app.exitApp();
+		}catch(err){
+
+		}
+		try {
+			// ios?
+			navigator.device.exitApp();
+		}catch(err){
+
+		}
+	},
+
+	reload: function(ev){
+		var that = this;
+
+		window.location = [location.protocol, '//', location.host, location.pathname].join('');
+
+		return false;
 	},
 
 	logout: function(ev){
@@ -9543,8 +9658,13 @@ App.Views.Settings = Backbone.View.extend({
 				subtext: 'fixes most problems',
 			},
 			{
+				key: 'reload',
+				text: 'Reload',
+				subtext: 'fixes display inconsistencies'
+			},
+			{
 				key: 'close',
-				text: 'Close',
+				text: 'Exit App',
 				subtext: 'in case BackButton broke'
 			},
 			{
@@ -9554,8 +9674,23 @@ App.Views.Settings = Backbone.View.extend({
 			}
 		];
 
+		// Remove device-specif options
+		if(device.platform == "iOS"){
+			settings = _.filter(settings,function(setting){
+				switch(setting.key){
+					case 'close':
+						return false;
+					default:
+						return true;
+				}
+			});
+		}
+
 		// Write HTML
-		that.$el.html(template(settings));
+		that.$el.html(template({
+			settings: settings,
+			version: App.Data.version
+		}));
 
 		// back button
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
@@ -9966,7 +10101,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 			var p = {
 				response_type: 'token',
 				client_id : App.Credentials.app_key,
-				redirect_uri : 'https://getemailbox.com/testback/'
+				redirect_uri : 'https://getemailbox.com/testback'
 				// state // optional
 				// x_user_id // optional	
 			};
@@ -9983,6 +10118,8 @@ App.Views.BodyLogin = Backbone.View.extend({
 				//Really cool hack
 				// window.plugins.childBrowser.close();
 
+				// alert('new');
+
 				var parser = document.createElement('a');
 				parser.href = loc;
 				// console.log(loc);
@@ -9993,16 +10130,26 @@ App.Views.BodyLogin = Backbone.View.extend({
 
 				// return false;
 
-				var url = loc;
+				var tmp_url = loc;
+				// alert(url);
+				// alert(parser.hostname);
+				// alert(parser.pathname);
 
-				if(parser.hostname == 'getemailbox.com' && parser.pathname == '/testback/'){
+				if(parser.hostname == 'getemailbox.com' && parser.pathname.substr(0,9) == '/testback'){
 					
 					// window.plugins.childBrowser.close();
 					// alert('closing childbrowser after /testback');
 					// return false;
+					// alert('testback');
+
+					// url-decode
+					// alert(tmp_url);
+					var url = decodeURIComponent(tmp_url);
+					// alert(url);
 
 					// var qs = App.Utils.getUrlVars();
 					var oauthParams = App.Utils.getOAuthParamsInUrl(url);
+					// alert(JSON.stringify(oauthParams));
 
 					// if(typeof qs.user_token == "string"){
 					if(typeof oauthParams.access_token == "string"){
@@ -10016,6 +10163,7 @@ App.Views.BodyLogin = Backbone.View.extend({
 						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'user', oauthParams.user_identifier, 'critical')
 							.then(function(){
 								// Saved user!
+								// alert('saved user');
 							});
 
 						App.Utils.Storage.set(App.Credentials.prefix_access_token + 'access_token', oauthParams.access_token, 'critical')
@@ -10037,53 +10185,56 @@ App.Views.BodyLogin = Backbone.View.extend({
 								window.location = [location.protocol, '//', location.host, location.pathname].join('');
 							});
 
-
 					} else {
 						// Show login splash screen
 						var page = new App.Views.BodyLogin();
 						App.router.showView('bodylogin',page);
+
+						alert('Problem logging in');
+						window.plugins.childBrowser.close();
+
 					}
 
 					return;
 
 
-					// First, parse the query string
-					var params = {}, queryString = url.substring(url.indexOf('#')+1),
-						regex = /([^&=]+)=([^&]*)/g, m;
-					while (m = regex.exec(queryString)) {
-						params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-					}
+					// // First, parse the query string
+					// var params = {}, queryString = url.substring(url.indexOf('#')+1),
+					// 	regex = /([^&=]+)=([^&]*)/g, m;
+					// while (m = regex.exec(queryString)) {
+					// 	params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+					// }
 
-					var qs = App.Utils.getUrlVars(url);
+					// var qs = App.Utils.getUrlVars(url);
 
-					if(typeof qs.user_token == "string"){
-						// Have a user_token
-						// - save it to localStorage
-						App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
-							.then(function(){
+					// if(typeof qs.user_token == "string"){
+					// 	// Have a user_token
+					// 	// - save it to localStorage
+					// 	App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
+					// 		.then(function(){
 								
-								// Reload page, back to #home
-								// forge.logging.info('reloading');
+					// 			// Reload page, back to #home
+					// 			// forge.logging.info('reloading');
 
-								// alert('success');
-								window.plugins.childBrowser.close();
+					// 			// alert('success');
+					// 			window.plugins.childBrowser.close();
 
-								$('body').html('');
-								window.location = [location.protocol, '//', location.host, location.pathname].join('');
-							});
+					// 			$('body').html('');
+					// 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
+					// 		});
 						
-					} else {
-						// Show login splash screen
-						// - failed login
+					// } else {
+					// 	// Show login splash screen
+					// 	// - failed login
 
-						alert('Login Failed');
-						window.plugins.childBrowser.close();
+					// 	alert('Login Failed');
+					// 	window.plugins.childBrowser.close();
 						
-						// forge.logging.info('== failed logging in ==');
-						var page = new App.Views.BodyLogin();
-						App.router.showView('bodylogin',page);
+					// 	// forge.logging.info('== failed logging in ==');
+					// 	var page = new App.Views.BodyLogin();
+					// 	App.router.showView('bodylogin',page);
 
-					}
+					// }
 
 				}
 
@@ -10091,60 +10242,60 @@ App.Views.BodyLogin = Backbone.View.extend({
 
 
 
-				// First, parse the query string
-				var params = {}, queryString = url.substring(url.indexOf('#')+1),
-					regex = /([^&=]+)=([^&]*)/g, m;
-				while (m = regex.exec(queryString)) {
-					params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-				}
+				// // First, parse the query string
+				// var params = {}, queryString = url.substring(url.indexOf('#')+1),
+				// 	regex = /([^&=]+)=([^&]*)/g, m;
+				// while (m = regex.exec(queryString)) {
+				// 	params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+				// }
 
-				var qs = App.Utils.getUrlVars(url);
+				// var qs = App.Utils.getUrlVars(url);
 
-				if(typeof qs.user_token == "string"){
-					// Have a user_token
-					// - save it to localStorage
-					App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
-						.then(function(){
+				// if(typeof qs.user_token == "string"){
+				// 	// Have a user_token
+				// 	// - save it to localStorage
+				// 	App.Utils.Storage.set(App.Credentials.prefix_user_token + 'user_token', qs.user_token, 'critical')
+				// 		.then(function(){
 							
-							// Reload page, back to #home
-							// forge.logging.info('reloading');
+				// 			// Reload page, back to #home
+				// 			// forge.logging.info('reloading');
 
-							window.location = [location.protocol, '//', location.host, location.pathname].join('');
-						});
+				// 			window.location = [location.protocol, '//', location.host, location.pathname].join('');
+				// 		});
 					
-				} else {
-					// Show login splash screen
-					// - failed login
+				// } else {
+				// 	// Show login splash screen
+				// 	// - failed login
 					
-					forge.logging.info('== failed logging in ==');
-					var page = new App.Views.BodyLogin();
-					App.router.showView('bodylogin',page);
-				}
+				// 	forge.logging.info('== failed logging in ==');
+				// 	var page = new App.Views.BodyLogin();
+				// 	App.router.showView('bodylogin',page);
+				// }
 
-				forge.logging.info('PARAMS:');
-				forge.logging.info(params);
+				// forge.logging.info('PARAMS:');
+				// forge.logging.info(params);
 
 
 
-				//DOM auto-parses
-				if (parser.hostname == "www.filepicker.io" && parser.pathname == FINISHED_PATH) {
-					window.plugins.childBrowser.close();
-					var args = parser.search.substring(1).split('&');
-					argsParsed = {};
+				// //DOM auto-parses
+				// if (parser.hostname == "www.filepicker.io" && parser.pathname == FINISHED_PATH) {
+				// 	window.plugins.childBrowser.close();
+				// 	var args = parser.search.substring(1).split('&');
+				// 	argsParsed = {};
 
-					//Kindly provided by 'http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript'
-					for (i=0; i < args.length; i++) {
-						arg = unescape(args[i]);
+				// 	//Kindly provided by 'http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript'
+				// 	for (i=0; i < args.length; i++) {
+				// 		arg = unescape(args[i]);
 
-						if (arg.indexOf('=') == -1) {
-							argsParsed[arg.trim()] = true;
-						} else {
-							kvp = arg.split('=');
-							argsParsed[kvp[0].trim()] = kvp[1].trim();
-						}
-					}
-					callback(argsParsed);
-				}
+				// 		if (arg.indexOf('=') == -1) {
+				// 			argsParsed[arg.trim()] = true;
+				// 		} else {
+				// 			kvp = arg.split('=');
+				// 			argsParsed[kvp[0].trim()] = kvp[1].trim();
+				// 		}
+				// 	}
+				// 	callback(argsParsed);
+				// }
 			};
 
 		} else {
@@ -10171,7 +10322,9 @@ App.Views.BodyLogin = Backbone.View.extend({
 		var template = App.Utils.template('t_body_login');
 
 		// Write HTML
-		$(this.el).html(template());
+		$(this.el).html(template({
+			version: App.Data.version
+		}));
 
 		return this;
 	}
@@ -10392,12 +10545,16 @@ App.Views.DelayModal = Backbone.View.extend({
 
 	events: {
 		// 'click .option' : 'click_option',
+		'click .option' : 'click_option',
 		'shorttap .option' : 'shorttap_option',
 		'longtap .option' : 'longtap_option',
+		'click .delay-modal-exit span' : 'cancel',
 		// 'click .option' : 'longtap_option', // enabling will cause double-calendar on mobile
 		
 		'click .overlay' : 'cancel',
 		'blur #pickadate' : 'picked_date',
+
+		'click #time_example div' : 'modify_time',
 
 		'click .btn-cancel' : 'cancel_confirmation',
 		'click .btn-delay' : 'choose_confirmation'
@@ -10436,6 +10593,17 @@ App.Views.DelayModal = Backbone.View.extend({
 		} else {
 			// Slide piece back in
 			App.Plugins.Minimail.revert_box(this.options.context);
+		}
+
+		return false;
+	},
+
+	click_option: function(ev){
+		if(usePg){
+
+		} else {
+			// browser
+			this.longtap_option(ev);
 		}
 
 		return false;
@@ -10543,43 +10711,62 @@ App.Views.DelayModal = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
+		// prevent event continuing to calendar, scroller, etc.
+		ev.preventDefault();
+
 		// Valid?
 		if($(elem).hasClass('ignore')){
 			return false;
 		}
 
-		// Get "wait" selected
-		var waitType = $(elem).attr('data-type');
+		// Is pick-a-date?
+		if($(elem).hasClass('pickadate')){
 
-		var save_text = $.trim($(elem).text());
+			// put the current date-time
+			this.time_scroller_and_cal(new Date());
 
-		// Get delay options (later today, etc.)
-		var delay_options = App.Plugins.Minimail.getDelayOptions();
-		
-		// Get option from delay_options
-		var wait = null,
-			tmp_delay = null;
-		$.each(delay_options,function(i,val){
+		} else {
+
+			// Get "wait" selected
+			var waitType = $(elem).attr('data-type');
+
+			var save_text = $.trim($(elem).text());
+
+			// Get delay options (later today, etc.)
+			var delay_options = App.Plugins.Minimail.getDelayOptions();
 			
-			if(waitType == val.key){
-				// using this one
-				wait = val.wait;
-				tmp_delay = val;
+			// Get option from delay_options
+			var wait = null,
+				tmp_delay = null;
+			$.each(delay_options,function(i,val){
+				
+				if(waitType == val.key){
+					// using this one
+					wait = val.wait;
+					tmp_delay = val;
+				}
+			});
+			if(wait == null){
+				// alert('Invalid type used');
+				this.close();
+				return;
 			}
-		});
-		if(wait == null){
-			// alert('Invalid type used');
-			this.close();
-			return;
+
+			// Show calendar and time scroller
+			this.time_scroller_and_cal(wait);
+
 		}
 
-		this.time_scroller_and_cal(wait);
+		return false;
 
 	},
 
 
 	time_scroller_and_cal: function(wait){
 		var that = this;
+
+		// Hide options nicely
+		that.$('.options').addClass('hiding');
 
 		// Set values for time scroller
 		var parsedScrollValues = App.Plugins.Minimail.formatTimeForScroll(wait);
@@ -10588,6 +10775,9 @@ App.Views.DelayModal = Backbone.View.extend({
 		// Set calender datetime to wait value, track it
 		that.wait_time = wait;
 		that.wait_date = wait.toString('yyyy-MM-dd');
+
+		// Set values on the #time_example rectangle
+		that.$('#time_example div').text(wait.toString('h:mm tt'));
 
 		// Trigger date confirmation
 		window.setTimeout(function(){
@@ -10636,114 +10826,6 @@ App.Views.DelayModal = Backbone.View.extend({
 		return false;
 	},
 
-	click_option: function(ev){
-		// // Clicked an option
-		// // - take an action on the Thread
-		// var that = this;
-		// var elem = ev.currentTarget;
-
-		// // Valid?
-		// if($(elem).hasClass('ignore')){
-		// 	return false;
-		// }
-
-		// // Pick a date?
-		// if($(elem).hasClass('pickadate')){
-		// 	// Let pick continue to datepicker
-		// 	// - auto-triggers the datepicker on Android/iOS
-
-		// 	// listen for end of date picker
-		// 	// clog('TRIGGERED');
-		// 	// // $(elem).find('input').trigger('click');
-		// 	// $(elem).find('input').focus();
-		// 	// clog('did it');
-		// 	return;
-		// }
-
-		// // Get "wait" selected
-		// var waitType = $(elem).attr('data-type');
-
-		// var save_text = $.trim($(elem).text());
-
-		// // Get delay options (later today, etc.)
-		// var delay_options = App.Plugins.Minimail.getDelayOptions();
-		
-		// // Get option from delay_options
-		// var wait = null,
-		// 	tmp_delay = null;
-		// $.each(delay_options,function(i,val){
-			
-		// 	if(waitType == val.key){
-		// 		// using this one
-		// 		wait = val.wait;
-		// 		// tmp_delay = val;
-		// 	}
-		// });
-		// if(wait == null){
-		// 	// alert('Invalid type used');
-		// 	this.close();
-		// 	return;
-		// }
-
-		// // Date
-		// // var arr = this.$("#date").mobiscroll().parseValue(wait);
-		// // console.log('hello');
-		
-		// // // var mobi_inst = $('#date').mobiscroll('getInst');
-		// // var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
-		// // this.dateScroll.mobiscroll('setValue',parsedScrollValues,true);
-
-		// var parsedScrollValues = App.Plugins.Minimail.formatDateForScroll(wait);
-		// this.timeScroll.mobiscroll('setValue',parsedScrollValues,true);
-
-		// // Trigger date confirmation
-		// window.setTimeout(function(){
-		// 	that.$('.options').addClass('nodisplay');
-		// 	that.$('.choose_datetime').removeClass('nodisplay');
-		
-		// 	// Full calendar
-		// 	$('#calendar').fullCalendar({
-		// 		// put your options and callbacks here
-		// 		// defaultView: 'month',
-		// 		dayClick: function(date) {
-		// 			// Select that date on calendar
-		// 			$('.fc-state-highlight').removeClass('fc-state-highlight');
-		// 			$(this).addClass('fc-state-highlight');
-		// 		}
-		// 	});
-
-		// 	// Add button class (hacky)
-		// 	$('.fc-button').addClass('btn');
-
-		// 	// // $('.fc-button-today').click();
-		// 	// window.setTimeout(function(){
-		// 	// 	// $('#calendar').fullCalendar('today');
-		// 	// 	// $('.fc-button-today').trigger('click');
-		// 	// 	$('#calendar').fullCalendar('render');
-		// 	// },300);
-		// },100);
-
-
-		// // mobi_inst.val(wait.toString());
-		// // console.log(1);
-		// // console.log(mobi_inst.parseValue(wait));
-
-		// // time
-		// // this.$("#time").mobiscroll().time({
-		// // 	display: 'inline',
-		// // 	theme: 'wp'
-		// // });
-
-		// // $('#pickadate').click();
-
-		// // Save delay
-		// // - triggers other actions
-		// // that.save_delay(wait, save_text);
-
-		// return false;
-
-	},
-
 	cancel_confirmation: function(ev){
 		// Cancelled choosing datetime
 		// - return to 
@@ -10751,7 +10833,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			elem = ev.currentTarget;
 
 		// Swap classes
-		this.$('.options').removeClass('nodisplay');
+		this.$('.options').removeClass('hiding nodisplay');
 		this.$('.choose_datetime').addClass('nodisplay');
 
 		// No calendar
@@ -10827,6 +10909,16 @@ App.Views.DelayModal = Backbone.View.extend({
 		return false;
 	},
 
+	modify_time: function(ev){
+		// Show the time modal
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Show modal
+		that.timeScroll.mobiscroll('show')
+
+	},
+
 	save_delay: function(wait, save_text){
 		// Save the delay
 		// - or return the result to the calling function, if it exists
@@ -10881,13 +10973,22 @@ App.Views.DelayModal = Backbone.View.extend({
 		// });
 
 		// (only) Time scroller/picker
-		this.timeScroll = this.$("#time").mobiscroll().time({
-			display: 'inline',
+		this.timeScroll = this.$("#time_example div").mobiscroll().time({
+			display: 'modal',
 			theme: 'wp',
-			mode: 'mixed',
+			mode: 'clickpick',
 			stepMinute: 15,
-			timeFormat: 'h:ii a'
+			timeFormat: 'h:ii a',
+			setText: 'Save Time',
+			cancelText: "Don't Save",
+			onClose: function(valueText, inst){
+				that.$('#time_example div').text(valueText);
+			}
 		});
+
+		// this.timeScroll.onClose(function(){
+		// 	alert('onClose2');
+		// });
 
 		// Bind to back button
 		// - bubbles previous ones lower (only 1 at a time allowed to bind to the back button)
@@ -10909,7 +11010,7 @@ App.Views.HtmlEmail = Backbone.View.extend({
 	className: 'big_html_email',
 
 	events: {
-		
+		'click .html-email-exit' : 'cancel'
 	},
 
 	initialize: function() {
