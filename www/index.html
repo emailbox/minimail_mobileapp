@@ -201,7 +201,7 @@
 				-->
 
 				<p style="color:#999;">
-					v 0.02
+					v {{version}}
 				</p>
 
 			</div>
@@ -569,6 +569,9 @@
 		<div class="overlay">
 			&nbsp;
 		</div>
+		<div class="html-email-exit">
+			<span>X</span>
+		</div>
 		<div class="html_email"></div>
 		<div class="slider_holder">
 			<div class="noUiSlider"></div>
@@ -604,7 +607,20 @@
 				{{/each}}
 
 				<div class="option pickadate">
-					Pick a Date
+					<div class="name">
+						Pick a Date
+					</div>
+					<div class="details">
+						&lt; custom >
+						<br />
+						<br />
+					</div>
+
+				</div>
+
+				<div class="delay-modal-exit">
+					<br />
+					<span>X</span>
 				</div>
 
 			</div>
@@ -613,6 +629,9 @@
 
 
 				<div id="calendar"></div>
+				<div id="time_example">
+					<div>&nbsp;</div>
+				</div>
 				<div id="time" name="time_scroller" class="text-center"></div>
 
 				<div class="buttons clearfix">
@@ -624,14 +643,6 @@
 					</div>
 				</div>
 
-				<!--
-				<div id="date" name="date_scroller"></div>
-				<div id="time" name="time_scroller"></div>
-
-				<br />
-				<br />
-
-				-->
 			</div>
 
 
@@ -1298,6 +1309,12 @@
 
 			<div class="body_container nudge_down">
 
+				<!-- Do not actually need this for iOS anymore
+				<div class="compose-exit-minimal nodisplay text-right">
+					<span>X</span>
+				</div>
+				-->
+
 				<div class="addresses">
 					{{#each Participants}}
 
@@ -1396,6 +1413,12 @@
 		</div>
 
 		<div class="body_container nudge_down">
+
+			<!-- Do not actually need this for iOS anymore
+			<div class="compose-exit-minimal nodisplay text-right">
+				<span>X</span>
+			</div>
+			-->
 
 			<div class="addresses">
 				
@@ -2311,7 +2334,7 @@
 
 
 				<!-- each -->
-				{{#each_with_index this}}
+				{{#each_with_index settings}}
 
 					<div class="setting clearfix" data-setting-type="{{key}}">
 
@@ -2336,6 +2359,11 @@
 				{{/each_with_index}}
 
 
+				<br />
+				<br />
+				<br />
+				<br />
+
 			</div>
 
 		</div>
@@ -2347,7 +2375,7 @@
 				<div class="base_footer_menu clearfix">
 					<div class="left">
 						<h1>
-							Settings
+							Settings <small>v {{version}}</small>
 						</h1>
 					</div>
 					<div class="right">
