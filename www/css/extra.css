@@ -517,21 +517,22 @@ body.console {
 
 .base_header_menu > .left {
   float:left;
-  width: 25%;
+  width: 20%;
   padding-left:1%;
 }
 
 
 .base_header_menu > .center {
   float:left;
-  width: 51%;
+  width: 58%;
   text-align: center;
 }
 
 .base_header_menu > .right {
   float:right;
-  width: 10%;
-  margin-right: 6%;
+  width: 20%;
+  padding-right: 1%;
+  margin-right: 0px;
   text-align: right;
 }
 
@@ -634,10 +635,12 @@ body.console {
 /* Replying */
 
 .base_header_menu.common_reply .left {
-  width: 50%;
+  width: 51%;
+  padding-left: 1%;
 }
 .base_header_menu.common_reply .right {
-  width: 40%;
+  width: 47%;
+  padding-left: 1%;
 }
 
 
@@ -1302,7 +1305,7 @@ input.prefilters_select[readonly] {
 
   color: white;
 
-  z-index: 100000;
+  z-index: 199;
 
   -webkit-transition: all .3s ease;
   -moz-transition: all .3s ease;
@@ -2018,6 +2021,7 @@ input.prefilters_select[readonly] {
 
 
 /* Delay Modal */
+
 .delay_modal {
   position: fixed;
   top:0;
@@ -2054,7 +2058,19 @@ input.prefilters_select[readonly] {
 
 .delay_modal .options {
   padding-bottom: 1%;
+  margin-bottom: 60px;
 
+  opacity: 1;
+
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  -ms-transition: all 1s ease;
+  transition: all 1s ease;
+}
+
+.delay_modal .options.hiding {
+  opacity: 0;
 }
 
 .delay_modal .option {
@@ -2108,6 +2124,32 @@ input.prefilters_select[readonly] {
   color: #b1b1b1;
 }
 
+.delay_modal .delay-modal-exit {
+  display: block;
+  float: left;
+
+  padding: 10px;
+
+  text-align:center;
+  width: 49%;
+  margin-left: 1%;
+  margin-top: 1%;
+  
+  background: none;
+  border: 0px;
+
+  position: relative;
+
+}
+
+.delay_modal .delay-modal-exit span {
+  font-size: 28px;
+  line-height: 36px;
+  color: #FFFFFF;
+
+  padding: 6px;
+}
+
 .delay_modal .choose_datetime {
   color: #EBEBEB;
 
@@ -2131,6 +2173,11 @@ input.prefilters_select[readonly] {
 
 }
 
+#calendar .fc-header .btn {
+    line-height: 28px;
+    height: auto;
+}
+
 #calendar .fc-day-header {
   border-width: 0px;
   border-bottom-width: 1px;
@@ -2140,6 +2187,28 @@ input.prefilters_select[readonly] {
   color: #333;
 }
 
+#time_example {
+  text-align: center;
+  width: 100%;
+}
+
+#time_example div {
+
+  display: inline-block;
+
+  text-align: center;
+
+  margin: 25px 10px;
+  padding: 15px;
+
+  font-size: 24px;
+  line-height: 30px;
+
+  border: 1px solid black;
+
+}
+
+/*
 #time .wp .dw,
 #time .wp .dwwb {
   background: #444;
@@ -2148,7 +2217,7 @@ input.prefilters_select[readonly] {
 #time .wp .dwwr {
   padding: 0px;
 }
-
+*/
 
 
 .delay_modal .calendar {
@@ -2196,10 +2265,11 @@ input.prefilters_select[readonly] {
 .big_html_email .html_email {
   position: fixed;
   /*bottom: 80px;*/
-  top: 0;
+  top: 6%;
   left: 0;
   width: 96%;
-  height: 86%;
+  height: 80%;
+  overflow: hidden;
 
   margin-left: 2%;
   margin-top: 2%;
@@ -2214,6 +2284,21 @@ input.prefilters_select[readonly] {
   -webkit-border-radius: 2px;
   border-radius: 2px;*/
 }
+
+.big_html_email .html-email-exit {
+  position: fixed;
+  /*bottom: 80px;*/
+  top: 4px;
+  right: 4px;
+  width: 100%;
+  height: 6%;
+
+}
+
+.big_html_email .html-email-exit span {
+  color: #FFFFFF;
+}
+
 
 .big_html_email .slider_holder {
   position: fixed;
@@ -2288,12 +2373,12 @@ input.prefilters_select[readonly] {
 
 .common_thread_view .email_holder .details .person {
   float: left;
-  width: 200px;
+  width: 160px;
 }
 
 .common_thread_view .email_holder .details .time_and_more {
   float: right;
-  width: 80px;
+  width: 100px;
   /*padding-right: 5px;*/
   text-align: right;
 }
@@ -2358,6 +2443,8 @@ iframe#email_html body {
   float: right;
   display: inline-block;
   cursor: pointer;
+
+  display: none;
 }
 
 /* Common Compose */
@@ -2373,20 +2460,38 @@ iframe#email_html body {
 .common_edit_email .base_header_menu > .left,
 .common_compose .base_header_menu > .left {
   float:left;
-  width: 38%;
-  margin-left: 4%;
+  width: 48%;
+  margin-left: 0%;
 }
 
 .common_edit_email .base_header_menu > .right,
 .common_compose .base_header_menu > .right {
   float:right;
-  width: 50%;
-  margin-right: 6%;
+  width: 48%;
+  margin-right: 0%;
   text-align: right;
 }
 
 .common_compose {
 
+}
+
+.compose-exit-minimal,
+.html-email-exit {
+  color: white;
+  font-size: 36px;
+  line-height: 40px;
+  text-align: right;
+
+}
+
+.compose-exit-minimal span ,
+.html-email-exit span {
+  padding: 5px;
+}
+
+.html-email-exit {
+  width: 100%;
 }
 
 .btn-send,
@@ -2915,13 +3020,13 @@ iframe#email_html body {
 
 .view_choose_contacts .contact .name_and_info {
   float: left;
-  width: 280px;
+  width: 250px;
   padding-left: 20px;
 }
 
 .view_choose_contacts .contact .display_name {
   font-size: 18pt;
-  line-height: 20pt;
+  line-height: 22pt;
   font-weight: 100;
   color: #b0b0b0;
 
@@ -2965,7 +3070,7 @@ iframe#email_html body {
 
 .view_settings .setting .name_and_info {
   float: left;
-  width: 300px;
+  width: 260px;
   /*padding-left: 20px;*/
   padding-left: 0px;
 }
