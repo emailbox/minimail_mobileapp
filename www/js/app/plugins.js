@@ -203,6 +203,11 @@ App.Plugins.Minimail = {
 		// 	wait: (5).seconds().fromNow()
 		// });
 		opts.push({
+			name: "Few minutes",
+			key: 'few_minutes',
+			wait: (15).minutes().fromNow()
+		});
+		opts.push({
 			name: "3 Hours",
 			key: 'few_hours',
 			wait: (3).hours().fromNow()
@@ -211,15 +216,15 @@ App.Plugins.Minimail = {
 		var nowTime = new Date.now();
 
 		// after_lunch if it is > 7hours away (meaning it is already after lunch)
-		opts.push({
-			name: "After Lunch",
-			key: 'after_lunch',
-			wait: new Date.now().set({hours: 13,minutes: 0})
-		});
-		var hours_diff = (Date.today().set({hours: 13,minutes: 0}).getTime() - nowTime.getTime()) / (1000 * 60 * 60);
-		if(hours_diff < 0 || hours_diff > 7){
-			opts[opts.length - 1].hide = 'invisible ignore';
-		}
+		// opts.push({
+		// 	name: "After Lunch",
+		// 	key: 'after_lunch',
+		// 	wait: new Date.now().set({hours: 13,minutes: 0})
+		// });
+		// var hours_diff = (Date.today().set({hours: 13,minutes: 0}).getTime() - nowTime.getTime()) / (1000 * 60 * 60);
+		// if(hours_diff < 0 || hours_diff > 7){
+		// 	opts[opts.length - 1].hide = 'invisible ignore';
+		// }
 
 		// 2
 		opts.push({
@@ -290,70 +295,71 @@ App.Plugins.Minimail = {
 		// clog(delay_datetime_sec);
 
 		// Fire event
-		Api.event({
+		if(delay_in_seconds > 0){
+			Api.event({
+				data: {
+					event: 'Minimail.wait_until_fired',
+					delay: delay_in_seconds,
+					obj: {
+						threadid: thread_id,
+						text: "An email is due"
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+
+					// console.log(JSON.stringify(response));
+
+					if(response.code != 200){
+						// Failed launching event
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+
+			// Fire event to modify move Email/Thread to Archive (it will be brought back later when wait_until is fired)
+			Api.event({
+				data: {
+					event: 'Thread.action',
+					obj: {
+						'_id' : thread_id, // allowed to pass a thread_id here
+						'action' : 'archive'
+					}
+				},
+				success: function(response){
+					response = JSON.parse(response);
+
+					if(response.code != 200){
+						// Failed launching event
+						alert('Failed launching Thread.action2');
+						dfd.reject(false);
+						return;
+					}
+
+				}
+			});
+		}
+
+
+		// Update api call
+		Api.update({
 			data: {
-				event: 'Minimail.wait_until_fired',
-				delay: delay_in_seconds,
-				obj: {
-					threadid: thread_id,
-					text: "An email is due"
+				model: 'Thread',
+				id: thread_id,
+				paths: {
+					"$set" : {
+						"app.AppPkgDevMinimail.wait_until" : delay_datetime_in_seconds,
+						// "app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
+						"app.AppPkgDevMinimail.done" : 0
+					}
 				}
 			},
 			success: function(response){
-				response = JSON.parse(response);
-
-				// console.log(JSON.stringify(response));
-
-				if(response.code != 200){
-					// Failed launching event
-					dfd.reject(false);
-					return;
-				}
-
-				// Save new delay also
-				
-				Api.update({
-					data: {
-						model: 'Thread',
-						id: thread_id,
-						paths: {
-							"$set" : {
-								"app.AppPkgDevMinimail.wait_until" : delay_datetime_in_seconds,
-								"app.AppPkgDevMinimail.wait_until_event_id" : response.data.event_id,
-								"app.AppPkgDevMinimail.done" : 0
-							}
-						}
-					},
-					success: function(response){
-						// Update the 
-						clog('updated');
-						dfd.resolve(true);
-					}
-				});
-
-				
-				// Fire event to modify move Email/Thread to Archive (it will be brought back later when wait_until is fired)
-				Api.event({
-					data: {
-						event: 'Thread.action',
-						obj: {
-							'_id' : thread_id, // allowed to pass a thread_id here
-							'action' : 'archive'
-						}
-					},
-					success: function(response){
-						response = JSON.parse(response);
-
-						if(response.code != 200){
-							// Failed launching event
-							alert('Failed launching Thread.action2');
-							dfd.reject(false);
-							return;
-						}
-
-					}
-				});
-
+				// Update the 
+				clog('updated');
+				dfd.resolve(true);
 			}
 		});
 
@@ -704,7 +710,8 @@ App.Plugins.Minimail = {
 					if(x_ratio_diff > .50){
 						$(this).parents('.thread').find('.thread-bg-time p').html('Pick a Delay');
 					} else if(x_ratio_diff > App.Credentials.thread_move_x_threshold){
-						$(this).parents('.thread').find('.thread-bg-time p').html('A Few Hours');
+						// $(this).parents('.thread').find('.thread-bg-time p').html('A Few Hours');
+						$(this).parents('.thread').find('.thread-bg-time p').html('Immediate');
 					} else {
 						// Remove any text that is there
 						$(this).parents('.thread').find('.thread-bg-time p').html('&nbsp;');
@@ -823,9 +830,10 @@ App.Plugins.Minimail = {
 
 
 						} else if(x_ratio_diff > App.Credentials.thread_move_x_threshold){
-							$(this).parents('.thread').find('.thread-bg-time p').html('A Few Hours');
+							// $(this).parents('.thread').find('.thread-bg-time p').html('A Few Hours');
+							$(this).parents('.thread').find('.thread-bg-time p').html('Immediate');
 
-							// Make wait_for be A Few Hours
+							// Make wait_for be A Few Hours (or immediate)
 							$(this).parents('.thread').addClass('finished');
 
 							// Scroll the window
@@ -837,7 +845,8 @@ App.Plugins.Minimail = {
 							}
 
 							// Save delay
-							var delay_seconds = 60 * 60 * 3; // 3 hours
+							// var delay_seconds = 60 * 60 * 3; // 3 hours
+							var delay_seconds = 0; // immediate
 							var now = new Date();
 							var now_sec = parseInt(now.getTime() / 1000, 10);
 							var in_seconds = now_sec + (delay_seconds);//(60*60*3);
@@ -871,7 +880,7 @@ App.Plugins.Minimail = {
 						// 
 						var newTime = new Date().getTime();
 						var elapsed = newTime - parseInt($(that).attr('finger-time'), 10);
-						if(elapsed < 100){
+						if(elapsed < 300){
 							$(that).trigger('shorttap');
 						} else {
 							$(that).trigger('longtap');
