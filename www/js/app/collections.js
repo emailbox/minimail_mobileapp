@@ -872,13 +872,36 @@ App.Collections.UndecidedThreads = Backbone.Collection.extend({
 			data: {
 				model: 'Thread',
 				conditions: that.undecided_conditions,
-				fields: ['_id','attributes.last_message_datetime_sec'], // only the ID field + sorting field
+				fields: ['_id','attributes.last_message_datetime_sec','attributes.last_message_datetime_sec'], // only the ID field + sorting field
 				limit: 10,
 				sort: {
 					'attributes.last_message_datetime_sec' : -1
 				}
 			}
 		});
+
+	},
+
+	fetchCount: function(options){
+		var that = this;
+
+		var dfd = $.Deferred();
+
+		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
+		Api.count({
+			data: {
+				model: 'Thread',
+				conditions: that.undecided_conditions
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				if(response.code == 200){
+					dfd.resolve(response.data);
+				}
+			}
+		});
+
+		return dfd.promise();
 
 	}
 
@@ -928,7 +951,7 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 						}
 					]
 				},
-				fields: ['_id','app.AppPkgDevMinimail.wait_until'], // id + seconds
+				fields: ['_id','app.AppPkgDevMinimail.wait_until','attributes.last_message_datetime_sec'], // id + seconds
 				limit: 10,
 				sort: {
 					'app.AppPkgDevMinimail.wait_until' : -1
@@ -940,6 +963,45 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 		// return models;
 
 	},
+
+	fetchCount: function(options){
+		var that = this;
+
+		var dfd = $.Deferred();
+
+		var now = new Date();
+		var now_sec = parseInt(now.getTime() / 1000);
+
+		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
+		Api.count({
+			data: {
+				model: 'Thread',
+				conditions: {
+					'$and' : [
+						{
+							'app.AppPkgDevMinimail.wait_until' : {
+								'$lte' : now_sec
+							}
+						},
+						{
+							'app.AppPkgDevMinimail.done' : {
+								"$ne" : 1
+							}
+						}
+					]
+				},
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				if(response.code == 200){
+					dfd.resolve(response.data);
+				}
+			}
+		});
+
+		return dfd.promise();
+
+	}
 
 });
 
@@ -985,7 +1047,7 @@ App.Collections.LaterThreads = Backbone.Collection.extend({
 						}
 					]
 				},
-				fields: ['_id','app.AppPkgDevMinimail.wait_until'], // id + seconds
+				fields: ['_id','app.AppPkgDevMinimail.wait_until','attributes.last_message_datetime_sec'], // id + seconds
 				limit: 10,
 				sort: {
 					'app.AppPkgDevMinimail.wait_until' : -1
@@ -997,6 +1059,45 @@ App.Collections.LaterThreads = Backbone.Collection.extend({
 		// return models;
 
 	},
+
+	fetchCount: function(options){
+		var that = this;
+
+		var dfd = $.Deferred();
+
+		var now = new Date();
+		var now_sec = parseInt(now.getTime() / 1000);
+
+		// This causes the Add1 shit to fire for this collection, it doesn't wait for anything else
+		Api.count({
+			data: {
+				model: 'Thread',
+				conditions: {
+					'$and' : [
+						{
+							'app.AppPkgDevMinimail.wait_until' : {
+								'$gt' : now_sec
+							}
+						},
+						{
+							'app.AppPkgDevMinimail.done' : {
+								"$ne" : 1
+							}
+						}
+					]
+				},
+			},
+			success: function(response){
+				response = JSON.parse(response);
+				if(response.code == 200){
+					dfd.resolve(response.data);
+				}
+			}
+		});
+
+		return dfd.promise();
+
+	}
 
 });
 
