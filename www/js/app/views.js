@@ -117,12 +117,12 @@ App.Views.Body = Backbone.View.extend({
 		// 'click .logout' : 'logout',
 		'click .goto_senders' : 'goto_senders',
 
-		'click .base_header_menu .threads_change button' : 'menu_click',
-		'dblclick .base_header_menu .threads_change button' : 'dblmenu_click',
+		'click .base_header_menu .threads_change a' : 'menu_click',
+		'dblclick .base_header_menu .threads_change a' : 'dblmenu_click',
 
 		'click .base_header_menu .logo' : 'settings',
 
-		'click .base_header_menu button[data-action="compose"]' : 'compose'
+		'click .base_header_menu a[data-action="compose"]' : 'compose'
 	},
 
 	initialize: function() {
@@ -155,7 +155,7 @@ App.Views.Body = Backbone.View.extend({
 			data.count = "10<sup>+</sup>";
 		}
 
-		var $button = this.$('.base_header_menu .threads_change button[data-action="'+data.type+'"]');
+		var $button = this.$('.base_header_menu .threads_change a[data-action="'+data.type+'"]');
 
 		// Remove any previous one
 		$button.find('.counter').remove();
@@ -199,7 +199,7 @@ App.Views.Body = Backbone.View.extend({
 		var id = $(elem).attr('data-action');
 
 		// Make other buttons inactive
-		this.$('.base_header_menu button').removeClass('active');
+		this.$('.base_header_menu a').removeClass('active');
 
 		// Activate this button
 		$(elem).addClass('active');
@@ -289,7 +289,7 @@ App.Views.Body = Backbone.View.extend({
 		// Load the Undecided View
 		// Backbone.history.loadUrl('undecided');
 		var doclick = 'dunno';
-		this.$('.base_header_menu button[data-action="'+doclick+'"]').addClass('active');
+		this.$('.base_header_menu a[data-action="'+doclick+'"]').addClass('active');
 		Backbone.history.loadUrl(doclick);
 		// this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('touchend');
 
@@ -765,7 +765,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		'click .btn[data-action="pin"]' : 'click_pin',
 		'click .btn[data-action="leisure"]' : 'click_leisure',
 
-		'click .reply' : 'reply',
+		'click .btn-reply' : 'reply',
 		'click .forward' : 'forward',
 
 		'click .email_holder .time_and_more .html_view' : 'html_view',
@@ -891,7 +891,7 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		// // Event bindings
 		// // - also bound at the top of initialize
-		// App.Events.bind('email_sent',this.email_sent);
+		App.Events.bind('email_sent',this.email_sent);
 		// App.Events.bind('thread_updated',this.refresh_and_render_thread);
 
 		// Mark as recently viewed
@@ -2205,6 +2205,7 @@ App.Views.CommonReply = Backbone.View.extend({
 	initialize: function(options) {
 		var that = this;
 		_.bindAll(this, 'render');
+		// _.bindAll(this, 'send');
 		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'cancel');
 		
@@ -2220,7 +2221,7 @@ App.Views.CommonReply = Backbone.View.extend({
 			// - render a "getting data" view
 
 			// Render loading
-			alert('thread not ready for reply');
+			alert('we are not using this!!');
 			this.render_init();
 
 			// Get Full Thread
@@ -2306,8 +2307,12 @@ App.Views.CommonReply = Backbone.View.extend({
 			// Thread and Emails already set
 			// - render reply view as expected
 
+			this.ThreadModel = this.options.ThreadModel;
+			this.EmailModels = this.options.EmailModels;
+
 			this.ready_to_render = true;
 			this.render();
+
 
 		}
 
@@ -2382,6 +2387,13 @@ App.Views.CommonReply = Backbone.View.extend({
 		return false;
 	},
 
+	cancel_sending: function(that, elem){
+
+		$(elem).text('Send');
+		$(elem).attr('disabled',false);
+		that.disable_buttons = false;
+	},
+
 	send: function(ev){
 		// Validate sending the email
 		// Send the email
@@ -2395,14 +2407,16 @@ App.Views.CommonReply = Backbone.View.extend({
 		this.disable_buttons = true;
 
 		// Throw into a different view after success?
+
 		
 
 		// In Reply To
-		var in_reply = this.thread_data.Email[this.thread_data.Email.length - 1].common['Message-Id'];
+		var in_reply = this.EmailModels.last().toJSON().common['Message-id']; //[this.thread_data.Email.length - 1].common['Message-Id'];
+		var subject = this.EmailModels.last().toJSON().original.headers.Subject;
 
 		// References (other message-ids)
-		var references = _.map(this.thread_data.Email,function(email){
-			return email.common['Message-Id'];
+		var references = _.map(this.EmailModels,function(email){
+			return email.toJSON().common['Message-Id'];
 		});
 
 		// To
@@ -2412,6 +2426,39 @@ App.Views.CommonReply = Backbone.View.extend({
 		});
 		to = to.join(',');
 
+		var from = App.Data.UserEmailAccounts.at(0).get('email');
+		var textBody = that.$('#textbody').val();
+
+		// Do a little bit of validation
+		try {
+			if(!to.length > 0){
+				alert('You need to send to somebody!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!from.length > 0){
+				alert('Whoops, we cannot send from your account right now');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!subject.length > 0){
+				alert('You need to write a subject line!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!textBody.length > 0){
+				alert('You need to write something in your email!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+
+		} catch(err){
+			console.error('Failed validation');
+			console.error(err);
+			that.cancel_sending(that, elem);
+			return false;
+
+		}
 
 		// Send return email
 		var eventData = {
@@ -2419,9 +2466,9 @@ App.Views.CommonReply = Backbone.View.extend({
 			delay: 0,
 			obj: {
 				To: to,
-				From: App.Data.UserEmailAccounts.at(0).get('email'),
-				Subject: that.thread_data.Email[that.thread_data.Email.length - 1].original.headers.Subject,
-				Text: that.$('#textbody').val(),
+				From: from,
+				Subject: subject,
+				Text: textBody,
 				headers: {
 					"In-Reply-To" : in_reply,
 					"References" : references.join(',')
@@ -2458,9 +2505,10 @@ App.Views.CommonReply = Backbone.View.extend({
 
 						alert('Sorry, Invalid Email');
 
-						$(elem).text('Send');
-						$(elem).attr('disabled',false);
-						that.disable_buttons = false;
+						// $(elem).text('Send');
+						// $(elem).attr('disabled',false);
+						// that.disable_buttons = false;
+						that.cancel_sending(that, elem);
 						return false;
 					}
 
@@ -2923,8 +2971,8 @@ App.Views.CommonReply = Backbone.View.extend({
 			// Email: _.filter( App.Data.Store.Email,function(email){
 			// 		if(email.attributes.thread_id == that.threadid) return true;
 			// 	})
-			Thread: this.options.ThreadModel.toJSON(),
-			Email: this.options.EmailModels.toJSON()
+			Thread: this.ThreadModel.toJSON(),
+			Email: this.EmailModels.toJSON()
 		};	
 
 		// Figure out who I'm replying to
@@ -3400,7 +3448,193 @@ App.Views.CommonCompose = Backbone.View.extend({
 		
 	},
 
+	cancel_sending: function(that, elem){
+
+		$(elem).text('Send');
+		$(elem).attr('disabled',false);
+		that.disable_buttons = false;
+	},
+
 	send: function(ev){
+		// Validate sending the email
+		// Send the email
+		var that = this;
+
+		var elem = ev.currentTarget;
+
+		// Disable buttons
+		$(elem).text('Sending...');
+		$(elem).attr('disabled','disabled');
+		this.disable_buttons = true;
+
+		// Throw into a different view after success?
+		
+		// Subject
+		var subject = that.$('#subject').val(); // reply subject: this.EmailModels.last().toJSON().original.headers.Subject;
+
+		// To
+		var to = [];
+		this.$('.participant').each(function(index){
+			to.push($(this).attr('data-email'));
+		});
+		to = to.join(',');
+
+		// From
+		var from = App.Data.UserEmailAccounts.at(0).get('email');
+
+		// Body of email
+		var textBody = that.$('#textbody').val();
+
+		// Do a little bit of validation
+		try {
+			if(!to.length > 0){
+				alert('You need to send to somebody!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!from.length > 0){
+				alert('Whoops, we cannot send from your account right now');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!subject.length > 0){
+				alert('You need to write a subject line!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+			if(!textBody.length > 0){
+				alert('You need to write something in your email!');
+				that.cancel_sending(that, elem);
+				return false;
+			}
+
+		} catch(err){
+			console.error('Failed validation');
+			console.error(err);
+			that.cancel_sending(that, elem);
+			return false;
+
+		}
+
+		// Send return email
+		var eventData = {
+			event: 'Email.send.validate',
+			delay: 0,
+			obj: {
+				To: to,
+				From: from,
+				Subject: subject,
+				Text: textBody,
+				headers: {
+				},
+				attachments: []
+			}
+		};
+
+		// Add attachments
+		// - not required
+		that.$('.file_attachment').each(function(idx, fileElem){
+			eventData.obj.attachments.push({
+				_id: $(fileElem).attr('data-file-id'),
+				name: $(fileElem).attr('data-file-name')
+			});
+		});
+
+		// Validate sending
+		Api.event({
+			data: eventData,
+			response: {
+				"pkg.native.email" : function(response){
+					// Handle response (see if validated to send)
+					// clog('Response');
+					// clog(response);
+					// clog(response.body.code);
+
+					// Update the view code
+					if(response.body.code == 200){
+						// Ok, validated sending this email
+						clog('Valid email to send');
+					} else {
+						// Failed, had an error
+
+						alert('Sorry, Invalid Email');
+
+						// $(elem).text('Send');
+						// $(elem).attr('disabled',false);
+						// that.disable_buttons = false;
+						that.cancel_sending(that, elem);
+						return false;
+					}
+
+					// Get rate-limit info
+					tmp_rate_limit = response.body.data;
+
+					// Over rate limit?
+					if(tmp_rate_limit.current + 1 >= tmp_rate_limit.rate_limit){
+
+						alert('Sorry, Over the Rate Limit (25 emails per 6 hours)');
+
+						$(elem).text('Send');
+						$(elem).attr('disabled',false);
+						that.disable_buttons = false;
+						return false;
+						
+					}
+
+					// All good, SEND Email
+					eventData.event = 'Email.send';
+
+					// Log
+					clog('sending reply Email');
+					clog(eventData);
+
+					Api.event({
+						data: eventData,
+						response: {
+							"pkg.native.email" : function(response){
+								
+								// Update the view code
+								if(response.body.code == 200){
+									// Sent successfully
+
+								} else {
+									// Failed, had an error sending
+
+									alert('Sorry, we might have failed sending this email');
+									
+									$(elem).text('Send');
+									$(elem).attr('disabled',false);
+									that.disable_buttons = false;
+									return false;
+								}
+
+
+								// Sent successfully! 
+
+								// Add to Email thread?
+								// - no, wait for the Email to be received, and it was be updated
+
+								that.after_sent();
+
+							}
+						}
+					});
+
+
+
+					// if validation ok, then continue to the next one
+					// - resolve or call?
+
+				}
+			}
+		});
+
+
+		return false;
+
+	},
+
+	send_old: function(ev){
 		// Send the email
 		// - Validate sending the email
 		var that = this,
@@ -4796,7 +5030,10 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		'click .multi-done' : 'multi_done',
 		'click .multi-delay' : 'multi_delay',
 
-		'multi-change .all_threads' : 'multi_options'
+		'multi-change .all_threads' : 'multi_options',
+
+		'click #dk_container_options .dk_toggle' : 'toggle_all',
+		'click #dk_container_options .dk_options a' : 'all_action'
 
 	},
 
@@ -4949,6 +5186,12 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Emit checker for multi-select
 		this.trigger('check_multi_select');
 
+		// Hide "all" options
+		that.$('#dk_container_options').removeClass('dk_open');
+
+		// Recheck count
+		this.checkCount();
+
 		// Print out number of views
 		console.log('number of views_1_');
 		console.log(that.useCollection.length);
@@ -5021,7 +5264,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var idx = that.useCollection.indexOf(thread);
 
 		// Create the View
-		var dv = new App.Views.SubCommonThread({
+		thread.dv = new App.Views.SubCommonThread({
 			model : thread,
 			threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
 			idx_in_collection: idx,
@@ -5029,7 +5272,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			parentView: that
 		});
 
-		var dvView = dv.render().el;
+		var dvView = thread.dv.render().el;
 
 		// Add to the correct place
 		// - not actually rendering yet though
@@ -5044,7 +5287,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		}
 
 		// Add to subViews
-		that._subViews.push(dv);
+		that._subViews.push(thread.dv);
 
 		// Re-sort the views we have
 		that._subViews = _.sortBy(that._subViews,function(sV){
@@ -5081,7 +5324,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			thread.Rendered = true;
 
 			// Fire the render_ready on the dvView
-			dv.trigger('render_ready');
+			thread.dv.trigger('render_ready');
 
 			// // Remove .inbox_zero if it exists
 			// // - move this to the actual "I'm ready to render" method
@@ -5255,11 +5498,25 @@ App.Views.Inbox_Base = Backbone.View.extend({
 	checkCount: function(){
 		var that = this;
 
+		// Update with local data
 		var eventData = {
 			count: that.useCollection.length,
 			type: that.threadType
 		};
 		App.Events.trigger('Main.UpdateCount', eventData);
+
+		// Get the count according to the API
+		this.useCollection.fetchCount()
+			.then(function(countVal){
+
+				var eventData = {
+					count: countVal,
+					type: that.threadType
+				};
+				App.Events.trigger('Main.UpdateCount', eventData);
+
+			});
+
 	},
 
 	remove_thread : function(model) {
@@ -5278,7 +5535,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Change the view's opacity:
 		// - or change based on whatever happened to it?
 		// - also depends on if it was a remote change, right? 
-		$(viewToRemove.el).css('opacity', 0.2);
+		$(viewToRemove.el).css('opacity', 0.5);
 
 		// don't actually remove it?
 		// - only remove it when refresh is called
@@ -5298,9 +5555,23 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 	},
 
-	change_thread: function(model){
+	change_thread: function(thread){
 		// Change triggered
-		console.log('change?');
+		// - new email or something on the Thread
+
+		// Trigger refresh of the view
+		// - just as if re-rendering
+		var that = this.this,
+			threadType = this.threadType;
+
+		// figure out the status of this guy
+		// - we don't want to re-render if we just changed the view for it
+		
+		// trigger render_ready again
+		console.log('changed thread!');
+		console.log(thread);
+		thread.dv.trigger('render_ready');
+
 	},
 
 	all_emails: function(emails){
@@ -5334,6 +5605,78 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var that = this;
 	},
 
+	toggle_all: function(ev){
+		// Show/hide options for all
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $parent = this.$('#dk_container_options');
+		console.log($parent);
+
+		if($parent.hasClass('dk_open')){
+			$parent.removeClass('dk_open');
+		} else {
+			$parent.addClass('dk_open');
+		}
+
+	},
+
+	all_action: function(ev){
+		// Clicked a button for actions on all (in current collection)
+
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Gather all the affected ones
+		// - already in this collection, basically
+		var incl_thread_ids = _.map(that.useCollection.toJSON(), function(col){
+			return col._id;
+		});
+
+		// Hide options
+		that.$('#dk_container_options').removeClass('dk_open');
+
+		// return if no threads in collection
+		if(incl_thread_ids.length < 1){
+			// Whoops, none to do
+			// that.$('#dk_container_options').removeClass('dk_open');
+			return false;
+		}
+
+		// Run action based on button clicked
+		switch($(elem).attr('data-action')){
+			case "done":
+				alert('done, not done yet');
+				break;
+			case "due":
+				if(that.threadType != "delayed"){
+					that.after_multi_delay_modal(new Date(), 'Now Due', incl_thread_ids);
+				}
+				break;
+			case "wait_reply":
+				alert('wating for reply not ready yet');
+				break;
+			case "few_hours":
+				that.after_multi_delay_modal( (3).hours().fromNow() , '3 Hours', incl_thread_ids);
+				break;
+			case "pick_time":
+				
+				// Display delay_modal Subview
+				var subView = new App.Views.DelayModal({
+					context: that,
+					onComplete: function(wait, save_text){
+						that.after_multi_delay_modal(wait, save_text, incl_thread_ids);
+					}
+				});
+				$('body').append(subView.$el);
+				subView.render();
+
+				break;
+		}
+		
+		return false;
+	},
+
 	multi_options: function(){
 		// Displays (or hides) multi-select options
 		var that = this;
@@ -5342,11 +5685,16 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		// See if there are any views that are multi-selected
 		if(this.$('.multi-selected').length > 0){
+
 			this.show_multi_options = true;
 			this.$('.multi_select_options').removeClass('no_multi_select');
+
+			this.$('.lot_options_flag').addClass('nodisplay');
 		} else {
 			this.show_multi_options = false;
 			this.$('.multi_select_options').addClass('no_multi_select');
+
+			this.$('.lot_options_flag').removeClass('nodisplay');
 		}
 
 		// // On or off?
@@ -5523,7 +5871,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		var that = this;
 
 		// Show multi-options
-		$('.multi_select_options').removeClass('nodisplay');
+		this.$('.multi_select_options').removeClass('nodisplay');
 
 		// Return if a null value was sent through by DelayModal
 		if(!wait){
@@ -5876,6 +6224,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Write HTML
 		this.$el.prepend(template(this.threadType));
 
+		// // Update count
+		// that.checkCount();
+
 		return this;
 		
 	},
@@ -5944,6 +6295,9 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 			// Scroll to bottom (yeah?)
 			this.$('.scroller').scrollTop(10000);
+
+			// Hide "all" options
+			that.$('#dk_container_options').removeClass('dk_open');
 
 			// Check inbox_zero
 			this.check_inbox_zero();
@@ -6187,6 +6541,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			this.$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
 			this.$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
 			this.$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
+			this.$(".thread-preview").on('touchcancel',App.Plugins.Minimail.thread_main.cancel);
 
 			
 		} else {
@@ -6194,6 +6549,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			this.$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
 			this.$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 			this.$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+			this.$(".thread-preview").on('mouseleave',App.Plugins.Minimail.thread_main.cancel);
 			
 		}
 
@@ -6541,12 +6897,14 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			this.$(".thread-preview").on('touchstart',App.Plugins.Minimail.thread_main.start);
 			this.$(".thread-preview").on('touchmove',App.Plugins.Minimail.thread_main.move);
 			this.$(".thread-preview").on('touchend',App.Plugins.Minimail.thread_main.end);
+			this.$(".thread-preview").on('touchcancel',App.Plugins.Minimail.thread_main.cancel);
 			
 		} else {
 
 			this.$(".thread-preview").on('mousedown',App.Plugins.Minimail.thread_main.start);
 			this.$(".thread-preview").on('mousemove',App.Plugins.Minimail.thread_main.move);
 			this.$(".thread-preview").on('mouseup',App.Plugins.Minimail.thread_main.end);
+			this.$(".thread-preview").on('mouseleave',App.Plugins.Minimail.thread_main.cancel);
 			
 		}
 
@@ -6729,6 +7087,7 @@ App.Views.LeisureList = Backbone.View.extend({
 			$(elem[1].el).addClass('closing_nicely');
 
 		});
+
 
 	},
 
@@ -9675,15 +10034,17 @@ App.Views.Settings = Backbone.View.extend({
 		];
 
 		// Remove device-specif options
-		if(device.platform == "iOS"){
-			settings = _.filter(settings,function(setting){
-				switch(setting.key){
-					case 'close':
-						return false;
-					default:
-						return true;
-				}
-			});
+		if(usePg){
+			if(device.platform == "iOS"){
+				settings = _.filter(settings,function(setting){
+					switch(setting.key){
+						case 'close':
+							return false;
+						default:
+							return true;
+					}
+				});
+			}
 		}
 
 		// Write HTML
@@ -10616,6 +10977,8 @@ App.Views.DelayModal = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
+		ev.preventDefault();
+
 		// Valid?
 		if($(elem).hasClass('ignore')){
 			return false;
@@ -10766,7 +11129,7 @@ App.Views.DelayModal = Backbone.View.extend({
 		var that = this;
 
 		// Hide options nicely
-		that.$('.options').addClass('hiding');
+		that.$('.options').addClass('nodisplay');
 
 		// Set values for time scroller
 		var parsedScrollValues = App.Plugins.Minimail.formatTimeForScroll(wait);
@@ -10781,7 +11144,6 @@ App.Views.DelayModal = Backbone.View.extend({
 
 		// Trigger date confirmation
 		window.setTimeout(function(){
-			that.$('.options').addClass('nodisplay');
 			that.$('.choose_datetime').removeClass('nodisplay');
 		
 			// Full calendar
