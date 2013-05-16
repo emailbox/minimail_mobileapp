@@ -1089,7 +1089,7 @@ var Api = {
 						// What was the error?
 						// - pass it along to responses
 						
-						_.each(queriesToRun, function(elemData){
+						_.each(searchesToRun, function(elemData){
 							elemData[0].reject(response);
 							if(elemData[1].error){
 								elemData[1].error(response);
