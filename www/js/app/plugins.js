@@ -396,6 +396,8 @@ App.Plugins.Minimail = {
 			success: function(response){
 				// Update the 
 				clog('updated');
+
+				dfd.resolve();
 			}
 		});
 
@@ -773,10 +775,12 @@ App.Plugins.Minimail = {
 						// - mark as done
 
 						App.Utils.toast('Marked as done');
-						App.Plugins.Minimail.saveAsDone(thread_id); // should also kill any wait_until queues
-
-						// emit thread.delay 
-						App.Events.trigger('Thread.delay', thread_id);
+						
+						App.Plugins.Minimail.saveAsDone(thread_id)
+							.then(function(){
+								// emit thread.delay 
+								App.Events.trigger('Thread.done', thread_id);
+							}); 
 
 						// Scroll the window
 						if($(this).parents('.thread').is(':last-child')){
@@ -852,10 +856,13 @@ App.Plugins.Minimail = {
 							var in_seconds = now_sec + (delay_seconds);//(60*60*3);
 
 							// save the delay
-							App.Plugins.Minimail.saveNewDelay(thread_id,in_seconds,delay_seconds);
+							App.Plugins.Minimail.saveNewDelay(thread_id,in_seconds,delay_seconds)
+								.then(function(){
 
-							// emit event
-							App.Events.trigger('Thread.delay', thread_id);
+									// emit event
+									App.Events.trigger('Thread.delay', thread_id);
+								});
+
 
 
 						} else {
@@ -877,7 +884,7 @@ App.Plugins.Minimail = {
 					if(x_total_diff < 40 && y_total_diff < 40){
 						// Didn't travel too far
 
-						// 
+						// shorttap or longtap
 						var newTime = new Date().getTime();
 						var elapsed = newTime - parseInt($(that).attr('finger-time'), 10);
 						if(elapsed < 300){
@@ -892,6 +899,19 @@ App.Plugins.Minimail = {
 					App.Plugins.Minimail.revert_box(this);
 
 				}
+			}
+				
+
+		},
+
+		cancel: function(e){
+			var that = this;
+			
+			if($(this).hasClass('touch_start')){
+				
+				// Revert back to original position
+				App.Plugins.Minimail.revert_box(this);
+
 			}
 				
 
