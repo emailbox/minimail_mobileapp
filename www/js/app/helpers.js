@@ -954,8 +954,10 @@ Handlebars.registerHelper("display_bodies", function(Email) {
 		content = App.Utils.nl2br(content,false);
 		if(i == 1){
 			try {
-				content = Email.AppPkgDevMinimail.textbody_edited;
-				content = App.Utils.nl2br(content,false);
+				if(Email && Email.AppPkgDevMinimail && Email.AppPkgDevMinimail.textbody_edited){
+					content = Email.AppPkgDevMinimail.textbody_edited;
+					content = App.Utils.nl2br(content,false);
+				}
 			} catch(err){
 				
 			}
@@ -1018,6 +1020,32 @@ Handlebars.registerHelper("display_body", function(Email) {
 	}
 
 	return new Handlebars.SafeString(tmp);
+
+});
+
+
+Handlebars.registerHelper("topflag", function(flag_name) {
+	// Display the first ParsedData entry
+	// - hide any additional entries
+
+	var flag = "";
+
+	switch(flag_name){
+		case "undecided":
+			flag = "New Threads";
+			break;
+		case "delayed":
+			flag = "Now Due";
+			break;
+		case "later":
+			flag = "Due Later";
+			break;
+		default:
+			break;
+	}
+
+	return new Handlebars.SafeString(flag);
+
 
 });
 
@@ -1389,11 +1417,10 @@ Handlebars.registerHelper("inbox_zero_words", function() {
 	// Words/phrases to choose from
 	// - html ok
 	var words = ['Fuck Yeah', 
-				'Believe It.', 
+				'Good Job', 
 				'Solid.',
-				'Once Again!',
-				'Noice',
-				'Inbox: 0']; // get clever
+				'Nice Work',
+				'Noice'];
 
 	return words[Math.floor(Math.random()*words.length)];
 });
