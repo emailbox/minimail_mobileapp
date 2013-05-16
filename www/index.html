@@ -42,6 +42,7 @@
 
 
 	<link href="css/bootstrap.css" type="text/css" rel="stylesheet"> <!-- Uncomment below if switching to Less-compiled -->
+	<link href="css/flat-ui.css" type="text/css" rel="stylesheet">
 	<link href="css/mobiscroll.custom-2.4.4.min.css" type="text/css" rel="stylesheet">
 
 	<!-- Extra.css needs to be below less compiled -->
@@ -246,57 +247,44 @@
 			<div class="footer_holder clearfix">
 
 				<div class="base_header_menu clearfix">
-					<div class="left">
-						<div class="btn-group pull-right-old">
-							<button data-action="compose" class="btn">
-								<i class="icon-envelope"></i>
-							</button>
+					<div class="left text-center">
+			            <div class="btn-toolbar">
+							<div class="btn-group">
+								<a data-action="compose" class="btn btn-info btn-compose">
+									<i class="fui-new-16"></i>
+								</a>
+							</div>
 						</div>
 					</div>
-					<div class="center">
+					<div class="center text-center">
 
-						<div class="text-center">
-
+			            <div class="btn-toolbar">
 							<div class="btn-group threads_change">
-								
-								{{!
-								<button data-action="undecided" class="btn">
-									<i class="icon-inbox"></i>
-								</button>
-								<button data-action="delayed" class="btn">
-									<i class="icon-time"></i>
-								</button>
-								}}
 
-								<button data-action="dunno" class="btn">
-									<i class="icon-inbox"></i>
-								</button>
-								<button data-action="now" class="btn">
-									<i class="icon-time"></i>
-								</button>
-								<button data-action="later" class="btn">
-									<i class="icon-road"></i>
-								</button>
-								<button data-action="leisure" class="btn nodisplay">
-									<i class="icon-glass"></i>
-								</button>
-								<button data-action="search" class="btn">
-									<i class="icon-search"></i>
-								</button>
-
-								{{!
-								<button data-action="collections" class="btn">
-									<i class="icon-list"></i>
-								</button>
-								}}
+								<a data-action="dunno" class="btn btn-info">
+									<i class="fui-mail-16"></i>
+								</a>
+								<a data-action="now" class="btn btn-info">
+									<i class="fui-time-16"></i>
+								</a>
+								<a data-action="later" class="btn btn-info">
+									<i class="fui-calendar-16"></i>
+								</a>
+								<a data-action="search" class="btn btn-info">
+									<i class="icon-search icon-white"></i>
+								</a>
 								
 							</div>
 						</div>
 
 					</div>
-					<div class="right">
-						<div class="logo">
-							<span>mM</span>
+					<div class="right text-center">
+			            <div class="btn-toolbar text-center">
+							<div class="btn-group">
+								<a class="btn btn-info logo btn-menu">
+									<i class="fui-menu-16"></i>
+								</a>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -370,14 +358,14 @@
 							{{> t_undecided_thread}}
 
 							<div class="thread-bg thread-bg-ok">
-								<i class="icon-ok"></i>
+								<i class="fui-checkround-16"></i>
 								<p>
 									Done
 								</p>
 							</div>
 
 							<div class="thread-bg thread-bg-time">
-								<i class="icon-time"></i>
+								<i class="fui-time-16"></i>
 								<p>
 									&nbsp;
 								</p>
@@ -619,8 +607,7 @@
 				</div>
 
 				<div class="delay-modal-exit">
-					<br />
-					<span>X</span>
+					<span><i class="fui-cross-24"></i></span>
 				</div>
 
 			</div>
@@ -768,10 +755,13 @@
 
 			<div class="multi_select_options no_multi_select">
 
-				<button data-action="multi-deselect" class="btn multi-deselect">Deselect All</button>
-				
-				<button data-action="multi-done" class="btn multi-done">Done</button>
-				<button data-action="multi-delay" class="btn multi-delay">Delay</button>
+				<div class="btn-toolbar">
+					<div class="btn-group">
+						<button data-action="multi-deselect" class="btn btn-default multi-deselect">Deselect All</button>
+						<button data-action="multi-done" class="btn btn-primary multi-done">Done</button>
+						<button data-action="multi-delay" class="btn btn-default multi-delay">Delay</button>
+					</div>
+				</div>
 
 			</div>
 			<div class="all_threads threads_holder data-lsp scroller">
@@ -833,16 +823,66 @@
 
 	<script id="t_all_structure" type="text/x-handlebars-template">
 
-		<div class="top_flag flag_type_{{this}} slide-from-left">
-			{{this}}
+		<!--
+		<div class="top_flag flag_type_{{this}} slide-from-left nodisplay">
+			{{topflag this}}
+		</div>
+		-->
+
+		<div class="lot_options_flag flag_type_{{this}} slide-from-right">
+			
+
+			<div class="dk_container span3 dk_shown dk_theme_default" id="dk_container_options" tabindex="1">
+				<a class="dk_toggle">
+					<span class="dk_label">
+						{{topflag this}}
+					</span>
+					<span class="select-icon">
+						&#x25BC;
+					</span>
+				</a>
+				<div class="dk_options" style="top: 44px;">
+					<ul class="dk_options_inner">
+						<li class="done"><a data-action="done">Done</a></li>
+						<li class="now"><a data-action="due">Now Due</a></li>
+						<li class="delay"><a data-action="wait_reply">Wait for Reply</a></li>
+						<li class="delay"><a data-action="few_hours">Few Hours</a></li>
+						<li class="delay"><a data-action="pick_time">Pick a Time</a></li>
+					</ul>
+				</div>
+			</div>
+
+
+			<!--
+			<ul class="pager">
+                <li class="previous">
+                  <a href="#">
+                    2 Total Message
+                  </a>
+                </li>
+                <li class="next">
+                  <a href="#">
+                    &#x25BC;
+                  </a>
+                </li>
+             </ul>
+             -->
+		
+
 		</div>
 
 		<div class="multi_select_options no_multi_select">
 
-			<button data-action="multi-deselect" class="btn multi-deselect">Deselect All</button>
-			
-			<button data-action="multi-done" class="btn multi-done">Done</button>
-			<button data-action="multi-delay" class="btn multi-delay">Delay</button>
+				<div class="btn-toolbar">
+					<div class="btn-group">
+
+						<button data-action="multi-deselect" class="btn btn-default multi-deselect">Deselect All</button>
+						<button data-action="multi-done" class="btn btn-primary multi-done">Done</button>
+						<button data-action="multi-delay" class="btn btn-warning multi-delay">Delay</button>
+
+					</div>
+
+				</div>
 
 		</div>
 		<div class="all_threads threads_holder data-lsp scroller">
@@ -856,14 +896,14 @@
 		{{> t_all_thread}}
 
 		<div class="thread-bg thread-bg-ok">
-			<i class="icon-ok"></i>
+			<i class="fui-checkround-24" style="font-size:16px;"></i>
 			<p>
 				Done
 			</p>
 		</div>
 
 		<div class="thread-bg thread-bg-time">
-			<i class="icon-time"></i>
+			<i class="fui-time-24" style="font-size:16px;"></i>
 			<p>
 				&nbsp;
 			</p>
@@ -889,9 +929,11 @@
 
 	<script id="t_all_now_done" type="text/x-handlebars-template">
 
+		<!--
 		<div class="top_flag flag_type_{{this}} slide-from-left">
 			{{this}}
 		</div>
+		-->
 		
 		<div class="inbox_zero fade-in-looks-weird">
 
@@ -908,9 +950,11 @@
 
 	<script id="t_all_later_done" type="text/x-handlebars-template">
 
+		<!--
 		<div class="top_flag flag_type_{{this}} slide-from-left">
 			{{this}}
 		</div>
+		-->
 		
 		<div class="inbox_zero fade-in-looks-weird">
 			<span class="words">No Upcoming</span>
@@ -926,9 +970,11 @@
 
 	<script id="t_all_due_done" type="text/x-handlebars-template">
 
+		<!--
 		<div class="top_flag flag_type_{{this}} slide-from-left">
 			{{this}}
 		</div>
+		-->
 		
 		<div class="inbox_zero fade-in-looks-weird">
 			<span class="words">None Due!</span>
@@ -1055,35 +1101,46 @@
 
 			</div>
 
+			<!--
 			<div class="footer2 thread_footer common_thread">
 
-				<div class="reply">
-					<div class="btn">
-						&lt; reply
-					</div>
-
-				</div>
-				<!--
-				<div class="forward">
-					<div class="btn">
-						forward &gt;
+				<div class="btn-toolbar">
+					<div class="btn-group btn-single reply">
+						
+						<div class="btn btn-info">
+							&lt; reply
+						</div>
 					</div>
 				</div>
-				-->
 
 			</div>
+			-->
 
 			<div class="footer">
 						
 				<div class="footer_holder clearfix">
 
-					<div class="base_header_menu undecided_thread_viewing clearfix">
+					<div class="base_header_menu thread_viewing clearfix">
 						<div class="left">
-							<div class="btn-group">
-								<button data-action="back" class="btn">Back</button>
+							<div class="btn-toolbar">
+								<div class="btn-group">
+									<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn btn-info">
+										<i class="fui-time-24"></i>
+									</button>
+									<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn btn-info">
+										<i class="fui-checkmark-24"></i>
+									</button>
+									<button data-action="reply" class="btn btn-info btn-reply">Reply</button>
+									<!--
+									<button data-action="pin" class="btn">
+										<i class="icon-upload"></i>
+									</button>
+									-->
+								</div>
 							</div>
 						</div>
 
+						<!--
 						<div class="center ">
 							<div class="btn-group pull-right">
 								<button data-action="leisure" class="btn nodisplay">
@@ -1091,20 +1148,13 @@
 								</button>
 							</div>
 						</div>
+						-->
 
 						<div class="right">
-							<div class="btn-group pull-right">
-								<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn">
-									<i class="icon-time"></i>
-								</button>
-								<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn">
-									<i class="icon-ok"></i>
-								</button>
-								<!--
-								<button data-action="pin" class="btn">
-									<i class="icon-upload"></i>
-								</button>
-								-->
+							<div class="btn-toolbar">
+								<div class="btn-group btn-single pull-right">
+									<button data-action="back" class="btn btn-default">Back</button>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -1281,8 +1331,24 @@
 
 			<div class="header at-top">
 						
-				<div class="header_holder clearfix">
+				<div class="header_holder text-center clearfix">
 
+
+					<div class="btn-toolbar">
+		                <div class="btn-group btn-single">
+		                  <a class="btn btn-default" href="#" data-action="cancel">Cancel</a>
+		                </div>
+		                <div class="btn-group two-with-separator">
+		                  <a class="btn btn-info" href="#" data-action="thread">Thread</a>
+		                  <a class="btn btn-info" href="#" data-action="contacts"><i class="fui-man-16"></i></a>
+		                </div>
+		                <div class="btn-group btn-single">
+		                  <a class="btn btn-success" href="#" data-action="send">Send</a>
+		                </div>
+	                </div>
+	            
+
+					<!--
 					<div class="base_header_menu common_reply clearfix">
 						<div class="left">
 							<div class="btn-group">
@@ -1301,7 +1367,7 @@
 							</div>
 						</div>
 					</div>
-						
+						-->
 
 				</div>
 				
@@ -1387,23 +1453,27 @@
 
 				<div class="base_header_menu clearfix">
 					<div class="left">
-						<div class="btn-group">
-							<button data-action="contact" class="btn">
-								Contacts
-							</button>
-							<button data-action="contact_write" class="btn">
-								...
-							</button>
+						<div class="btn-toolbar">
+							<div class="btn-group two-with-separator">
+								<button data-action="contact" class="btn btn-info">
+									<i class="fui-man-16"></i>
+								</button>
+								<button data-action="contact_write" class="btn btn-info">
+									...
+								</button>
+							</div>
 						</div>
 					</div>
 					<div class="right">
-						<div class="btn-group pull-right">
-							<button data-action="cancel" class="btn">
-								Cancel
-							</button>
-							<button data-action="send" class="btn btn-success btn-send">
-								Send
-							</button>
+						<div class="btn-toolbar">
+							<div class="btn-group two-with-separator pull-right_old">
+								<button data-action="cancel" class="btn btn-default">
+									Cancel
+								</button>
+								<button data-action="send" class="btn btn-success btn-send">
+									Send
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -1914,7 +1984,7 @@
 			<div class="search_input">
 
 				<div class="search_prefilters">
-					<button class="btn show_search">Search</button>
+					<button class="btn btn-primary show_search">Search</button>
 					<select class="prefilters_select">
 						{{#each filter_options}}
 							<option class="prefilter" value="{{key}}">{{name}}</option>
@@ -1924,7 +1994,7 @@
 
 			    <div class="form-search nodisplay">
 					<input type="text" class="input search-query">
-					<button class="btn submit" type="submit">Search</button>
+					<button class="btn btn-primary submit" type="submit">Search</button>
 			    	<button class="btn btn-danger cancel">X</button>
 				</div>
 			</div>
@@ -1938,7 +2008,7 @@
 
 		{{#each this}}
 
-			<div class="thread no_text_select" data-id="{{Thread._id}}" data-thread-type="undecided">
+			<div class="thread no_text_select" data-id="{{Thread._id}}" data-thread-type="searching">
 
 				<div class="thread-preview clearfix" data-thread-id="{{Thread._id}}" data-thread-read="{{Thread.attributes.read.status}}">
 
@@ -2082,7 +2152,7 @@
 			<div class="search_input">
 
 				<div class="search_prefilters">
-					<button class="btn show_search">Search</button>
+					<button class="btn btn-primary show_search">Search</button>
 					<select class="prefilters_select">
 						{{#each filter_options}}
 							<option class="prefilter" value="{{key}}">{{name}}</option>
@@ -2092,7 +2162,7 @@
 
 			    <div class="form-search nodisplay">
 					<input type="text" class="input search-query">
-					<button class="btn submit" type="submit">Search</button>
+					<button class="btn btn-primary submit" type="submit">Search</button>
 			    	<button class="btn btn-danger cancel">X</button>
 				</div>
 			</div>
@@ -2149,7 +2219,7 @@
 			<div class="search_input">
 
 				<div class="search_prefilters">
-					<button class="btn show_search">Search</button>
+					<button class="btn btn-primary show_search">Search</button>
 					<select class="prefilters_select">
 						{{#each filter_options}}
 							<option class="prefilter" value="{{key}}">{{name}}</option>
@@ -2159,7 +2229,7 @@
 
 			    <div class="form-search nodisplay">
 					<input type="text" class="input search-query">
-					<button class="btn submit" type="submit">Search</button>
+					<button class="btn btn-primary submit" type="submit">Search</button>
 			    	<button class="btn btn-danger cancel">X</button>
 				</div>
 			</div>
@@ -2379,10 +2449,12 @@
 						</h1>
 					</div>
 					<div class="right">
-						<div class="btn-group pull-right">
-							<button data-action="cancel" class="btn cancel">
-								Back
-							</button>
+						<div class="btn-toolbar">
+							<div class="btn-group btn-single pull-right">
+								<button data-action="cancel" class="btn btn-default cancel">
+									Back
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -2425,10 +2497,12 @@
 						</h1>
 					</div>
 					<div class="right">
-						<div class="btn-group pull-right">
-							<button data-action="cancel" class="btn cancel">
-								Back
-							</button>
+						<div class="btn-toolbar">
+							<div class="btn-group btn-single pull-right">
+								<button data-action="cancel" class="btn cancel">
+									Back
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -2490,10 +2564,12 @@
 						</h1>
 					</div>
 					<div class="right">
-						<div class="btn-group pull-right">
-							<button data-action="cancel" class="btn cancel">
-								Back
-							</button>
+						<div class="btn-toolbar">
+							<div class="btn-group btn-single pull-right">
+								<button data-action="cancel" class="btn cancel">
+									Back
+								</button>
+							</div>
 						</div>
 					</div>
 				</div>
