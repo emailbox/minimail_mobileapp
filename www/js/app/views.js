@@ -286,12 +286,32 @@ App.Views.Body = Backbone.View.extend({
 		// Fix fluid layout
 		this.resize_fluid_page_elements();
 
-		// Load the Undecided View
+		// Load the /Undecided/Dunno/New View
 		// Backbone.history.loadUrl('undecided');
 		var doclick = 'dunno';
 		this.$('.base_header_menu a[data-action="'+doclick+'"]').addClass('active');
 		Backbone.history.loadUrl(doclick);
 		// this.$('.base_header_menu button[data-action="'+doclick+'"]').trigger('touchend');
+
+
+		// Launch startup tutorial if necessary
+
+		// Update startup tutorial settings
+		var latest_tut_num = 2;
+		App.Utils.Storage.get('startup_tutorial','critical')
+			.then(function(tut_num){
+				if(!tut_num != latest_tut_num){
+					// Not created, show screen
+
+					var startup_tut = new App.Views.StartupTutorial();
+					startup_tut.render();
+
+					// Save as viewed
+					App.Utils.Storage.set('startup_tutorial',latest_tut_num,'critical');
+					
+				}
+
+			});
 
 		return this;
 	},
@@ -5566,7 +5586,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		// figure out the status of this guy
 		// - we don't want to re-render if we just changed the view for it
-		
+
 		// trigger render_ready again
 		console.log('changed thread!');
 		console.log(thread);
@@ -9846,6 +9866,7 @@ App.Views.Settings = Backbone.View.extend({
 		// Close myself
 		this.close();
 
+		ev.preventDefault();
 		return false;
 	},
 
@@ -10088,6 +10109,7 @@ App.Views.GeneralSettings = Backbone.View.extend({
 
 		this.back();
 
+		ev.preventDefault();
 		return false;
 	},
 
@@ -10233,6 +10255,7 @@ App.Views.SpeedTest = Backbone.View.extend({
 
 		this.back();
 
+		ev.preventDefault();
 		return false;
 	},
 
@@ -10720,6 +10743,50 @@ App.Views.BodyUnreachable = Backbone.View.extend({
 
 		return this;
 	}
+});
+
+
+App.Views.StartupTutorial = Backbone.View.extend({
+	
+	el: 'body',
+
+	events: {
+		'click .go_tut' : 'watch_tutorial',
+		'click .no_tut' : 'no_tutorial'
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+	},
+
+	watch_tutorial: function(){
+		alert('Tutorial is a work-in-progress');
+		$('#modalTutorial').modal('hide');
+		return false;
+	},
+
+	no_tutorial: function(){
+		$('#modalTutorial').modal('hide');
+		return false;
+	},
+
+	render: function() {
+
+		// Remove any previous version
+		$('#modalTutorial').remove();
+
+		// Build from template
+		var template = App.Utils.template('t_startup_tutorial');
+
+		// Write HTML
+		$(this.el).append(template());
+
+		// Display Modal
+		$('#modalTutorial').modal();
+
+		return this;
+	}
+
 });
 
 
