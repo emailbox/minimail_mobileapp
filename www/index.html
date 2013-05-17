@@ -829,7 +829,7 @@
 		</div>
 		-->
 
-		<div class="lot_options_flag flag_type_{{this}} slide-from-right">
+		<div class="lot_options_flag flag_type_{{this}} slide-from-right_old">
 			
 
 			<div class="dk_container span3 dk_shown dk_theme_default" id="dk_container_options" tabindex="1">
@@ -843,11 +843,11 @@
 				</a>
 				<div class="dk_options" style="top: 44px;">
 					<ul class="dk_options_inner">
-						<li class="done"><a data-action="done">Done</a></li>
-						<li class="now"><a data-action="due">Now Due</a></li>
-						<li class="delay"><a data-action="wait_reply">Wait for Reply</a></li>
-						<li class="delay"><a data-action="few_hours">Few Hours</a></li>
-						<li class="delay"><a data-action="pick_time">Pick a Time</a></li>
+						<li class="done"><a data-action="done"><i class="fui-checkround-24"></i>&nbsp;&nbsp;&nbsp; Done</a></li>
+						<li class="now"><a data-action="due"><i class="fui-checkmark-24"></i>&nbsp;&nbsp;&nbsp; Now Due</a></li>
+						<li class="delay"><a data-action="wait_reply"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Wait for Reply</a></li>
+						<li class="delay"><a data-action="few_hours"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Few Hours</a></li>
+						<li class="delay"><a data-action="pick_time"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Pick a Time</a></li>
 					</ul>
 				</div>
 			</div>
@@ -1124,10 +1124,10 @@
 						<div class="left">
 							<div class="btn-toolbar">
 								<div class="btn-group">
-									<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn btn-info">
+									<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn btn-warning">
 										<i class="fui-time-24"></i>
 									</button>
-									<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn btn-info">
+									<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn btn-primary">
 										<i class="fui-checkmark-24"></i>
 									</button>
 									<button data-action="reply" class="btn btn-info btn-reply">Reply</button>
@@ -2691,11 +2691,35 @@
 	</script>
 
 
-	<!-- Intro template -->
+	<script id="t_startup_tutorial" type="text/x-handlebars-template">
+		<div class="modal hide" id="modalTutorial">
+			<div class="modal-body">
+				<h2>
+					Welcome to Minimail!
+				</h2>
+
+				<p>
+					Want to quickly learn how to use Minimail? 
+				</p>
+
+				<a class="btn btn-success go_tut">
+					<i class="fui-checkmark-16"></i> Yes, I want to learn
+				</a>
+
+				<a class="btn btn-default no_tut">
+					<i class="fui-cross-16"></i> No, I get it already
+				</a>
+
+			</div>
+		</div>
+	</script>
+
+
+	<!-- unused -->
 	<script id="t_modal_intro" type="text/x-handlebars-template">
 		<div class="modal hide" id="modalIntro">
 			<div class="modal-body">
-				<h3>Welcome to "Filemess"</h3>
+				<h3>Welcome</h3>
 			</div>
 		</div>
 	</script>
