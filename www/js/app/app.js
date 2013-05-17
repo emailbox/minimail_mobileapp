@@ -16,7 +16,7 @@ var App = {
 	Events: 	 _.extend({}, Backbone.Events),
 	Data: 		 {
 		// tmp_contacts: [], // testing contacts
-		version: "0.0.20",
+		version: "0.0.21",
 		online: true,
 		LoggedIn: false, // Logged into minimail servers
 		notifications_queue: [],
