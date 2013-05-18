@@ -453,7 +453,8 @@ App.Plugins.Minimail = {
 				if(response.data.length < 1){
 					// Not set
 					// - create w/ defaults
-					alert('Settings being created');
+					// alert('Settings being created');
+					App.Utils.Notification.toast('Settings being created');
 
 					// Default data to save to emailbox
 					var defaultData = {
@@ -757,7 +758,7 @@ App.Plugins.Minimail = {
 
 				var x_ratio_diff = Math.abs(x_diff / $(this).parents('.thread').width());
 
-
+				var $thread = $(this).parents('.thread');
 				var $parent_controller = $(this).parents('.all_threads');
 				// // Already in multi-select mode?
 				// if($parent_controller.hasClass('multi-select-mode')){
@@ -775,7 +776,7 @@ App.Plugins.Minimail = {
 						// - mark as done
 
 						App.Utils.toast('Marked as done');
-						
+
 						App.Plugins.Minimail.saveAsDone(thread_id)
 							.then(function(){
 								// emit thread.delay 
@@ -835,6 +836,15 @@ App.Plugins.Minimail = {
 
 						} else if(x_ratio_diff > App.Credentials.thread_move_x_threshold){
 							// $(this).parents('.thread').find('.thread-bg-time p').html('A Few Hours');
+
+							// Already delayed, because "Immediate" has no effect here
+							// alert($thread.attr('data-thread-type'));
+							if($thread.attr('data-thread-type') == 'delayed'){
+								App.Utils.Notification.toast('Already delayed');
+								App.Plugins.Minimail.revert_box(this);
+								return false;
+							}
+
 							$(this).parents('.thread').find('.thread-bg-time p').html('Immediate');
 
 							// Make wait_for be A Few Hours (or immediate)
