@@ -5590,7 +5590,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// trigger render_ready again
 		console.log('changed thread!');
 		console.log(thread);
-		thread.dv.trigger('render_ready');
+		thread.dv.trigger('render_change');
 
 	},
 
@@ -6541,6 +6541,7 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 		// Listen for render_ready
 		this.on('render_ready', this.render_ready, this);
+		this.on('render_change', this.render_change, this);
 	},
 
 	beforeClose: function(){
@@ -6885,6 +6886,19 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 		return false;
 
+	},
+
+	render_change: function(){
+		// This Thread has had a change occur on it
+		// - don't want to prevent .dragright stuff to be diminished
+
+		if(this.$el.hasClass('tripped') || this.$el.hasClass('finished')){
+			// already triggered, no need to refresh it
+			// console.log('ALREADY FINISHED');
+		} else {
+			// console.log('NOT ALREADY FINISHED');
+			this.render_ready();
+		}
 	},
 
 	render_ready: function(){
@@ -9815,6 +9829,7 @@ App.Views.Settings = Backbone.View.extend({
 		'click .setting[data-setting-type="general"]' : 'general_settings',
 		'click .setting[data-setting-type="sync"]' : 'sync_inbox',
 		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
+		'click .setting[data-setting-type="tutorial"]' : 'tutorial',
 		'click .setting[data-setting-type="flushcache"]' : 'flushcache',
 		'click .setting[data-setting-type="reload"]' : 'reload',
 		'click .setting[data-setting-type="close"]' : 'closeapp',
@@ -9916,6 +9931,37 @@ App.Views.Settings = Backbone.View.extend({
 		});
 
 		App.Utils.Notification.toast('Sync has been triggered, it may take a moment');
+
+		return;
+	},
+
+	tutorial: function(ev){
+		var that = this;
+
+		// Launch speedtest subView
+		// - should it really be a subView?
+
+		this.tutorial = new App.Views.StartupTutorial();
+
+		// Render the subView
+		this.tutorial.render();
+
+		// // Append to View
+		// this.$el.after(this.speedtestSubView.el); // could do this.speedtestSubView.render().el ?
+
+		// // Hide this View
+		// this.$el.hide();
+
+		// // Listen for subview closing
+		// this.speedtestSubView.on('back', function(){
+		// 	// Show the parent
+		// 	// - close the guy
+
+		// 	this.speedtestSubView.close();
+
+		// 	that.$el.show();
+
+		// }, this);
 
 		return;
 	},
@@ -10027,6 +10073,11 @@ App.Views.Settings = Backbone.View.extend({
 			// 	text: 'Theme',
 			// 	subtext: 'lots of pretty colors',
 			// },
+			{
+				key: 'tutorial',
+				text: 'Startup Tutorial',
+				subtext: 'what does this button do?',
+			},
 			{
 				key: 'speedtest',
 				text: 'Speed Test',
@@ -10748,25 +10799,54 @@ App.Views.BodyUnreachable = Backbone.View.extend({
 
 App.Views.StartupTutorial = Backbone.View.extend({
 	
-	el: 'body',
+	id: 'modalTutorial',
+	className: 'modal hide',
 
 	events: {
-		'click .go_tut' : 'watch_tutorial',
-		'click .no_tut' : 'no_tutorial'
+		'click .next_step' : 'next_step',
+		'click .exit_tutorial' : 'exit_tutorial'
 	},
+
+	current_step: 0,
+	steps: [
+		't_startup_tutorial_0',
+		't_startup_tutorial_1',
+		't_startup_tutorial_05',
+		't_startup_tutorial_2',
+		// 't_startup_tutorial_3',
+		't_startup_tutorial_4'
+	],
 
 	initialize: function() {
 		_.bindAll(this, 'render');
 	},
 
-	watch_tutorial: function(){
-		alert('Tutorial is a work-in-progress');
-		$('#modalTutorial').modal('hide');
+	next_step: function(){
+		// alert('Tutorial is a work-in-progress');
+		// $('#modalTutorial').modal('hide');
+
+		// Increase to next step
+		this.current_step++;
+
+		// Does that step exist?
+		if(this.steps.length < this.current_step){
+			alert('Abrupt end to tutorial, no?');
+			this.exit_tutorial();
+		}
+
+		// Build from template
+		var template = App.Utils.template(this.steps[this.current_step]);
+
+		// Write HTML
+		this.$('.modal-body').html(template());
+
 		return false;
 	},
 
-	no_tutorial: function(){
+	exit_tutorial: function(){
 		$('#modalTutorial').modal('hide');
+
+		// this.unbind();
 		return false;
 	},
 
@@ -10778,11 +10858,15 @@ App.Views.StartupTutorial = Backbone.View.extend({
 		// Build from template
 		var template = App.Utils.template('t_startup_tutorial');
 
+		this.$el.html(template());
+
 		// Write HTML
-		$(this.el).append(template());
+		$('body').append(this.el);
 
 		// Display Modal
 		$('#modalTutorial').modal();
+
+		this.current_step = 0;
 
 		return this;
 	}
