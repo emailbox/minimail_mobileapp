@@ -514,7 +514,6 @@ body.console {
 .header .btn-toolbar {
   padding: 0px; 
   margin: 0px;
-  /*margin-top: 10px;*/
 }
 
 
@@ -877,6 +876,10 @@ body.console {
   -moz-box-sizing: border-box;
 }
 
+.search_category i {
+  font-size: 20px;
+}
+
 .search_category:first-child {
   /*margin-top: 450px;*/
 }
@@ -1178,13 +1181,12 @@ input.prefilters_select[readonly] {
 /* Startup tutorial */
 
 #modalTutorial {
-  top: 20%;
+  top: 10%;
 }
 
 #modalTutorial p {
   padding: 20px 0;
   font-size: 16px;
-  text-align: center;
 }
 
 #modalTutorial a {
@@ -1193,6 +1195,44 @@ input.prefilters_select[readonly] {
 
 #modalTutorial a:nth-of-type(1) {
   margin-bottom: 10px;
+}
+
+ul.tutorial_list {
+  margin: 0px;
+  padding: 0px;
+}
+
+ul.tutorial_list li {
+  list-style: none;
+
+  padding: 0;
+  margin: 0;
+
+  color: white;
+
+}
+
+ul.tutorial_list li span {
+  display: inline-block;
+
+  margin: 5px 0;
+  padding: 10px;
+
+  width: 100px;
+
+  text-align: center;
+}
+
+ul.tutorial_list li.new span {
+  background: #1ABC9C;
+}
+
+ul.tutorial_list li.now span {
+  background: #E74C3C;
+}
+
+ul.tutorial_list li.later span {
+  background: #E67E22;
 }
 
 
@@ -1477,7 +1517,11 @@ input.prefilters_select[readonly] {
 
 
 .lot_options_flag .dk_label {
+  display: inline-block;
   padding: 0px 25px;
+
+  width: 125px;
+  text-align: center;
 }
 
 .lot_options_flag .select-icon {
@@ -2598,7 +2642,11 @@ input.prefilters_select[readonly] {
 .common_thread_view .email_sent_alert {
   margin-top: 10px;
 
+  border: 0px;
   background: #27AE60;
+  color: white;
+  font-weight: bold;
+  text-shadow: none;
 
   padding: 15px 0;
 }
@@ -2727,6 +2775,10 @@ iframe#email_html body {
 
 .common_compose {
 
+}
+
+.common_thread_reply .base_header_menu {
+  padding-bottom: 0px;
 }
 
 .compose-exit-minimal,
