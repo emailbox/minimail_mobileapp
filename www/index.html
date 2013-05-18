@@ -133,7 +133,7 @@
 		try {
 			if (!useForge && navigator.userAgent.match(/(iPhone|iPod|iPad|Android|BlackBerry)/)) {
 				usePg = true;
-			} 
+			}
 		} catch(err){
 
 		}
@@ -845,7 +845,9 @@
 					<ul class="dk_options_inner">
 						<li class="done"><a data-action="done"><i class="fui-checkround-24"></i>&nbsp;&nbsp;&nbsp; Done</a></li>
 						<li class="now"><a data-action="due"><i class="fui-checkmark-24"></i>&nbsp;&nbsp;&nbsp; Now Due</a></li>
+						<!--
 						<li class="delay"><a data-action="wait_reply"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Wait for Reply</a></li>
+						-->
 						<li class="delay"><a data-action="few_hours"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Few Hours</a></li>
 						<li class="delay"><a data-action="pick_time"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Pick a Time</a></li>
 					</ul>
@@ -1183,8 +1185,8 @@
 
 			<div class="emails">
 
-				<div class="email_sent_alert alert alert-success text-center nodisplay">
-					<strong>Email sent successfully!</strong> It will appear shortly
+				<div class="email_sent_alert alert text-center nodisplay">
+					<strong>Email queued to send!</strong> It will appear shortly
 				</div>
 
 				{{#each Email}}
@@ -1290,7 +1292,7 @@
 						
 				<div class="header_holder clearfix">
 
-					<div class="base_header_menu undecided_thread_viewing clearfix">
+					<div class="base_header_menu thread_viewing clearfix">
 						<div class="left">
 							<div class="btn-group">
 								<button data-action="back" class="btn">Compose</button>
@@ -1328,50 +1330,33 @@
 
 		<div class="common_thread_reply_content">
 
-
 			<div class="header at-top">
 						
 				<div class="header_holder text-center clearfix">
 
+					<div class="base_header_menu thread_viewing clearfix">
 
-					<div class="btn-toolbar">
-		                <div class="btn-group btn-single">
-		                  <a class="btn btn-default" href="#" data-action="cancel">Cancel</a>
-		                </div>
-		                <div class="btn-group two-with-separator">
-		                  <a class="btn btn-info" href="#" data-action="thread">Thread</a>
-		                  <a class="btn btn-info" href="#" data-action="contacts"><i class="fui-man-16"></i></a>
-		                </div>
-		                <div class="btn-group btn-single">
-		                  <a class="btn btn-success" href="#" data-action="send">Send</a>
-		                </div>
-	                </div>
-	            
 
-					<!--
-					<div class="base_header_menu common_reply clearfix">
-						<div class="left">
-							<div class="btn-group">
-								<button data-action="thread" class="btn view_thread">Thread</button>
-								<button data-action="contacts" class="btn contacts">Contacts</button>
-							</div>
-						</div>
-						<div class="right">
-							<div class="btn-group pull-right">
-								<button data-action="cancel" class="btn">
-									Cancel
-								</button>
-								<button data-action="send" class="btn btn-success btn-send">
-									Send
-								</button>
-							</div>
-						</div>
+						<div class="btn-toolbar">
+			                <div class="btn-group btn-single">
+			                  <a class="btn btn-default" href="#" data-action="cancel">Cancel</a>
+			                </div>
+			                <div class="btn-group two-with-separator">
+			                  <a class="btn btn-info" href="#" data-action="thread">Thread</a>
+			                  <a class="btn btn-info" href="#" data-action="contacts"><i class="fui-man-16"></i></a>
+			                </div>
+			                <div class="btn-group btn-single">
+			                  <a class="btn btn-success" href="#" data-action="send">Send</a>
+			                </div>
+		                </div>
+
+
 					</div>
-						-->
 
 				</div>
 				
 			</div>
+
 
 			<div class="body_container nudge_down">
 
@@ -1393,7 +1378,7 @@
 
 				<div class="body">
 
-					<textarea id="textbody" name="textbody" placeholder="body"></textarea>
+					<textarea id="textbody" name="textbody" placeholder="Body"></textarea>
 
 				</div>
 
@@ -1496,13 +1481,13 @@
 
 			<div class="subject">
 
-				<input type="text" id="subject" name="subject" placeholder="subject" />
+				<input type="text" id="subject" name="Subject" placeholder="subject" />
 
 			</div>
 
 			<div class="body">
 
-				<textarea id="textbody" name="textbody" placeholder="body"></textarea>
+				<textarea id="textbody" name="textbody" placeholder="Body"></textarea>
 
 			</div>
 
@@ -1917,11 +1902,11 @@
 		<div class="quick_searches scroller">
 
 			<div class="search_category" data-type="links" data-detail="recently_viewed">
-				<i class="icon-bookmark icon-white"></i> Links
+				<i class="fui-cmd-16"></i>&nbsp;&nbsp; Links
 			</div>
 
 			<div class="search_category" data-type="attachments">
-				<i class="icon-download-alt icon-white"></i> Attachments
+				<i class="fui-camera-16"></i>&nbsp;&nbsp; Attachments
 
 				<div class="details nodisplay">
 					<div class="detail_item" data-type="recently_viewed">
@@ -1951,7 +1936,7 @@
 			-->
 
 			<div class="search_category" data-type="threads">
-				<i class="icon-inbox icon-white"></i> Emails / Threads
+				<i class="fui-mail-16"></i>&nbsp;&nbsp; Emails / Threads
 
 				<div class="details nodisplay">
 					<div class="detail_item" data-type="recently_viewed">
@@ -2692,27 +2677,128 @@
 
 
 	<script id="t_startup_tutorial" type="text/x-handlebars-template">
-		<div class="modal hide" id="modalTutorial">
-			<div class="modal-body">
-				<h2>
-					Welcome to Minimail!
-				</h2>
-
-				<p>
-					Want to quickly learn how to use Minimail? 
-				</p>
-
-				<a class="btn btn-success go_tut">
-					<i class="fui-checkmark-16"></i> Yes, I want to learn
-				</a>
-
-				<a class="btn btn-default no_tut">
-					<i class="fui-cross-16"></i> No, I get it already
-				</a>
-
-			</div>
+		<div class="modal-body">
+			{{> t_startup_tutorial_0}}
 		</div>
 	</script>
+
+	<script id="t_startup_tutorial_0" type="text/x-handlebars-template" class="partial">
+		<h2>
+			Welcome to Minimail
+		</h2>
+
+		<p class="text-center">
+			Want to quickly learn how to use Minimail? 
+		</p>
+
+		<a class="btn btn-success next_step">
+			<i class="fui-checkmark-16"></i> Yes, I want to learn
+		</a>
+
+		<a class="btn btn-default exit_tutorial">
+			<i class="fui-cross-16"></i> No, I get it already
+		</a>
+	</script>
+
+	<script id="t_startup_tutorial_1" type="text/x-handlebars-template">
+		
+		<h3>
+			Quick Note! <br />Minimail is loading your Inbox
+		</h3>
+
+		<p>
+			This should take just a few minutes, so don't fret if your email's don't appear right away. <!--'-->
+		</p>
+
+		<a class="btn btn-success next_step">
+			<i class="fui-checkmark-16"></i> Next
+		</a>
+
+	</script>
+
+	<script id="t_startup_tutorial_05" type="text/x-handlebars-template">
+		
+		<h3>
+			The Basic Idea
+		</h3>
+
+		<p>
+			Think of your emails as a to-do list; you can mark a Thread as <strong>Done</strong> (like Archiving in Gmail), or <strong>Delay</strong> it and it will come back when you want. 
+		</p>
+
+		<a class="btn btn-success next_step">
+			<i class="fui-checkmark-16"></i> Next
+		</a>
+
+	</script>
+
+	<script id="t_startup_tutorial_2" type="text/x-handlebars-template">
+		
+		<h3>
+			3 views for your threads: 
+		</h3>
+
+		<ul class="tutorial_list text-center">
+			<li class="new">
+				<span>
+					<i class="fui-mail-16"></i> New
+				</span>
+			</li>
+			<li class="now">
+				<span>
+					<i class="fui-time-16"></i> Due Now
+				</span>
+			</li>
+			<li class="later">
+				<span>
+					<i class="fui-calendar-16"></i> Due Later
+				</span>
+			</li>
+		</ul>
+
+		<p>
+			Pressing one of these icons on the bottom of the Main page will trigger refresh.  
+		</p>
+
+		<a class="btn btn-success next_step">
+			<i class="fui-checkmark-16"></i> Next
+		</a>
+
+	</script>
+
+	<script id="t_startup_tutorial_3" type="text/x-handlebars-template">
+		<h3>
+			Drag left or right on a Thread
+		</h3>
+
+		<p>
+			Dragging left or right is key
+		</p>
+
+		<a class="btn btn-success next_step">
+			<i class="fui-checkmark-16"></i> Next
+		</a>
+
+	</script>
+
+	<script id="t_startup_tutorial_4" type="text/x-handlebars-template">
+		<h2>
+			All Done!
+		</h2>
+
+		<p>
+			Want to try again? Just go to the main menu and click "Startup Tutorial"
+		</p>
+
+		<p>
+			<strong>Thank You</strong> for trying out minimail! Please let Nick know if anything is awry! 
+		</p>
+
+		<a class="btn btn-default exit_tutorial">
+			<i class="fui-cross-16"></i> Exit Tutorial
+		</a>
+	</script>
+
 
 
 	<!-- unused -->
