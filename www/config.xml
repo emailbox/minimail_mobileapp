@@ -2,7 +2,7 @@
 <widget xmlns     = 'http://www.w3.org/ns/widgets'
         xmlns:gap = 'http://phonegap.com/ns/1.0'
         id        = "minimail"
-        version   = "0.0.21">
+        version   = "0.0.25">
     <name>minimail</name>
 
     <description>
