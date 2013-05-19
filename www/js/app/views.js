@@ -297,10 +297,10 @@ App.Views.Body = Backbone.View.extend({
 		// Launch startup tutorial if necessary
 
 		// Update startup tutorial settings
-		var latest_tut_num = 2;
+		var latest_tut_num = 3;
 		App.Utils.Storage.get('startup_tutorial','critical')
 			.then(function(tut_num){
-				if(!tut_num != latest_tut_num){
+				if(tut_num != latest_tut_num){
 					// Not created, show screen
 
 					var startup_tut = new App.Views.StartupTutorial();
@@ -788,9 +788,17 @@ App.Views.CommonThread = Backbone.View.extend({
 		'click .btn-reply' : 'reply',
 		'click .forward' : 'forward',
 
-		'click .email_holder .time_and_more .html_view' : 'html_view',
-		'shorttap .email_holder .details' : 'collapse_email',
-		'longtap .email_holder .details' : 'collapse_emails',
+		'click .email_holder .html_view' : 'html_view',
+		// 'shorttap .email_holder .details' : 'hidden_options', //'collapse_email',
+		'click .email_holder .details' : 'hidden_options',
+		'click .email_holder .hidden_options .option.hidden_attachments' : 'hidden_attachments',
+		'click .email_holder .hidden_options .option.hidden_contact' : 'hidden_contact',
+		'click .email_holder .hidden_options .option.hidden_embeds' : 'hidden_embeds',
+
+		'click .email_holder .hidden_options .attachment' : 'view_attachment',
+
+		'click .email_holder .collapse_email' : 'collapse_email',
+		'click .email_holder .collapse_emails' : 'collapse_emails',
 		'click .email_holder .email_body .ParsedDataShowAll span.expander' : 'email_folding',
 		'click .email_holder .email_body .ParsedDataShowAll span.edit' : 'edit_email'
 	},
@@ -1181,21 +1189,143 @@ App.Views.CommonThread = Backbone.View.extend({
 
 	},
 
+	hidden_options: function(ev){
+		// Show/hide hidden_options
+		var that = this,
+			elem = ev.currentTarget;
+
+		ev.preventDefault();
+		ev.stopPropagation();
+
+		// Already hidden?
+		var $holder = $(elem).parents('.email_holder');
+		if($holder.hasClass('collapsing_bodies')){
+			// Show this guy
+			$holder.removeClass('collapsing_bodies');
+			return false;
+		}
+
+
+		var $email = $(elem).parents('.email');
+
+		if($email.hasClass('showing_hidden_options')){
+			// Hide this one
+			$email.removeClass('showing_hidden_options');
+		} else {
+			// Show this one
+			$email.addClass('showing_hidden_options');
+
+		}
+
+		return false;
+
+	},
+
+	hidden_attachments: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $list = $(elem).next();
+		if(!$list.hasClass('list_attachments')){
+			return;
+		}
+
+		if($list.hasClass('nodisplay')){
+			$list.removeClass('nodisplay');
+		} else {
+			$list.addClass('nodisplay');
+		}
+
+		return false;
+	},
+
+	hidden_contact: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $list = $(elem).next();
+		if(!$list.hasClass('list_contact')){
+			return;
+		}
+
+		if($list.hasClass('nodisplay')){
+			$list.removeClass('nodisplay');
+		} else {
+			$list.addClass('nodisplay');
+		}
+
+		return false;
+	},
+
+	hidden_embeds: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $list = $(elem).next();
+		if(!$list.hasClass('list_embeds')){
+			return;
+		}
+
+		if($list.hasClass('nodisplay')){
+			$list.removeClass('nodisplay');
+		} else {
+			$list.addClass('nodisplay');
+		}
+
+		return false;
+	},
+
+	view_attachment: function(ev){
+		// Show an attachment
+		// - different saving options?
+		// - filepicker.io!
+
+		// Shows the view for the attachment
+		var that = this;
+		var elem = ev.currentTarget;
+
+		// Get url path to attachment
+		var url_path = $(elem).attr('data-path');
+
+		if(url_path.length < 1){
+			alert('Sorry, attachment cannot be downloaded');
+			return false;
+		}
+
+		// Open attachment in new View
+		// - subView
+		navigator.app.loadUrl(url_path, { openExternal:true });
+
+		// App.Utils.Notification.toast('Loading in ChildBrowser (should load in a new View, with options for )');
+		// if(usePg){
+		// 	window.plugins.childBrowser.showWebPage(path,{
+		// 		showLocationBar: false,
+		// 		showAddress: false,
+		// 		showNavigationBar: false
+		// 	});
+		// }
+		// window.open(App.Credentials.s3_bucket + path);
+		return false;
+
+	},
+
 	collapse_email: function(ev){
 		// Collapse/show only this email
 		var that = this,
 			elem = ev.currentTarget;
 
-		var $body = $(elem).parent().find('.email_body');
+		var $holder = $(elem).parents('.email_holder');
 
-		if($body.hasClass('nodisplay')){
+		if($holder.hasClass('collapsing_bodies')){
 			// Show this one
-			$body.removeClass('nodisplay');
+			$holder.removeClass('collapsing_bodies');
 		} else {
 			// Hide this one
-			$body.addClass('nodisplay');
+			$holder.addClass('collapsing_bodies');
 		}
 
+		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 
 	},
@@ -1205,20 +1335,21 @@ App.Views.CommonThread = Backbone.View.extend({
 		var that = this,
 			elem = ev.currentTarget;
 
-		var $body = $(elem).parent().find('.email_body');
+		var $holder = $(elem).parents('.email_holder');
 
-		if($body.hasClass('nodisplay')){
-			// Show all
-			that.$('.email_body').removeClass('nodisplay');
-		} else {
-			// Hide all
-			that.$('.email_body').addClass('nodisplay');
+		// Switch everything excepe the last email to hidden
+		// - also changing this one
+		// - keeps the last one open, always
+		
+		// Hide all
+		that.$('.email_holder').addClass('collapsing_bodies');
 
-			// Show the last one
-			var $last = that.$('.email_holder:last-child .email');
-			$last.find('.email_body').removeClass('nodisplay');
-		}
+		// Show the last one
+		var $last = that.$('.email_holder:last-child');
+		$last.removeClass('collapsing_bodies');
 
+		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 
 	},
@@ -1283,6 +1414,7 @@ App.Views.CommonThread = Backbone.View.extend({
 		// });
 	
 		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 	},
 
@@ -1331,18 +1463,173 @@ App.Views.CommonThread = Backbone.View.extend({
 
 		// });
 
-		// Write HTML
-		this.$el.html(template(data));
-
 		// Run MathJax code
 		// MathJax.Hub.Queue(["Typeset",MathJax.Hub,"threadContainer"]);
 
-		// Parse out links we want to embed
+		// Slightly parse Emails for:
+
+		// Links we want to embed
 		// - gists: <script src="https://gist.github.com/nicholasareed/5177795.js"></script>
 		// - youtube
+
+		// Signatures we want to remove
+		// - todo: save them
+
+		var line_strip_from_front = [
+			'&gt; '
+		];
+
+		var bad_start_with = [
+			'Sent from my '
+		];
+
+		var bad_equal = [
+			'-- '
+		];
+
+		var bad_equal_after_trim = [
+			'Sent from my iPhone',
+			'--'
+		];
+
+
+		var color_presets = [
+			'email1',
+			'email2',
+			'email3',
+			'email4'
+
+		];
+		var current_color = 0;
+		var email_to_color = {}; // for consistent coloring
+
+		// Randomize the list of colors
+		color_presets = _.shuffle(color_presets);
+
+		// Iterate through Emails
 		_.each(data.Email, function(email, i){
-			console.log(1);
-			console.log(email);
+
+			// Get sender, color according to a random scale? 
+			// - have a few preset colors, think max 10 people in a conversation?
+			
+			try {
+
+				var tmp_isme = false;
+				_.each(App.Data.UserEmailAccounts.toJSON(),function(acct, l){
+					if(acct.email == email.original.headers.From_Parsed[0][1]){
+						tmp_isme = true;
+					}
+				});
+
+				if(tmp_isme){
+					data.Email[i].data_color = 'my_email';;
+				} else {
+
+					if(email_to_color[ email.original.headers.From_Parsed[0][0] ] != undefined){
+						// already set for this email address
+						data.Email[i].data_color = email_to_color[ email.original.headers.From_Parsed[0][0] ];
+					} else {
+						// Need to set a color for this email
+						var tmp_val = 0;
+						var color_position = (current_color + color_presets.length) % color_presets.length;
+						color_presets[ color_position  ]
+						var use_color = color_presets[ color_position  ];
+						email_to_color[ email.original.headers.From_Parsed[0][0] ] = use_color;
+						// console.log(use_color);
+						data.Email[i].data_color = use_color;
+						current_color++;
+					}
+				}
+
+			} catch(err){
+				console.error('view e1');
+				console.error(err);
+				data.Email[i].data_color = '#6a6a6a';
+			}
+
+			// Signatures
+			var first_parsed = email.original.ParsedData[0];
+			var tmp_lines = first_parsed.Data.split('\n');
+			
+			// Iterate over lines
+			var lines = [];
+			var signature = [];
+			// var linenum = 1;
+			var now_hiding_lines = false;
+			_.each(tmp_lines, function(line, index, somethingelse){
+				// see if it contains a "signature" type of line
+				// - remove all the ones below it if it does
+
+				// Check half the lines, up to the last 10
+				var check_lines = false;
+				var skip_this_line = false;
+				if(tmp_lines.length > 20){
+					// check the last 10
+					if(index + 10 > tmp_lines.length){
+						check_lines = true;
+					}
+				} else {
+					// check half, but at least 2
+					var half = parseInt(tmp_lines.length / 2);
+					if(half < 2){
+						half = 2;
+					}
+					if(index + half > tmp_lines.length){
+						check_lines = true;
+					}
+				}
+
+				if(check_lines){
+					// Within 10
+					// - run checks
+					var tripped = false;
+					_.each(bad_start_with,function(elem){
+						if(line.substr(0,elem.length).toLowerCase() == elem.toLowerCase()){
+							tripped = true;
+						}
+					});
+
+					_.each(bad_equal,function(elem){
+						if(line.toLowerCase() == elem.toLowerCase()){
+							tripped = true;
+						}
+					});
+
+					_.each(bad_equal_after_trim,function(elem){
+						if($.trim(line.toLowerCase()) == elem.toLowerCase()){
+							tripped = true;
+						}
+					});
+
+					if(tripped){
+						now_hiding_lines = true;
+					}
+				}
+
+				// if(skip_this_line){
+				// 	return;
+				// }
+
+				if(now_hiding_lines){
+					signature.push(line);
+					return;
+				}
+
+				// Keep adding to lines
+				lines.push(line);
+
+			});
+	
+			if(signature.length > 0){
+				first_parsed.Body = $.trim(lines.join('\n'));
+				first_parsed.Signature = $.trim(signature.join('\n'));
+
+
+				email.original.ParsedData[0] = first_parsed;
+			}
+
+
+			// Links
 			try {
 				// Iterate over links
 				// - embed below
@@ -1408,8 +1695,11 @@ App.Views.CommonThread = Backbone.View.extend({
 			}
 		});
 	
+		// Write HTML
+		this.$el.html(template(data));
+
 		// Custom tap
-		App.Utils.WatchCustomTap(that.$('.email_holder .details'));
+		// App.Utils.WatchCustomTap(that.$('.email_holder .details'));
 
 		// Resize body_container
 		this.resize_fluid_page_elements();
@@ -3232,7 +3522,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 	contact: function(ev){
 		// Choose a contact
-		var that = this;
+		var that = this,
 			elem = ev.currentTarget;
 
 		// Validate email
@@ -3242,7 +3532,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 			// Already have contacts data?
 
 			// Change element to "loading contacts"
-			$(elem).text('Loading...');
+			$(elem).text('Lo...');
 
 			// Display contacts chooser subview
 			window.setTimeout(function(){
@@ -3276,7 +3566,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 				// Change text back
 				// - after view is already hidden
-				$(elem).text('Contacts');
+				$(elem).html('<i class="fui-man-24"></i>');
 
 				// Listen for contact events
 				// - chose_email
@@ -4107,66 +4397,66 @@ App.Views.ChooseContact = Backbone.View.extend({
 		// - display whether we are fetching contacts and updating them
 		// - should be treated as a Collection of Contact Models
 
-		this._renderedContacts = null;
+		this._renderedContacts = false;
 
 		if(usePg){
 
 			// Collect from Collection.Contacts
 
-			// If Rendered, continue rendering
-			this.contacts = new App.Collections.Contacts();
+			// // If Rendered, continue rendering
+			// this.contacts = new App.Collections.Contacts(); // probably already fetched
 
-			this.contacts.on('reset',function(contacts){
-				// alert('reset');
-				console.log('reset contacts');
-			}, this);
-			this.contacts.on('sync',function(contacts){
-				// Render template with all contacts
-				// - ignoring additions/subtractions until next load
-				// - not using 'add' or 'remove' at all
-				console.log('sync');
-				if(contacts.length < 1){
-					// Nothing to render (probably nothing cached, first grab)
-					console.log('no contacts found (in cache?)');
-					return;
-				}
-				console.log('found some contacts');
+			// this.contacts.on('reset',function(contacts){
+			// 	// alert('reset');
+			// 	console.log('reset contacts');
+			// }, this);
+			// this.contacts.on('sync',function(contacts){
+			// 	// Render template with all contacts
+			// 	// - ignoring additions/subtractions until next load
+			// 	// - not using 'add' or 'remove' at all
+			// 	console.log('sync');
+			// 	if(contacts.length < 1){
+			// 		// Nothing to render (probably nothing cached, first grab)
+			// 		console.log('no contacts found (in cache?)');
+			// 		return;
+			// 	}
+			// 	console.log('found some contacts');
 
-				// Template
-				var template = App.Utils.template('t_choose_contacts');
+			// 	// Template
+			// 	var template = App.Utils.template('t_choose_contacts');
 
-				// Write HTML
-				if(!that._renderedContacts){
-					that.__renderedContacts = true;
-					that.$el.html(template({
-						contacts: contacts.toJSON()
-					}));
-				} else {
-					console.log('already rendered');
-				}
+			// 	// Write HTML
+			// 	if(!that._renderedContacts){
+			// 		that.__renderedContacts = true;
+			// 		that.$el.html(template({
+			// 			contacts: contacts.toJSON()
+			// 		}));
+			// 	} else {
+			// 		console.log('already rendered');
+			// 	}
 
-			});
+			// });
 
-			var k = 1;
-			this.contacts.on('add', function(contact){
-				// console.log('added_contact: ' + k);
-				k++;
-			}, this);
+			// var k = 1;
+			// this.contacts.on('add', function(contact){
+			// 	// console.log('added_contact: ' + k);
+			// 	k++;
+			// }, this);
 
-			this.contacts.on('remove', function(contact){
-				// console.log('removed_contact');
-				// k--;
-			}, this);
+			// this.contacts.on('remove', function(contact){
+			// 	// console.log('removed_contact');
+			// 	// k--;
+			// }, this);
 
-			this.contacts.on('all', function(event){
-				if(event == 'add' || event == 'remove'){
-					return;
-				}
-				console.log(event);
-			}, this);
+			// this.contacts.on('all', function(event){
+			// 	if(event == 'add' || event == 'remove'){
+			// 		return;
+			// 	}
+			// 	console.log(event);
+			// }, this);
 
-			// Trigger data
-			this.contacts.fetch();
+			// Trigger data refresh
+			App.Data.Store.Contacts.fetch();
 
 		} else {
 			// Browser
@@ -4268,7 +4558,7 @@ App.Views.ChooseContact = Backbone.View.extend({
 
 	render: function() {
 		var that = this;
-
+		
 		// Already rendered once?
 		if(this._rendered){
 			// Already rendered, but asking to be shown?
@@ -4290,49 +4580,16 @@ App.Views.ChooseContact = Backbone.View.extend({
 		this._rendered = true;
 
 		// Template (loading)
-		var template = App.Utils.template('t_common_loading');
+		// var template = App.Utils.template('t_common_loading');
+		var template = App.Utils.template('t_choose_contacts');
 
 		// Write HTML
-		this.$el.html(template());
+		this.$el.html(template({
+			contacts: App.Data.Store.Contacts
+		}));
 
 		// Back button
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
-
-		// // Data
-		// // var data = this.options.accounts.UserGmailAccounts;
-
-		// // Should start the updater for accounts
-		// // - have a separate view for Accounts?
-
-		// // console.log(JSON.stringify(this.options.contacts[0]));
-		// // Api.event({
-		// // 	data: {
-		// // 		event: 'Render.test',
-		// // 		obj: this.options.contacts.splice(0,10)
-		// // 	}
-		// // });
-
-		// // Sort/organize contacts
-
-		// // Get into list of contacts and emails
-		// // - displaying 1 contact and 1 email per line
-
-		// // Empty App.Data.Store.Contacts?
-		// // - never got them before
-		// if(App.Data.Store.ContactsParsed.length < 1){
-
-		// 	// Don't continue displaying
-		// 	return
-
-		// }
-
-		// // Template
-		// var template = App.Utils.template('t_choose_contacts');
-
-		// // Write HTML
-		// this.$el.html(template({
-		// 	contacts: App.Data.Store.ContactsParsed
-		// }));
 
 		return this;
 	}
@@ -5555,7 +5812,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Change the view's opacity:
 		// - or change based on whatever happened to it?
 		// - also depends on if it was a remote change, right? 
-		$(viewToRemove.el).css('opacity', 0.5);
+		$(viewToRemove.el).css('opacity', 0.8);
 
 		// don't actually remove it?
 		// - only remove it when refresh is called
@@ -6108,7 +6365,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 				console.log(viewToRemove);
 
 				// Change the view's opacity:
-				$(viewToRemove.el).css('opacity', 0.2);
+				$(viewToRemove.el).css('opacity', 0.8);
 
 				// don't actually remove it?
 				// - only remove it when refresh is called
@@ -9882,6 +10139,7 @@ App.Views.Settings = Backbone.View.extend({
 		this.close();
 
 		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 	},
 
@@ -10161,6 +10419,7 @@ App.Views.GeneralSettings = Backbone.View.extend({
 		this.back();
 
 		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 	},
 
@@ -10307,6 +10566,7 @@ App.Views.SpeedTest = Backbone.View.extend({
 		this.back();
 
 		ev.preventDefault();
+		ev.stopPropagation();
 		return false;
 	},
 
@@ -11129,6 +11389,7 @@ App.Views.DelayModal = Backbone.View.extend({
 			elem = ev.currentTarget;
 
 		ev.preventDefault();
+		ev.stopPropagation();
 
 		// Valid?
 		if($(elem).hasClass('ignore')){
@@ -11227,6 +11488,7 @@ App.Views.DelayModal = Backbone.View.extend({
 
 		// prevent event continuing to calendar, scroller, etc.
 		ev.preventDefault();
+		ev.stopPropagation();
 
 		// Valid?
 		if($(elem).hasClass('ignore')){
