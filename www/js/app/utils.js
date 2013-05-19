@@ -350,7 +350,7 @@ App.Utils = {
 		});
 
 		$elem.on('touchcancel',function(e){
-			
+
 			if(!$(this).hasClass('touch_start')){
 				// Never started touching?
 				alert('no touch_start');
@@ -358,6 +358,9 @@ App.Utils = {
 			}
 
 			$(this).removeClass('touch_start');
+
+			e.preventDefault();
+			e.stopPropagation();
 		});
 
 	},
