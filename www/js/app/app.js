@@ -3,7 +3,7 @@
 var debugging_mode = true;
 var clog = function(v){
 	if(debugging_mode){
-		// window.console.log(v);
+		window.console.log(v);
 	}
 };
 
@@ -16,7 +16,7 @@ var App = {
 	Events: 	 _.extend({}, Backbone.Events),
 	Data: 		 {
 		// tmp_contacts: [], // testing contacts
-		version: "0.0.25",
+		version: "0.0.31",
 		online: true,
 		LoggedIn: false, // Logged into minimail servers
 		notifications_queue: [],
@@ -54,7 +54,7 @@ var App = {
 
 			// Local only (don't sync?)
 			Attachment: {},
-			Contacts: [],
+			Contacts: [], // usePg=collection, browser=array
 			ContactsParsed: [],
 			Contact: {},
 			Link: {}
@@ -242,6 +242,12 @@ var App = {
 			.then(function(user){
 				App.Credentials.user = user;
 			});
+
+		// Start gathering contacts
+		window.setTimeout(function(){
+			App.Data.Store.Contacts = new App.Collections.Contacts();
+			App.Data.Store.Contacts.fetch();
+		},10000);
 
 		// Get access_token, set to app global, login to minimail server (doesn't allow offline access yet)
 		// - switch to be agnostic to online state (if logged in, let access offline stored data: need better storage/sync mechanisms)
