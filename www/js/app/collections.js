@@ -1455,7 +1455,11 @@ App.Collections.Contacts = Backbone.Collection.extend({
 
 	model: App.Models.Contact,
 	sync: Backbone.cachingSync(contacts_sync_collection, 'Contacts', 'id'),
-	custom_cache_id: true
+	custom_cache_id: true,
+
+	comparator: function(Contact){
+		return Contact['displayName'] + Contact['email'];
+	}
 });
 
 
@@ -1647,44 +1651,55 @@ function contacts_sync_collection(method, model, options) {
 				multiple: true
 			};
 
+			App.Utils.Notification.toast('Loading Contacts (may freeze for a moment)');
+
 			// Go get data
-			navigator.contacts.find(contactFields, function(all_contacts){
-				// Filter contacts who have no email address
-				var contacts_with_email = [];
-				$.each(all_contacts,function(i,contact){
-					try {
-						if(contact.emails.length > 0){
-							contacts_with_email.push(contact);
+			try {
+				navigator.contacts.find(contactFields, function(all_contacts){
+					// Filter contacts who have no email address
+					var contacts_with_email = [];
+					$.each(all_contacts,function(i,contact){
+						try {
+							if(contact.emails.length > 0){
+								contacts_with_email.push(contact);
+							}
+						} catch (err){
+
 						}
-					} catch (err){
+					});
 
+					// console.log('with email');
+					// console.log(JSON.stringify(contacts_with_email.splice(0,2)));
+
+					// alert(contacts_with_email.length);
+
+					// get only the top 25
+					// contacts_with_email = contacts_with_email.splice(0,25);
+
+					// Parse and sort
+					var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
+					// contacts_parsed = contacts_parsed.splice(0,25);
+
+					// Resolve
+					dfd.resolve(contacts_parsed);
+
+					// Fire success function
+					if(options.success){
+						options.success(contacts_parsed);
 					}
-				});
 
-				// console.log('with email');
-				// console.log(JSON.stringify(contacts_with_email.splice(0,2)));
-
-				// alert(contacts_with_email.length);
-
-				// get only the top 25
-				// contacts_with_email = contacts_with_email.splice(0,25);
-
-				// Parse and sort
-				var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
-				// contacts_parsed = contacts_parsed.splice(0,25);
-
-				// Resolve
-				dfd.resolve(contacts_parsed);
-
-				// Fire success function
-				if(options.success){
-					options.success(contacts_parsed);
+				}, function(err){
+					// Err with contacts
+					alert('Error with contacts');
+				}, contactFindOptions);
+			} catch(err){
+				console.log('Failed loading contacts');
+				console.log(err);
+				if(usePg){
+					alert("Failed loading Contacts");
 				}
-
-			}, function(err){
-				// Err with contacts
-				alert('Error with contacts');
-			}, contactFindOptions);
+				
+			}
 
 
 			break;
@@ -1759,14 +1774,14 @@ function parse_and_sort_contacts(contacts){
 	contacts = _.compact(contacts); // get rid of empty arrays
 	contacts = _.uniq(contacts);
 
-	// Sort
-	contacts = App.Utils.sortBy({
-		arr: contacts,
-		path: 'email',
-		direction: 'desc', // desc
-		type: 'string'
-	});
-
+	// // Sort
+	// contacts = App.Utils.sortBy({
+	// 	arr: contacts,
+	// 	path: 'email',
+	// 	direction: 'desc', // desc
+	// 	type: 'string'
+	// });
+	console.log(contacts.length);
 	return contacts;
 
 };
