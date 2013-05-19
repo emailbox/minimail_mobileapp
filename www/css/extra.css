@@ -446,6 +446,8 @@ body.console {
   left: 0px;
   width: 100%;
   line-height: 40px;
+  height: 56.5px;
+  overflow: hidden;
 
   z-index: 100;
 
@@ -742,7 +744,13 @@ body.console {
 }
 
 .base_footer_menu {
-  padding: 10px 0;
+  height: 74px;
+  overflow: hidden;
+}
+
+.footer .base_footer_menu .btn-toolbar {
+  padding: 10px 0 0;
+  margin: 10px 0 0;
 }
 
 .base_footer_menu .btn-group > div {
@@ -769,12 +777,19 @@ body.console {
   border-radius: 0px 2px 2px 0px; */
 }
 
-.base_footer_menu .right {
-  margin-right: 6%;
-  width: 20%;
+.thread_viewing.base_footer_menu > .left {
+  float:left;
+  width:65%;
+  margin-left: 0%;
+  text-align: center;
+}
+
+.thread_viewing.base_footer_menu .right {
+  margin-right: 0%;
+  width: 35%;
 
   float: right;
-  text-align: right;
+  text-align: center;
 }
 
 
@@ -1455,6 +1470,13 @@ ul.tutorial_list li.later span {
   -ms-transition: all .3s ease;
   transition: all .3s ease;
 
+}
+
+.lot_options_flag .dk_container {
+  margin-bottom: 0px;
+
+  box-shadow: 0px 0px 4px 4px #444;
+  -webkit-box-shadow: 0px 0px 4px 4px #444;
 }
 
 .lot_options_flag.flag_type_undecided .dk_container a.dk_toggle,
@@ -2599,7 +2621,8 @@ ul.tutorial_list li.later span {
 /* Common Thread Viewing */
 
 .common_thread_view {
-  background: #2e353f;
+  /*background: #2e353f;*/
+  background: #444;
   padding-bottom: 120px;
 }
 
@@ -2609,6 +2632,7 @@ ul.tutorial_list li.later span {
 
 .common_thread_view .body_container {
   background: #2e353f;
+  background: #444;
 }
 
 .common_thread_view .thread_container {
@@ -2652,7 +2676,7 @@ ul.tutorial_list li.later span {
 }
 
 .common_thread_view .email_holder {
-  margin-top: 20px;
+  margin-bottom: 20px;
 
   background: #ECF0F1;
 }
@@ -2662,10 +2686,31 @@ ul.tutorial_list li.later span {
 }
 
 .common_thread_view .email_holder .details {
-  background: #7F8C8D;
+  /*background: #7F8C8D;*/
   color: white;
   /*border-bottom: 1px solid #ccc;*/
   
+}
+
+.common_thread_view .email_holder .email[data-sender="email1"] .details,
+.common_thread_view .email_holder .email[data-sender="email1"] .drop-button {
+  background: #16A085;
+}
+.common_thread_view .email_holder .email[data-sender="email2"] .details,
+.common_thread_view .email_holder .email[data-sender="email2"] .drop-button {
+  background: #8E44AD;
+}
+.common_thread_view .email_holder .email[data-sender="email3"] .details,
+.common_thread_view .email_holder .email[data-sender="email3"] .drop-button {
+  background: #D35400;
+}
+.common_thread_view .email_holder .email[data-sender="email4"] .details,
+.common_thread_view .email_holder .email[data-sender="email4"] .drop-button {
+  background: #2980B9;
+}
+.common_thread_view .email_holder .email[data-sender="my_email"] .details,
+.common_thread_view .email_holder .email[data-sender="my_email"] .drop-button {
+  background: #000;
 }
 
 .common_thread_view .email_holder .details .person {
@@ -2673,7 +2718,7 @@ ul.tutorial_list li.later span {
   width: 160px;
 
   font-weight: bold;
-  padding: 10px;
+  padding: 15px 10px;
 }
 
 .common_thread_view .email_holder .details .time_and_more {
@@ -2681,7 +2726,7 @@ ul.tutorial_list li.later span {
   width: 100px;
   /*padding-right: 5px;*/
   text-align: right;
-  padding: 10px;
+  padding: 15px 10px;
 }
 
 .common_thread_view .email_holder .details .time_and_more .html_view {
@@ -2711,6 +2756,176 @@ iframe#email_html body {
   -webkit-transform-origin: 0 0;
 }
 
+.common_thread_view .email .hidden_options {
+  background: #444;
+  /*padding: 10px;*/
+  display: none;
+  padding-bottom: 0px;
+
+  -webkit-transition: all .3s ease;
+  -moz-transition: all .3s ease;
+  -o-transition: all .3s ease;
+  -ms-transition: all .3s ease;
+  transition: all .3s ease;
+}
+
+.common_thread_view .email.showing_hidden_options .hidden_options {
+  display: block;
+}
+
+.common_thread_view .email .hidden_options > div.option {
+  padding: 15px 10px;
+  /*margin-bottom: 5px;*/
+  color: white;
+  background: #2C3E50;
+
+  border-left: 4px solid black;
+  border-bottom: 1px solid #222;
+  background: #333;
+}
+
+.common_thread_view .email_holder .email[data-sender="email1"] .hidden_options,
+.common_thread_view .email_holder .email[data-sender="email1"] .email_body {
+  border-left: 4px solid #16A085;
+}
+.common_thread_view .email_holder .email[data-sender="email2"] .hidden_options,
+.common_thread_view .email_holder .email[data-sender="email2"] .email_body {
+  border-left: 4px solid #8E44AD;
+}
+.common_thread_view .email_holder .email[data-sender="email3"] .hidden_options,
+.common_thread_view .email_holder .email[data-sender="email3"] .email_body {
+  border-left: 4px solid #D35400;
+}
+.common_thread_view .email_holder .email[data-sender="email4"] .hidden_options,
+.common_thread_view .email_holder .email[data-sender="email4"] .email_body {
+  border-left: 4px solid #2980B9;
+}
+.common_thread_view .email_holder .email[data-sender="my_email"] .hidden_options,
+.common_thread_view .email_holder .email[data-sender="my_email"] .email_body {
+  border-left: 4px solid #000;
+}
+
+
+
+
+.common_thread_view .email .hidden_options > div.list_attachments,
+.common_thread_view .email .hidden_options > div.list_contact,
+.common_thread_view .email .hidden_options > div.list_embeds {
+  /*padding: 10px;*/
+  
+  color: white;
+  background: #34495E;
+  border-top: 2px solid #222;
+  border-bottom: 2px solid #444;
+
+  border-left: 4px solid black;
+  background: #333;
+}
+
+.common_thread_view .email .hidden_options > div.hidden_buttons {
+  background: none;
+  /*padding-bottom: 10px;*/
+}
+
+.common_thread_view .email .hidden_options > div.hidden_buttons div.drop-button {
+  float: left;
+  display: block;
+  width: auto;
+  color: white;
+  /*background: black;*/
+  padding: 18px;
+
+  font-size: 16px;
+  line-height: 8px;
+
+  border-left: 1px solid #333;
+}
+.common_thread_view .email .hidden_options > div.hidden_buttons div.drop-button:first-child {
+  border-left: 0px;
+}
+
+
+.common_thread_view .email .hidden_options div.attachment {
+  padding: 15px 10px;
+  padding-right: 0px;
+  border-bottom: 1px solid #222;
+}
+
+.common_thread_view .email .hidden_options div.attachment:last-child {
+  border-bottom: 0px;
+}
+
+.common_thread_view .email .hidden_options div.list_contact > div {
+  padding: 15px 10px;
+  padding-right: 0px;
+  border-bottom: 1px solid #222;
+}
+
+.common_thread_view .email .hidden_options div.list_contact > div:last-child {
+  border-bottom: 0px;
+}
+
+.common_thread_view .email .hidden_options div.list_contact .info {
+  padding: 0px;
+}
+.common_thread_view .email .hidden_options div.list_contact .info span {
+  display: inline-block;
+  padding: 15px 0;
+}
+.common_thread_view .email .hidden_options div.list_contact .info span.left {
+  float: left;
+  background: #2c2c2c;
+  text-align: right;
+
+  width: 70px;
+  padding-right: 8px;
+}
+.common_thread_view .email .hidden_options div.list_contact .info span.right {
+  float: left;
+  width: 200px;
+
+  padding-left: 8px;
+
+}
+
+
+.common_thread_view .email .hidden_options div.list_embeds > div {
+  padding: 15px 10px;
+  padding-right: 0px;
+  border-bottom: 1px solid #222;
+}
+
+.common_thread_view .email .hidden_options div.list_embeds > div:last-child {
+  border-bottom: 0px;
+}
+
+.common_thread_view .email .hidden_options div.list_embeds .info {
+  padding: 0px;
+}
+.common_thread_view .email .hidden_options div.list_embeds .info span {
+  display: inline-block;
+  padding: 15px 0;
+}
+.common_thread_view .email .hidden_options div.list_embeds .info span.left {
+  background: #2c2c2c;
+  text-align: right;
+
+  width: 70px;
+  padding-right: 8px;
+}
+
+.email_holder.collapsing_bodies {
+  margin-bottom: 0px;
+}
+.email_holder.collapsing_bodies .email_body,
+.email_holder.collapsing_bodies .showing_hidden_options .hidden_options {
+  display: none;
+}
+
+.email_holder.collapsing_bodies .on_collapsed_body {
+  display: block;
+}
+
 .common_thread_view .email_holder .email_body {
   padding: 10px;
 }
@@ -2727,6 +2942,15 @@ iframe#email_html body {
 /*.thread-view .email .content:not(.showAllParsedData) .ParsedDataContent:not([data-level="0"]) {*/
 .common_thread_view .email_holder .email_body .ParsedDataContent:not([data-level="0"]) {
   display: none;
+}
+
+.common_thread_view .email_holder .email_body .signature {
+  color: white;
+  background: #3498DB;
+  /*text-align: center;*/
+
+  margin: 5px 0;
+  padding: 10px;
 }
 
 .common_thread_view .email_holder .email_body .ParsedDataShowAll span.expander {
@@ -2747,6 +2971,7 @@ iframe#email_html body {
 
   display: none;
 }
+
 
 /* Common Compose */
 
@@ -3054,7 +3279,7 @@ iframe#email_html body {
 .undecided_thread_view .email_holder .details {
   background: #fafafa;
   border-bottom: 1px solid #ccc;
-  padding: 10px;
+  padding: 20px 10px;
 }
 
 .undecided_thread_view .email_holder .details .person {
