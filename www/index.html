@@ -843,8 +843,9 @@
 				</a>
 				<div class="dk_options" style="top: 44px;">
 					<ul class="dk_options_inner">
+						<li class="instructions"><a data-action="none">Tap to Mark All:</a></li>
 						<li class="done"><a data-action="done"><i class="fui-checkround-24"></i>&nbsp;&nbsp;&nbsp; Done</a></li>
-						<li class="now"><a data-action="due"><i class="fui-checkmark-24"></i>&nbsp;&nbsp;&nbsp; Now Due</a></li>
+						<li class="now"><a data-action="due"><i class="fui-checkmark-24"></i>&nbsp;&nbsp;&nbsp; Due Now</a></li>
 						<!--
 						<li class="delay"><a data-action="wait_reply"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; Wait for Reply</a></li>
 						-->
@@ -1122,16 +1123,18 @@
 						
 				<div class="footer_holder clearfix">
 
-					<div class="base_header_menu thread_viewing clearfix">
+					<div class="base_footer_menu thread_viewing clearfix">
 						<div class="left">
 							<div class="btn-toolbar">
 								<div class="btn-group">
 									<button data-action="delay" data-active="{{Thread.AppPkgDevMinimail.wait_until}}" class="btn btn-warning">
-										<i class="fui-time-24"></i>
+										&nbsp;<i class="fui-time-24"></i>&nbsp;
 									</button>
 									<button data-action="done" data-active="{{Thread.AppPkgDevMinimail.done}}" class="btn btn-primary">
-										<i class="fui-checkmark-24"></i>
+										&nbsp;<i class="fui-checkmark-24"></i>&nbsp;
 									</button>
+								</div>
+								<div class="btn-group btn-single">
 									<button data-action="reply" class="btn btn-info btn-reply">Reply</button>
 									<!--
 									<button data-action="pin" class="btn">
@@ -1154,7 +1157,7 @@
 
 						<div class="right">
 							<div class="btn-toolbar">
-								<div class="btn-group btn-single pull-right">
+								<div class="btn-group btn-single">
 									<button data-action="back" class="btn btn-default">Back</button>
 								</div>
 							</div>
@@ -1193,7 +1196,7 @@
 
 					<div class="email_holder">
 
-						<div class="email" data-id="{{_id}}">
+						<div class="email" data-id="{{_id}}" data-sender="{{data_color}}">
 							
 
 							<div class="details clearfix">
@@ -1208,6 +1211,103 @@
 									{{display_shorttime common.date}}
 								</div>
 
+
+							</div>
+
+							<div class="hidden_options">
+
+								<div class="hidden_buttons">
+
+									<div class="clearfix">
+										<div class="drop-button collapse_email">
+											<i class="fui-menu-24"></i>
+										</div>
+
+										<div class="drop-button collapse_emails">
+											<i class="fui-menu-24"></i> x All
+										</div>
+
+										<div class="drop-button html_view">
+											<i class="fui-eye-24"></i>
+										</div>
+
+									</div>
+
+								</div>
+
+								{{#compare_length original.attachments ">" 0}}
+									<div class="option hidden_attachments">
+										<i class="fui-video-24"></i>&nbsp;&nbsp;&nbsp; At least 1 Attachment
+									</div>
+
+									<div class="list_attachments nodisplay">
+										{{#each original.attachments}}
+
+											<div class="attachment" data-path="{{this.path}}">
+												{{{this.name}}}
+											</div>
+
+										{{/each}}
+
+									</div>
+
+								{{else}}
+									<div class="option">
+										<i class="fui-video-24"></i>&nbsp;&nbsp;&nbsp; Zero Attachments
+									</div>
+								{{/compare_length}}
+								
+								<div class="option hidden_contact">
+									<i class="fui-man-24"></i>&nbsp;&nbsp;&nbsp; Contact &amp; Signature
+								</div>
+								<div class="list_contact nodisplay">
+									{{print original.headers.From_Parsed}}
+									<div class="info clearfix">
+										<span class="left">
+											Name: 
+										</span>
+										<span class="right ellipses">
+											{{original.headers.From_Parsed.[0].[0]}}
+										</span>
+									</div>
+									<div class="info clearfix">
+										<span class="left">
+											Email: 
+										</span>
+										<span class="right ellipses">
+											{{original.headers.From_Parsed.[0].[1]}}
+										</span>
+									</div>
+
+									{{#compare_length original.ParsedData.[0].Signature ">" 0}}
+										<div class="signature">
+											{{original.ParsedData.[0].Signature}}
+										</div>
+									{{/compare_length}}
+
+								</div>
+								
+								<div class="option hidden_embeds">
+									<i class="fui-cmd-24"></i>&nbsp;&nbsp;&nbsp; Links &amp; Embeds
+								</div>
+								<div class="list_embeds nodisplay">
+
+									{{#compare_length email.app.AppPkgDevMinimail.links ">" 0}}
+
+										{{#each email.app.AppPkgDevMinimail.links}}
+											<div class="info">
+												<span class="left">
+													Link:
+												</span>
+												<span class="right">
+													https://localhost.com
+												</span>
+											</div>
+										{{/each}}
+
+									{{/compare_length}}
+
+								</div>
 
 							</div>
 
@@ -1294,8 +1394,10 @@
 
 					<div class="base_header_menu thread_viewing clearfix">
 						<div class="left">
-							<div class="btn-group">
-								<button data-action="back" class="btn">Compose</button>
+							<div class="btn-toolbar">
+								<div class="btn-group btn-single">
+									<button data-action="back" class="btn btn-primary">Compose</button>
+								</div>
 							</div>
 						</div>
 						<!--
@@ -1342,8 +1444,8 @@
 			                  <a class="btn btn-default" href="#" data-action="cancel">Cancel</a>
 			                </div>
 			                <div class="btn-group two-with-separator">
-			                  <a class="btn btn-info" href="#" data-action="thread">Thread</a>
-			                  <a class="btn btn-info" href="#" data-action="contacts"><i class="fui-man-16"></i></a>
+			                  <a class="btn btn-info" href="#" data-action="thread">&nbsp;<i class="fui-new-16"></i>&nbsp;</a>
+			                  <a class="btn btn-info" href="#" data-action="contacts">&nbsp;<i class="fui-man-16"></i>&nbsp;</a>
 			                </div>
 			                <div class="btn-group btn-single">
 			                  <a class="btn btn-success" href="#" data-action="send">Send</a>
