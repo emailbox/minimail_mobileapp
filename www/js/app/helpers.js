@@ -138,6 +138,10 @@ Handlebars.registerHelper('compare_length', function (lvalue, operator, rvalue, 
 	*/
 
     var operators, result;
+
+    if(lvalue == "undefined" || lvalue == null){
+    	return options.inverse(this);
+    }
     
     if (arguments.length < 3) {
         throw new Error("Handlerbars Helper 'compare' needs 2 parameters");
@@ -941,32 +945,38 @@ Handlebars.registerHelper("display_bodies", function(Email) {
 	// - hide any additional entries
 
 	var parsedData = Email.original.ParsedData;
-
+	// console.dir(Email.original.ParsedData);
 	var tmp = '';
-	var content = '';
 
 	// Building sections
 	// - now incorporates Edited Emails (minimail only)
 	var i = 0;
-	for (x in parsedData){
+	// for (x in parsedData){
+	_.each(parsedData,function(pieceOfData, index){
 		i++;
-		content = parsedData[x].Data;
-		content = App.Utils.nl2br(content,false);
-		if(i == 1){
-			try {
-				if(Email && Email.AppPkgDevMinimail && Email.AppPkgDevMinimail.textbody_edited){
-					content = Email.AppPkgDevMinimail.textbody_edited;
-					content = App.Utils.nl2br(content,false);
-				}
-			} catch(err){
-				
+		var content = '';
+		// console.log(pieceOfData);
+		try {
+			if(pieceOfData.Body.length > 0){
+				content = App.Utils.nl2br(pieceOfData.Body, false);
+				tmp += '<div class="ParsedDataContent" data-level="'+index+'">'+content+'</div>';
+				// tmp += '<div class="signature">' + App.Utils.nl2br(pieceOfData.Signature) + '</div>';
+				// content += '<div class="signature">' + App.Utils.nl2br(pieceOfData.Signature) + '</div>';
+				// go to next parsedData
+				return;
+			} else {
+				content = pieceOfData.Data;
+				content = App.Utils.nl2br(content,false);
 			}
-			tmp += '<div class="ParsedDataContent" data-level="'+x+'">'+content+'</div>';
-		} else {
-			// do the normal thing
-			tmp += '<div class="ParsedDataContent" data-level="'+x+'">'+content+'</div>';
+		} catch(err){
+			// console.log(parsedData[x]);
+			content = pieceOfData.Data;
+			content = App.Utils.nl2br(content,false);
 		}
-	}
+
+		tmp += '<div class="ParsedDataContent" data-level="'+index+'">'+content+'</div>';
+		
+	});
 
 	// Clickable selector to see the rest of the conversation
 	// - only if the conversation is much longer
@@ -1035,7 +1045,7 @@ Handlebars.registerHelper("topflag", function(flag_name) {
 			flag = "New Threads";
 			break;
 		case "delayed":
-			flag = "Now Due";
+			flag = "Due Now";
 			break;
 		case "later":
 			flag = "Due Later";
@@ -1238,7 +1248,7 @@ Handlebars.registerHelper("email_participants_pretty", function(email) {
 				var email = person[1];
 
 				var tmp_isme = false;
-				_.each(App.Data.UserEmailAccounts.accounts,function(acct, l){
+				_.each(App.Data.UserEmailAccounts.toJSON(),function(acct, l){
 					if(acct.email == email){
 						tmp_isme = true;
 					}
@@ -1306,7 +1316,7 @@ Handlebars.registerHelper("thread_from_pretty", function(email) {
 			var email = person[1];
 
 			var tmp_isme = false;
-			_.each(App.Data.UserEmailAccounts.accounts,function(acct, l){
+			_.each(App.Data.UserEmailAccounts.toJSON(),function(acct, l){
 				if(acct.email == email){
 					tmp_isme = true;
 				}
