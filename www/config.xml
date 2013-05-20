@@ -2,7 +2,7 @@
 <widget xmlns     = 'http://www.w3.org/ns/widgets'
         xmlns:gap = 'http://phonegap.com/ns/1.0'
         id        = "minimail"
-        version   = "0.0.31">
+        version   = "0.0.41">
     <name>minimail</name>
 
     <description>
@@ -14,6 +14,11 @@
     </author>
 
     <feature name="http://api.phonegap.com/1.0/device" />
+    <feature name="http://api.phonegap.com/1.0/camera"/>
+    <feature name="http://api.phonegap.com/1.0/contacts"/>
+    <feature name="http://api.phonegap.com/1.0/file"/>
+    <feature name="http://api.phonegap.com/1.0/network"/>
+    <feature name="http://api.phonegap.com/1.0/notification"/>
 
     <preference name="phonegap-version" value="2.5.0" />
     <preference name="orientation"      value="portrait" />
@@ -51,6 +56,7 @@
     <gap:splash src="res/screen/ios/screen-iphone-portrait.png"    gap:platform="ios"     width="1536" height="2008" />
 
     <plugin name="NetworkStatus" value="org.apache.cordova.NetworkManager" />
+
 
 	<gap:plugin name="Storage" />
 	<gap:plugin name="GenericPush" />
