@@ -137,7 +137,7 @@ App.Views.Body = Backbone.View.extend({
 
 	updateCount: function(data){
 		// Updates the count for one of the displayed now,due,later
-
+		console.log('updateCount');
 		// Convert types
 		if(data.type == 'delayed'){
 			data.type = 'now';
@@ -164,6 +164,9 @@ App.Views.Body = Backbone.View.extend({
 		var template = App.Utils.template('t_thread_counter');
 
 		// Add to button
+		console.log('add to button');
+		console.log(data.count);
+		console.log($button);
 		$button.append(template({count: data.count}));
 		
 		return false;
@@ -1504,7 +1507,12 @@ App.Views.CommonThread = Backbone.View.extend({
 		var email_to_color = {}; // for consistent coloring
 
 		// Randomize the list of colors
-		color_presets = _.shuffle(color_presets);
+		// color_presets = _.shuffle(color_presets);
+		// - just offset the current_color based on a consistent parameter (the first letter of the first senders name)
+		// - stays the same for a day
+		var alphabet = 'abcdefghijklmnopqrstuvwxyz';
+		var day = new Date().toString('d');
+		current_color = alphabet.indexOf(data.Email[0].original.headers.From_Parsed[0][1][0]) + day;
 
 		// Iterate through Emails
 		_.each(data.Email, function(email, i){
@@ -2497,8 +2505,15 @@ App.Views.CommonReply = Backbone.View.extend({
 		'click .btn[data-action="send"]' : 'send',
 
 		'click .btn[data-action="contacts"]' : 'contact',
+		'click .addresses .choose_type button' : 'switch_addresses',
 
 		'click .remove_address' : 'remove_address',
+		'click .show_all_addresses' : 'show_all_addresses',
+
+		'click .address_list .add .openButton' : 'quick_add_address',
+		'click .address_list .add .addEmail' : 'quick_add_email',
+		'click .quick_contacts .btn-toolbar a' : 'tab_clicked',
+		'click .addresses .contact' : 'chose_contact',
 
 		'click .add_attachment' : 'add_attachment',
 		'click .file_attachment' : 'remove_attachment',
@@ -2518,12 +2533,19 @@ App.Views.CommonReply = Backbone.View.extend({
 		// _.bindAll(this, 'send');
 		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'cancel');
+		// _.bindAll(this, 'change_input_add_contact');
+		_.bindAll(this, 'checking_autocomplete');
 		
 		// this.el = this.options.el;
 
 		// Are the models already set?
 		// - expecting them to be, should have a fallback for if they are not set
 
+		// Load contacts if not loaded
+		if(App.Data.Store.Contacts.length < 1){
+			App.Data.Store.Contacts = new App.Collections.Contacts();
+			App.Data.Store.Contacts.fetch();
+		}
 
 		if(!this.options.ThreadModel || !this.options.EmailModels){
 			// Not set
@@ -2641,6 +2663,256 @@ App.Views.CommonReply = Backbone.View.extend({
 	},
 
 
+	show_all_addresses: function(ev){
+		// Hide the single_address and show complex address fields
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Hide single_address field
+		that.$('.single_address').addClass('nodisplay');
+
+		// Show complex
+		that.$('.addresses').removeClass('nodisplay');
+
+		// Add focus listener
+		this.$('.add input').on('focus', $.proxy(this.focus_input_add_contact, this));
+		this.$('.add input').on('blur', $.proxy(this.blur_input_add_contact, this));
+
+		// change event (update autocomplete)
+		// this.$('.add input').on('keyup', this.change_input_add_contact);
+
+		return false;
+	},
+
+	tab_clicked: function(ev){
+		// Only for adding styles
+		var that = this,
+			elem = ev.currentTarget;
+
+		$(elem).siblings().removeClass('active');
+		$(elem).addClass('active');
+	},
+
+	quick_add_address: function(ev){
+		// Opens up the quick-add dialog
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Already displayed?
+		// - remove it
+		var $add = $(elem).parents('.add');
+		if($add.next() && $add.next().hasClass('quick_contacts')){
+			$add.next().remove();
+			return false;
+		}
+
+		// Remove 'searching' box
+		if($add.next() && $add.next().hasClass('searching_contacts')){
+			$add.next().remove();
+			return false;
+		}
+
+
+		// Create template
+		var template = App.Utils.template('t_contacts_quick_add');
+
+		// append after this .add element
+		$(elem).parents('.add').after(template({
+			frequent: [],
+			in_thread: that.rendered_data.Participants
+		}));
+
+		return false;
+	},
+
+	quick_add_email: function(ev){
+		// Adds the current email in the text field to the list
+		// - validates email
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Validate email
+		var email = $(elem).parent().find('input').val();
+		email = $.trim(email);
+		if(!App.Utils.Validate.email(email)){
+			// Failed validation
+			App.Utils.Notification.toast('Need to enter a full email address','danger');
+			return false;
+		}
+
+		// Email OK
+
+		// Remove if already in there?
+		var $exists = $(elem).parents('.address_list').find('.participant[data-email="'+email+'"]');
+		if($exists.length > 0){
+			$exists.remove();
+			ev.preventDefault();
+			ev.stopPropagation();
+			return false;
+		}
+
+		// Add using a template
+		var template = App.Utils.template('t_compose_recipient');
+
+		// If not exists, add it
+		$(elem).parents('.address_list').find('.add').before(template(email));
+
+		// Clear the input field
+		$(elem).parent().find('input').val('');
+
+		ev.preventDefault();
+		ev.stopPropagation();
+		return false;
+	},
+
+	chose_contact: function(ev){
+		// add contact to To, Cc, or Bcc
+		var that = this,
+			elem = ev.currentTarget;
+
+		var email = $(elem).attr('data-email');
+
+		// Add email to html
+		// - should highlight the email address after chosen
+
+		// Remove if already in there?
+		var $exists = $(elem).parents('.address_list').find('.participant[data-email="'+email+'"]');
+		if($exists.length > 0){
+			$exists.remove();
+			ev.preventDefault();
+			ev.stopPropagation();
+			return false;
+		}
+
+		// Add using a template
+		var template = App.Utils.template('t_compose_recipient');
+
+		// If not exists, display it
+		$(elem).parents('.address_list').find('.add').before(template(email));
+
+		ev.preventDefault();
+		ev.stopPropagation();
+		return false;
+
+	},
+
+	focus_input_add_contact: function(ev){
+		// Typing in the add contact input
+		var that = this,
+			elem = ev.currentTarget;
+
+		// start autocompletetimeout
+		that.current_autocomplete_elem = elem;
+
+		// Already displayed?
+		// - remove it
+		var $add = $(elem).parents('.add');
+		if($add.next() && $add.next().hasClass('searching_contacts')){
+			// $add.next().remove();
+			that.checking_autocomplete(); // run now
+			return false;
+		}
+
+		// Remove 'quick_contacts' box
+		if($add.next() && $add.next().hasClass('quick_contacts')){
+			$add.next().remove();
+			// return false;
+		}
+
+		// Create template
+		var template = App.Utils.template('t_contacts_searching_init');
+
+		// append after this .add element
+		$(elem).parents('.add').after(template([]));
+
+		// Already text typed in there?
+
+		that.checking_autocomplete();
+
+
+		return;
+	},
+
+	blur_input_add_contact: function(){
+		// when leaving contact search box
+		var that = this;
+
+		// Clear the timeout
+		window.clearTimeout(that.autocompleteTimeout);
+
+		return;
+	},
+
+	checking_autocomplete: function(){
+		var that = this;
+
+		that.autocompleteTimeout = window.setTimeout(function(){
+			// Check for updates to field
+			that.update_autocomplete();
+			that.checking_autocomplete();
+		},100);
+	},
+
+	update_autocomplete: function(){
+		// check for differences in input field
+		var that = this;
+
+		var elem = that.current_autocomplete_elem;
+		
+		var search_val = $.trim($(elem).val().toLowerCase());
+		if(search_val == $(elem).attr('last-val')){
+			return;
+		}
+		$(elem).attr('last-val', search_val);
+
+		console.log(search_val);
+
+		var total = null,
+			return_result = null
+
+		if(search_val != ''){
+			var result = [];
+			var Contacts = [];
+			try {
+				Contacts = App.Data.Store.Contacts.toJSON();
+			} catch(err){
+				Contacts = App.Data.Store.Contacts;
+			}
+			console.log('Contacts length');
+			console.log(Contacts.length);
+			console.dir(Contacts.length);
+			_.each(Contacts, function(contact){
+				if(contact.name.toLowerCase().indexOf(search_val) != -1){
+					// found
+					result.push(contact);
+					return true;
+				}
+				if(contact.email.toLowerCase().indexOf(search_val) != -1){
+					// found
+					result.push(contact);
+					return true;
+				}
+				return false;
+			});
+
+			total = result.length;
+			return_result = result.splice(0,5);
+
+		}
+
+		// Update template
+		var template = App.Utils.template('t_contacts_searching_results');
+
+		// append after this .add element
+		$(elem).parents('.address_list').find('.searching_contacts').html(template({
+			total: total,
+			result: return_result,
+			all_contacts: App.Data.Store.Contacts.length
+		}));
+
+		return;
+	},
+
 	remove_address: function(ev){
 		// remove a person from the sending list
 
@@ -2721,7 +2993,7 @@ App.Views.CommonReply = Backbone.View.extend({
 		
 
 		// In Reply To
-		var in_reply = this.EmailModels.last().toJSON().common['Message-id']; //[this.thread_data.Email.length - 1].common['Message-Id'];
+		var in_reply = this.EmailModels.last().toJSON().common['Message-Id']; //[this.thread_data.Email.length - 1].common['Message-Id'];
 		var subject = this.EmailModels.last().toJSON().original.headers.Subject;
 
 		// References (other message-ids)
@@ -2731,32 +3003,47 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		// To
 		var to = [];
-		this.$('.participant').each(function(index){
+		this.$('.address_list[data-type="To"] .participant').each(function(index){
 			to.push($(this).attr('data-email'));
 		});
 		to = to.join(',');
+
+		// CC
+		var cc = [];
+		this.$('.address_list[data-type="CC"] .participant').each(function(index){
+			cc.push($(this).attr('data-email'));
+		});
+		cc = cc.join(',');
+		
+		// BCC
+		var bcc = [];
+		this.$('.address_list[data-type="BCC"] .participant').each(function(index){
+			bcc.push($(this).attr('data-email'));
+		});
+		bcc = bcc.join(',');
+		
 
 		var from = App.Data.UserEmailAccounts.at(0).get('email');
 		var textBody = that.$('#textbody').val();
 
 		// Do a little bit of validation
 		try {
-			if(!to.length > 0){
+			if(to.length < 1){
 				alert('You need to send to somebody!');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!from.length > 0){
+			if(from.length < 1){
 				alert('Whoops, we cannot send from your account right now');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!subject.length > 0){
+			if(subject.length < 1){
 				alert('You need to write a subject line!');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!textBody.length > 0){
+			if(textBody.length < 1){
 				alert('You need to write something in your email!');
 				that.cancel_sending(that, elem);
 				return false;
@@ -2786,6 +3073,14 @@ App.Views.CommonReply = Backbone.View.extend({
 				attachments: []
 			}
 		};
+
+		// CC and BCC
+		if(cc.length > 0){
+			eventData.obj.headers.CC = cc;
+		}
+		if(bcc.length > 0){
+			eventData.obj.headers.BCC = bcc;
+		}
 
 		// Add attachments
 		// - not required
@@ -2840,9 +3135,9 @@ App.Views.CommonReply = Backbone.View.extend({
 					// All good, SEND Email
 					eventData.event = 'Email.send';
 
-					// Log
-					clog('sending reply Email');
-					clog(eventData);
+					// // Log
+					// clog('sending reply Email');
+					// clog(eventData);
 
 					Api.event({
 						data: eventData,
@@ -2918,6 +3213,29 @@ App.Views.CommonReply = Backbone.View.extend({
 
 		return false;
 
+	},
+
+	switch_addresses: function(ev){
+		// Switch showing To/CC/BCC
+		var that = this,
+			elem = ev.currentTarget;
+
+		if($(elem).hasClass('btn-inverse')){
+			// already active
+			return false;
+		}
+
+		// Remove currently active
+		var $addresses = $(elem).parents('.addresses');
+		$addresses.find('.address_list').removeClass('active');
+		$addresses.find('button').removeClass('btn-inverse').addClass('btn-info');
+
+		// Make current selection active
+		$(elem).removeClass('btn-info').addClass('btn-inverse');
+		var attr = $(elem).attr('data-type');
+		$addresses.find('.address_list[data-type="'+attr+'"]').addClass('active');
+
+		return false;
 	},
 
 	contact: function(ev){
@@ -3267,7 +3585,7 @@ App.Views.CommonReply = Backbone.View.extend({
 
 	render_thread: function(){
 		
-		clog('rendering Thread');
+		clog('rendering Thread and Forms');
 
 		// Render the loading screen
 		var that = this;
@@ -3300,9 +3618,9 @@ App.Views.CommonReply = Backbone.View.extend({
 
 						// Sent from myself
 						// - disclude? (only if no others?)
-						if($.inArray(parsed_email[1], App.Data.UserEmailAccounts_Quick) != -1){
-							return false;
-						}
+						// if($.inArray(parsed_email[1], App.Data.UserEmailAccounts_Quick) != -1){
+						// 	return false;
+						// }
 
 						// Add address to list
 						addresses.push(parsed_email[1]);
@@ -3333,24 +3651,69 @@ App.Views.CommonReply = Backbone.View.extend({
 			return false;
 		});
 
+		// All participants
 		data.Participants = tmp_participants2;
+
+		// To
+		// - either Reply-To or From
+		// - if the last email is from me, then set the same info? (only go 2 deep before it breaks)
+		var tmp_last = data.Email[data.Email.length - 1];
+		var still_me = false;
+		// console.log(tmp_last);
+		try {
+			if($.inArray(tmp_last.original.headers.From_Parsed[0][1], App.Data.UserEmailAccounts_Quick) != -1){
+				// is me
+				// - try the next email
+				tmp_last = data.Email[data.Email.length - 2];
+				if($.inArray(tmp_last.original.headers.From_Parsed[0][1], App.Data.UserEmailAccounts_Quick) != -1){
+					// Is still me, just go with my same To address
+					still_me = true;
+				} else {
+
+				}
+			}
+		} catch(err){
+
+		}
+		if(still_me){
+			// using my "To" data
+			data.Participants_To = tmp_last.original.headers['To_Parsed'];
+		} else {
+			data.Participants_To = tmp_last.original.headers['Reply-To_Parsed'].length > 0 ? tmp_last.original.headers['Reply-To_Parsed'] : tmp_last.original.headers['From_Parsed'];
+		}
+
+		// Carbon Copies
+		data.Participants.CC = tmp_last.original.headers['Cc_Parsed'];
+
+		// Single email recipient (conversation with one person)
+		// - mailing list?
+		if(data.Participants_To.length == 1 && data.Participants.CC.length == 0){
+			data.only_single_address = data.Participants_To[0];
+			data.single_address_class = 'nodisplay';
+		}
+
+		// attach to View
+		this.rendered_data = data;
 
 		// Write HTML
 		this.$el.html(template(data));
 
 		// Listen for textarea focus
 		// - remove all the other elements, make it all about the composing experience? (show/hide button?)
-		this.$('textarea').on('focus',function(){
-			// alert('focused');
-			// that.$('.addresses').hide();
-			// that.$('.header, .addresses').hide();
-			// that.$('.body_container').removeClass('nudge_down');
-			that.trigger('keyboard_out');
+
+		// Input keyboard showing
+		// this.$('textarea').on('focus',function(){
+		// 	that.trigger('keyboard_showing');
+		// });
+		// this.$('textarea').on('blur',function(){
+		// 	that.trigger('keyboard_in');
+		// });
+
+		// Textarea keyboard showing
+		this.$('.compose_body').on('focus',function(){
+			that.trigger('keyboard_showing');
 		});
-		this.$('textarea').on('blur',function(){
-			// alert('unfocused');
-			// that.$('.addresses').show();
-			
+		this.$('.compose_body').on('blur',function(){
 			that.trigger('keyboard_in');
 		});
 
@@ -3360,14 +3723,14 @@ App.Views.CommonReply = Backbone.View.extend({
 			var win_height = $(window).height();
 			if(win_height != App.Data.xy.win_height && win_height != App.Data.xy.win_width){
 				// Keyboard is out
-				if(!that.keyboard_out){
-					that.keyboard_out = true;
-					that.trigger('keyboard_out');
+				if(!that.keyboard_showing){
+					that.keyboard_showing = true;
+					that.trigger('keyboard_showing');
 				}
 			} else {
 				// Keyboard is hidden
-				if(that.keyboard_out){
-					that.keyboard_out = false;
+				if(that.keyboard_showing){
+					that.keyboard_showing = false;
 					that.trigger('keyboard_in');
 				}
 			}
@@ -3376,10 +3739,12 @@ App.Views.CommonReply = Backbone.View.extend({
 		that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
 
 		// Hiding elements on keyboard out
-		that.on('keyboard_out',function(){
+		that.on('keyboard_showing',function(){
 			// that.$('.compose-exit-minimal').removeClass('nodisplay');
-			that.$('.header, .addresses').hide();
-			that.$('.body_container').removeClass('nudge_down');
+			if(that.$('.compose_body').is(':focus')){
+				that.$('.header, .addresses').hide();
+				that.$('.body_container').removeClass('nudge_down');
+			}
 		});
 
 		// Showing elements when keyboard hidden
@@ -3467,7 +3832,15 @@ App.Views.CommonCompose = Backbone.View.extend({
 		'click .btn[data-action="cancel"]' : 'cancel',
 		'click .btn[data-action="send"]' : 'send',
 
-		'click .participant' : 'remove_address', // click anywhere on the email to remove it
+		'click .btn[data-action="contacts"]' : 'contact',
+		'click .addresses .choose_type button' : 'switch_addresses',
+
+		'click .remove_address' : 'remove_address',
+
+		'click .address_list .add .openButton' : 'quick_add_address',
+		'click .address_list .add .addEmail' : 'quick_add_email',
+		'click .quick_contacts .btn-toolbar a' : 'tab_clicked',
+		'click .addresses .contact' : 'chose_contact',
 
 		'click .add_attachment' : 'add_attachment',
 		'click .add_photo' : 'add_photo',
@@ -3490,6 +3863,12 @@ App.Views.CommonCompose = Backbone.View.extend({
 		var that = this;
 		// this.el = this.options.el;
 
+		// Load contacts if not loaded
+		if(App.Data.Store.Contacts.length < 1){
+			App.Data.Store.Contacts = new App.Collections.Contacts();
+			App.Data.Store.Contacts.fetch();
+		}
+
 	},
 
 	beforeClose: function(){
@@ -3501,23 +3880,265 @@ App.Views.CommonCompose = Backbone.View.extend({
 		return;
 	},
 
-
-	remove_address: function(ev){
-		// remove a person from the sending list
+	tab_clicked: function(ev){
+		// Only for adding styles
 		var that = this,
 			elem = ev.currentTarget;
 
-		// Confirm removing
-		// - probably do away with this step
-		//	- maybe have a slight delay before it actually gets rid of it, as a way to *undo* instead of having to confirm
-		var c = confirm('Remove address?');
-		if(!c){
-			return;
+		$(elem).siblings().removeClass('active');
+		$(elem).addClass('active');
+	},
+
+	quick_add_address: function(ev){
+		// Opens up the quick-add dialog
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Already displayed?
+		// - remove it
+		var $add = $(elem).parents('.add');
+		if($add.next() && $add.next().hasClass('quick_contacts')){
+			$add.next().remove();
+			return false;
 		}
 
-		// Remove address
-		$(elem).remove();
+		// Remove 'searching' box
+		if($add.next() && $add.next().hasClass('searching_contacts')){
+			$add.next().remove();
+			return false;
+		}
 
+
+		// Create template
+		var template = App.Utils.template('t_contacts_quick_add');
+
+		// append after this .add element
+		$(elem).parents('.add').after(template({
+			frequent: []
+		}));
+
+		return false;
+	},
+
+	quick_add_email: function(ev){
+		// Adds the current email in the text field to the list
+		// - validates email
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Validate email
+		var email = $(elem).parent().find('input').val();
+		email = $.trim(email);
+		if(!App.Utils.Validate.email(email)){
+			// Failed validation
+			App.Utils.Notification.toast('Need to enter a full email address','danger');
+			return false;
+		}
+
+		// Email OK
+
+		// Remove if already in there?
+		var $exists = $(elem).parents('.address_list').find('.participant[data-email="'+email+'"]');
+		if($exists.length > 0){
+			$exists.remove();
+			ev.preventDefault();
+			ev.stopPropagation();
+			return false;
+		}
+
+		// Add using a template
+		var template = App.Utils.template('t_compose_recipient');
+
+		// If not exists, add it
+		$(elem).parents('.address_list').find('.add').before(template(email));
+
+		// Clear the input field
+		$(elem).parent().find('input').val('');
+
+		ev.preventDefault();
+		ev.stopPropagation();
+		return false;
+	},
+
+	chose_contact: function(ev){
+		// add contact to To, Cc, or Bcc
+		var that = this,
+			elem = ev.currentTarget;
+
+		var email = $(elem).attr('data-email');
+
+		// Add email to html
+		// - should highlight the email address after chosen
+
+		// Remove if already in there?
+		var $exists = $(elem).parents('.address_list').find('.participant[data-email="'+email+'"]');
+		if($exists.length > 0){
+			$exists.remove();
+			ev.preventDefault();
+			ev.stopPropagation();
+			return false;
+		}
+
+		// Add using a template
+		var template = App.Utils.template('t_compose_recipient');
+
+		// If not exists, display it
+		$(elem).parents('.address_list').find('.add').before(template(email));
+
+		ev.preventDefault();
+		ev.stopPropagation();
+		return false;
+
+	},
+
+	focus_input_add_contact: function(ev){
+		// Typing in the add contact input
+		var that = this,
+			elem = ev.currentTarget;
+
+		// start autocompletetimeout
+		that.current_autocomplete_elem = elem;
+
+		// Already displayed?
+		// - remove it
+		var $add = $(elem).parents('.add');
+		if($add.next() && $add.next().hasClass('searching_contacts')){
+			// $add.next().remove();
+			that.checking_autocomplete(); // run now
+			return false;
+		}
+
+		// Remove 'quick_contacts' box
+		if($add.next() && $add.next().hasClass('quick_contacts')){
+			$add.next().remove();
+			// return false;
+		}
+
+		// Create template
+		var template = App.Utils.template('t_contacts_searching_init');
+
+		// append after this .add element
+		$(elem).parents('.add').after(template([]));
+
+		// Already text typed in there?
+
+		that.checking_autocomplete();
+
+
+		return;
+	},
+
+	blur_input_add_contact: function(){
+		// when leaving contact search box
+		var that = this;
+
+		// Clear the timeout
+		window.clearTimeout(that.autocompleteTimeout);
+
+		return;
+	},
+
+	checking_autocomplete: function(){
+		var that = this;
+
+		that.autocompleteTimeout = window.setTimeout(function(){
+			// Check for updates to field
+			that.update_autocomplete();
+			that.checking_autocomplete();
+		},100);
+	},
+
+	update_autocomplete: function(){
+		// check for differences in input field
+		var that = this;
+
+		var elem = that.current_autocomplete_elem;
+		
+		var search_val = $.trim($(elem).val().toLowerCase());
+		if(search_val == $(elem).attr('last-val')){
+			return;
+		}
+		$(elem).attr('last-val', search_val);
+
+		console.log(search_val);
+
+		var total = null,
+			return_result = null
+
+		if(search_val != ''){
+			var result = [];
+			var Contacts = [];
+			try {
+				Contacts = App.Data.Store.Contacts.toJSON();
+			} catch(err){
+				Contacts = App.Data.Store.Contacts;
+			}
+			console.log('Contacts length');
+			console.log(Contacts.length);
+			console.dir(Contacts.length);
+			_.each(Contacts, function(contact){
+				if(contact.name.toLowerCase().indexOf(search_val) != -1){
+					// found
+					result.push(contact);
+					return true;
+				}
+				if(contact.email.toLowerCase().indexOf(search_val) != -1){
+					// found
+					result.push(contact);
+					return true;
+				}
+				return false;
+			});
+
+			total = result.length;
+			return_result = result.splice(0,5);
+
+		}
+
+		// Update template
+		var template = App.Utils.template('t_contacts_searching_results');
+
+		// append after this .add element
+		$(elem).parents('.address_list').find('.searching_contacts').html(template({
+			total: total,
+			result: return_result,
+			all_contacts: App.Data.Store.Contacts.length
+		}));
+
+		return;
+	},
+
+	remove_address: function(ev){
+		// remove a person from the sending list
+
+		var that = this;
+		var elem = ev.currentTarget;
+
+		$(elem).parents('.participant').remove();
+
+	},
+
+	switch_addresses: function(ev){
+		// Switch showing To/CC/BCC
+		var that = this,
+			elem = ev.currentTarget;
+
+		if($(elem).hasClass('btn-inverse')){
+			// already active
+			return false;
+		}
+
+		// Remove currently active
+		var $addresses = $(elem).parents('.addresses');
+		$addresses.find('.address_list').removeClass('active');
+		$addresses.find('button').removeClass('btn-inverse').addClass('btn-info');
+
+		// Make current selection active
+		$(elem).removeClass('btn-info').addClass('btn-inverse');
+		var attr = $(elem).attr('data-type');
+		$addresses.find('.address_list[data-type="'+attr+'"]').addClass('active');
+
+		return false;
 	},
 
 	contact: function(ev){
@@ -3741,7 +4362,7 @@ App.Views.CommonCompose = Backbone.View.extend({
 		App.Events.trigger("email_compose_sent", true);
 
 		// Toast
-		App.Utils.toast('Email Sent Successfully');
+		App.Utils.Notification.toast('Email Sent Successfully','success');
 
 		// Close myself
 		this.close();
@@ -3784,35 +4405,47 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 		// To
 		var to = [];
-		this.$('.participant').each(function(index){
+		this.$('.address_list[data-type="To"] .participant').each(function(index){
 			to.push($(this).attr('data-email'));
 		});
 		to = to.join(',');
 
-		// From
-		var from = App.Data.UserEmailAccounts.at(0).get('email');
+		// CC
+		var cc = [];
+		this.$('.address_list[data-type="CC"] .participant').each(function(index){
+			cc.push($(this).attr('data-email'));
+		});
+		cc = cc.join(',');
+		
+		// BCC
+		var bcc = [];
+		this.$('.address_list[data-type="BCC"] .participant').each(function(index){
+			bcc.push($(this).attr('data-email'));
+		});
+		bcc = bcc.join(',');
+		
 
-		// Body of email
-		var textBody = that.$('#textbody').val();
+		var from = App.Data.UserEmailAccounts.at(0).get('email');
+		var textBody = $.trim(that.$('#textbody').val());
 
 		// Do a little bit of validation
 		try {
-			if(!to.length > 0){
+			if(to.length < 1){
 				alert('You need to send to somebody!');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!from.length > 0){
+			if(from.length < 1){
 				alert('Whoops, we cannot send from your account right now');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!subject.length > 0){
+			if(subject.length < 1){
 				alert('You need to write a subject line!');
 				that.cancel_sending(that, elem);
 				return false;
 			}
-			if(!textBody.length > 0){
+			if(textBody.length < 1){
 				alert('You need to write something in your email!');
 				that.cancel_sending(that, elem);
 				return false;
@@ -3840,6 +4473,14 @@ App.Views.CommonCompose = Backbone.View.extend({
 				attachments: []
 			}
 		};
+
+		// CC and BCC
+		if(cc.length > 0){
+			eventData.obj.headers.CC = cc;
+		}
+		if(bcc.length > 0){
+			eventData.obj.headers.BCC = bcc;
+		}
 
 		// Add attachments
 		// - not required
@@ -4313,14 +4954,14 @@ App.Views.CommonCompose = Backbone.View.extend({
 
 		// Listen for textarea focus
 		// - remove all the other elements, make it all about the composing experience? (show/hide button?)
-		this.$('textarea').on('focus',function(){
+		this.$('.compose_body').on('focus',function(){
 			// alert('focused');
 			// that.$('.addresses').hide();
 			// that.$('.header, .addresses').hide();
 			// that.$('.body_container').removeClass('nudge_down');
-			that.trigger('keyboard_out');
+			that.trigger('keyboard_showing');
 		});
-		this.$('textarea').on('blur',function(){
+		this.$('.compose_body').on('blur',function(){
 			// alert('unfocused');
 			// that.$('.addresses').show();
 
@@ -4333,14 +4974,14 @@ App.Views.CommonCompose = Backbone.View.extend({
 			var win_height = $(window).height();
 			if(win_height != App.Data.xy.win_height && win_height != App.Data.xy.win_width){
 				// Keyboard is out
-				if(!that.keyboard_out){
-					that.keyboard_out = true;
-					that.trigger('keyboard_out');
+				if(!that.keyboard_showing){
+					that.keyboard_showing = true;
+					that.trigger('keyboard_showing');
 				}
 			} else {
 				// Keyboard is hidden
-				if(that.keyboard_out){
-					that.keyboard_out = false;
+				if(that.keyboard_showing){
+					that.keyboard_showing = false;
 					that.trigger('keyboard_in');
 				}
 			}
@@ -4349,11 +4990,13 @@ App.Views.CommonCompose = Backbone.View.extend({
 		that.checkingTimeout = setTimeout(that.checkingForKeyboard, 500);
 
 		// Hiding elements on keyboard out
-		that.on('keyboard_out',function(){
+		that.on('keyboard_showing',function(){
 			// alert('out');
 			// that.$('.compose-exit-minimal').removeClass('nodisplay');
-			that.$('.header, .addresses').hide();
-			that.$('.body_container').removeClass('nudge_down');
+			if(that.$('.compose_body').is(':focus')){
+				that.$('.header, .addresses').hide();
+				that.$('.body_container').removeClass('nudge_down');
+			}
 		});
 
 		// Showing elements when keyboard hidden
@@ -4365,6 +5008,9 @@ App.Views.CommonCompose = Backbone.View.extend({
 		});
 
 
+		// Add focus listener on autocomplete
+		this.$('.add input').on('focus', $.proxy(this.focus_input_add_contact, this));
+		this.$('.add input').on('blur', $.proxy(this.blur_input_add_contact, this));
 
 		// Bind to backbutton
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.cancel);
@@ -4400,6 +5046,8 @@ App.Views.ChooseContact = Backbone.View.extend({
 		this._renderedContacts = false;
 
 		if(usePg){
+			alert('launched contacts');
+			App.Data.Store.Contacts = new App.Collections.Contacts();
 
 			// Collect from Collection.Contacts
 
@@ -4584,8 +5232,10 @@ App.Views.ChooseContact = Backbone.View.extend({
 		var template = App.Utils.template('t_choose_contacts');
 
 		// Write HTML
+		console.log('render contacts: ');
+		console.log(App.Data.Store.Contacts.length);
 		this.$el.html(template({
-			contacts: App.Data.Store.Contacts
+			contacts: App.Data.Store.Contacts.toJSON()
 		}));
 
 		// Back button
@@ -11167,7 +11817,7 @@ App.Views.Modal = Backbone.View.extend({
 
 App.Views.Toast = Backbone.View.extend({
 	
-	el: 'body',
+	id: 'toast',
 
 	events: {
 	},
@@ -11177,28 +11827,39 @@ App.Views.Toast = Backbone.View.extend({
 	},
 
 	render: function() {
-
+		var that = this;
 		// Remove any previous version
-		$('#toast').remove();
+		// $('#toast').remove();
 
 		// Build from template
 		var template = App.Utils.template('t_toast');
 
 		// Write HTML
-		$(this.el).append(template({
+		this.$el.html(template({
 			message: this.options.message
 		}));
 
-		$('#toast').animate({
+		// Add classname
+		if(this.options.type){
+			this.$el.addClass('toast-' + this.options.type);
+		}
+
+		$('body').append(this.el);
+		// $(this.el).append(template({
+		// 	message: this.options.message
+		// }));
+
+		this.$el.animate({
 			opacity: 1
 		},'fast');
 
 		// Display Modal
 		window.setTimeout(function(){
-			$('#toast').animate({
+			that.$el.animate({
 				opacity: 0
 			},'fast',function(){
-				$(this).remove();
+				// $(this).remove();
+				that.close();
 			});
 		},3000);
 
