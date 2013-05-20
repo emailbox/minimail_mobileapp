@@ -78,6 +78,7 @@
 	<!-- http://momentjs.com/  would be an alternative -->
 
 	<script src="js/bootstrap/bootstrap-modal.js"></script>
+	<script src="js/bootstrap/bootstrap-tab.js"></script>
 
 	<!--<script src="js/libs/jquery.ajaxQueue.js"></script>-->
 	<script src="js/libs/jquery.ajaxManager.js"></script>
@@ -297,11 +298,17 @@
 	</script>
 
 	<script id="t_thread_counter" class="partial" type="text/x-handlebars-template">
+
 		{{#if count}}
+
 			<div class="counter">
-				<span>{{{count}}}</span>
+				<span>
+					{{echo count}}
+				</span>
 			</div>
+
 		{{/if}}
+
 	</script>
 
 
@@ -855,6 +862,7 @@
 				</div>
 			</div>
 
+			<div class="shadow"></div>
 
 			<!--
 			<ul class="pager">
@@ -1104,21 +1112,6 @@
 
 			</div>
 
-			<!--
-			<div class="footer2 thread_footer common_thread">
-
-				<div class="btn-toolbar">
-					<div class="btn-group btn-single reply">
-						
-						<div class="btn btn-info">
-							&lt; reply
-						</div>
-					</div>
-				</div>
-
-			</div>
-			-->
-
 			<div class="footer">
 						
 				<div class="footer_holder clearfix">
@@ -1261,7 +1254,7 @@
 									<i class="fui-man-24"></i>&nbsp;&nbsp;&nbsp; Contact &amp; Signature
 								</div>
 								<div class="list_contact nodisplay">
-									{{print original.headers.From_Parsed}}
+									
 									<div class="info clearfix">
 										<span class="left">
 											Name: 
@@ -1440,14 +1433,14 @@
 
 
 						<div class="btn-toolbar">
-			                <div class="btn-group btn-single">
+			                <div class="btn-group btn-single pull-left">
 			                  <a class="btn btn-default" href="#" data-action="cancel">Cancel</a>
 			                </div>
-			                <div class="btn-group two-with-separator">
-			                  <a class="btn btn-info" href="#" data-action="thread">&nbsp;<i class="fui-new-16"></i>&nbsp;</a>
-			                  <a class="btn btn-info" href="#" data-action="contacts">&nbsp;<i class="fui-man-16"></i>&nbsp;</a>
-			                </div>
 			                <div class="btn-group btn-single">
+			                  <a class="btn btn-info" href="#" data-action="thread">&nbsp;<i class="fui-new-16"></i>&nbsp;</a>
+			                  <!--<a class="btn btn-info" href="#" data-action="contacts">&nbsp;<i class="fui-man-16"></i>&nbsp;</a>-->
+			                </div>
+			                <div class="btn-group btn-single text-center pull-right">
 			                  <a class="btn btn-success" href="#" data-action="send">Send</a>
 			                </div>
 		                </div>
@@ -1468,19 +1461,83 @@
 				</div>
 				-->
 
-				<div class="addresses">
-					{{#each Participants}}
+				{{#if only_single_address}}
+					<div class="single_address">
+						<span class="label participant show_all_addresses" data-email="{{only_single_address.[1]}}">
+							<strong>To:</strong> {{only_single_address.[1]}}</span>
+					</div>
+				{{/if}}
 
-						<span class="label participant" data-email="{{this}}">
-							<span class="remove_address">X</span> {{this}}
-						</span>
+				<div class="addresses {{single_address_class}}">
 
-					{{/each}}
+					<div class="btn-toolbar choose_type">
+						<div class="btn-group">
+							<button class="btn btn-inverse" data-type="To">To <span>{{count Participants_To}}</span></button>
+							<button class="btn btn-info" data-type="CC">CC <span>{{count Participants_CC}}</span></button>
+							<button class="btn btn-info" data-type="BCC">BCC <span>0</span></button>
+						</div>
+						<div class="btn-group btn-single pull-right">
+							<button class="btn btn-info shrink"> <i class="fui-cross-24"></i> </button>
+						</div>
+					</div>
+
+					<div class="address_list active" data-type="To">
+						{{#each Participants_To}}
+
+							<span class="label participant" data-email="{{this.[1]}}">
+								<span class="remove_address">X</span> {{this.[1]}}
+							</span>
+
+						{{/each}}
+
+						<div class="add">
+							<div class="input-append">
+								<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+								<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+								<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+							</div>
+						</div>
+
+					</div>
+
+
+					<div class="address_list" data-type="CC">
+
+						{{#each Participants_CC}}
+
+							<span class="label participant" data-email="{{this.[1]}}">
+								<span class="remove_address">X</span> {{this.[1]}}
+							</span>
+
+						{{/each}}
+
+						<div class="add">
+							<div class="input-append">
+								<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+								<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+								<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+							</div>
+						</div>
+
+					</div>
+
+					<div class="address_list" data-type="BCC">
+
+						<div class="add">
+							<div class="input-append">
+								<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+								<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+								<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+							</div>
+						</div>
+						
+					</div>
+
 				</div>
 
 				<div class="body">
 
-					<textarea id="textbody" name="textbody" placeholder="Body"></textarea>
+					<textarea id="textbody" class="compose_body" name="textbody" placeholder="Body"></textarea>
 
 				</div>
 
@@ -1511,12 +1568,86 @@
 	</script>
 
 
+	<script id="t_contacts_quick_add" type="text/x-handlebars-template" class="partial">
+
+		<div class="quick_contacts">
+				
+			<div class="btn-toolbar">
+				<div class="btn-group">
+					{{#if in_thread}}
+						<a href="#tab1" class="btn btn-inverse active" data-toggle="tab">In Thread</a>
+					{{/if}}
+					<a href="#tab2" class="btn btn-inverse" data-toggle="tab">Frequent</a>
+				</div>
+			</div>
+
+			<div class="tab-content">
+				{{#if in_thread}}
+					<div id="tab1" class="active">
+						{{#each in_thread}}
+							<div class="contact" data-email="{{this}}">
+								{{this}}
+							</div>
+						{{/each}}
+					</div>
+				{{/if}}
+				<div id="tab2">
+					<div class="no_frequent">
+						Frequent (unavailable)
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_contacts_searching_init" type="text/x-handlebars-template" class="partial">
+
+		<div class="searching_contacts">
+			
+			<div class="before_searching">
+				Type name or email in search box
+			</div>
+
+		</div>
+
+	</script>
+
+
+	<script id="t_contacts_searching_results" type="text/x-handlebars-template" class="partial">
+
+		{{#compare total "!=" null}}
+			{{#if total}}
+				{{#each result}}
+
+					<div class="contact ellipsis" data-email="{{this.email}}">
+						{{this.email}} <span>{{this.name}}</span>
+					</div>
+
+				{{/each}}
+			{{else}}
+				<div class="before_searching">
+					No matching contacts found of {{all_contacts}}
+				</div>
+			{{/if}}
+		{{else}}
+			<div class="before_searching">
+				Type name or email in search box
+			</div>
+		{{/compare}}
+
+
+	</script>
+
+
+
 	<script id="t_common_photo_preview_image" type="text/x-handlebars-template" class="partial">
 
 		<img src="{{{url}}}" width="40" height="40"/>
 
 	</script>
-
 
 
 	<script id="t_common_file_attachment" type="text/x-handlebars-template" class="partial">
@@ -1541,22 +1672,24 @@
 				<div class="base_header_menu clearfix">
 					<div class="left">
 						<div class="btn-toolbar">
-							<div class="btn-group two-with-separator">
+							<div class="btn-group btn-single">
+								<button data-action="cancel" class="btn btn-default">
+									Cancel
+								</button>
+								<!--
 								<button data-action="contact" class="btn btn-info">
 									<i class="fui-man-16"></i>
 								</button>
 								<button data-action="contact_write" class="btn btn-info">
 									...
 								</button>
+								-->
 							</div>
 						</div>
 					</div>
 					<div class="right">
 						<div class="btn-toolbar">
-							<div class="btn-group two-with-separator pull-right_old">
-								<button data-action="cancel" class="btn btn-default">
-									Cancel
-								</button>
+							<div class="btn-group btn-single pull-right_old">
 								<button data-action="send" class="btn btn-success btn-send">
 									Send
 								</button>
@@ -1571,14 +1704,56 @@
 
 		<div class="body_container nudge_down">
 
-			<!-- Do not actually need this for iOS anymore
-			<div class="compose-exit-minimal nodisplay text-right">
-				<span>X</span>
-			</div>
-			-->
-
 			<div class="addresses">
-				
+
+				<div class="btn-toolbar choose_type">
+					<div class="btn-group">
+						<button class="btn btn-inverse" data-type="To">To <span>0</span></button>
+						<button class="btn btn-info" data-type="CC">CC <span>0</span></button>
+						<button class="btn btn-info" data-type="BCC">BCC <span>0</span></button>
+					</div>
+					<div class="btn-group btn-single pull-right">
+						<button class="btn btn-info shrink"> <i class="fui-cross-24"></i> </button>
+					</div>
+				</div>
+
+				<div class="address_list active" data-type="To">
+
+					<div class="add">
+						<div class="input-append">
+							<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+							<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+							<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+						</div>
+					</div>
+
+				</div>
+
+
+				<div class="address_list" data-type="CC">
+
+					<div class="add">
+						<div class="input-append">
+							<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+							<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+							<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+						</div>
+					</div>
+
+				</div>
+
+				<div class="address_list" data-type="BCC">
+
+					<div class="add">
+						<div class="input-append">
+							<input class="" id="appendedInputButton" type="text" placeholder="Start typing email or name">
+							<button class="btn btn-success addEmail" type="button"><i class="fui-plus-24"></i></button>
+							<button class="btn btn-success openButton" type="button"><i class="fui-man-24"></i></button>
+						</div>
+					</div>
+					
+				</div>
+
 			</div>
 
 			<div class="subject">
@@ -1589,7 +1764,7 @@
 
 			<div class="body">
 
-				<textarea id="textbody" name="textbody" placeholder="Body"></textarea>
+				<textarea id="textbody" class="compose_body" name="textbody" placeholder="Body"></textarea>
 
 			</div>
 
@@ -2734,11 +2909,11 @@
 
 	<!-- Toast template -->
 	<script id="t_toast" type="text/x-handlebars-template">
-		<div id="toast">
-			<div class="toast-bg">
-				{{message}}
-			</div>
+		
+		<div class="toast-bg">
+			{{message}}
 		</div>
+
 	</script>
 
 	<!-- online-status template -->
@@ -2805,11 +2980,11 @@
 	<script id="t_startup_tutorial_1" type="text/x-handlebars-template">
 		
 		<h3>
-			Quick Note! <br />Minimail is loading your Inbox
+			Minimail takes a second to get started
 		</h3>
 
 		<p>
-			This should take just a few minutes, so don't fret if your email's don't appear right away. <!--'-->
+			Don't fret if your emails take a moment to appear; you can try sending an email to yourself, just to make sure minimail is working. Did you know that you have <strong>complete control</strong> over your data? 
 		</p>
 
 		<a class="btn btn-success next_step">
