@@ -54,10 +54,12 @@ App.Utils = {
 
 		},
 
-		toast: function(message){
-
+		toast: function(message, type){
+			// Pops up an overlay window for a moment
+			// - types: null, danger, info, success
 			var toast = new App.Views.Toast({
-				message: message
+				message: message, 
+				type: type
 			});
 			toast.render();
 		},
