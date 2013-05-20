@@ -16,7 +16,7 @@ var App = {
 	Events: 	 _.extend({}, Backbone.Events),
 	Data: 		 {
 		// tmp_contacts: [], // testing contacts
-		version: "0.0.31",
+		version: "0.0.41",
 		online: true,
 		LoggedIn: false, // Logged into minimail servers
 		notifications_queue: [],
@@ -244,10 +244,10 @@ var App = {
 			});
 
 		// Start gathering contacts
-		window.setTimeout(function(){
-			App.Data.Store.Contacts = new App.Collections.Contacts();
-			App.Data.Store.Contacts.fetch();
-		},10000);
+		// window.setTimeout(function(){
+		// 	App.Data.Store.Contacts = new App.Collections.Contacts();
+		// 	App.Data.Store.Contacts.fetch();
+		// },10000);
 
 		// Get access_token, set to app global, login to minimail server (doesn't allow offline access yet)
 		// - switch to be agnostic to online state (if logged in, let access offline stored data: need better storage/sync mechanisms)
