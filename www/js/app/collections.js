@@ -1651,6 +1651,7 @@ function contacts_sync_collection(method, model, options) {
 				multiple: true
 			};
 
+			// alert('loading contacts');
 			App.Utils.Notification.toast('Loading Contacts (may freeze for a moment)');
 
 			// Go get data
@@ -1680,6 +1681,10 @@ function contacts_sync_collection(method, model, options) {
 					var contacts_parsed = parse_and_sort_contacts(contacts_with_email);
 					// contacts_parsed = contacts_parsed.splice(0,25);
 
+					console.log('Got all contacts');
+					console.log(contacts_parsed);
+					console.log(JSON.stringify(contacts_parsed));
+
 					// Resolve
 					dfd.resolve(contacts_parsed);
 
@@ -1693,6 +1698,7 @@ function contacts_sync_collection(method, model, options) {
 					alert('Error with contacts');
 				}, contactFindOptions);
 			} catch(err){
+				alert('failed getting contacts');
 				console.log('Failed loading contacts');
 				console.log(err);
 				if(usePg){
@@ -1739,7 +1745,8 @@ function parse_and_sort_contacts(contacts){
 
 			// Set display to email value, if displayName doesn't exist
 			if(!contact.displayName){
-				tmp_data.name = email.value;
+				// tmp_data.name = email.value;
+				tmp_data.name = '';
 			}
 
 			// Set photo value
