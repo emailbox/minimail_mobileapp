@@ -408,7 +408,8 @@ body.console {
   /*background: #333;
   background: -webkit-linear-gradient(#333, #111);*/
 
-  background: #333538;
+  /*background: #333538;*/
+  background: #333;
   
   /*box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
   -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;*/
@@ -457,7 +458,8 @@ body.console {
   
   /*background: #333;*/
   /*background: -webkit-linear-gradient(#111, #333);*/
-  background: #333538;
+  /*background: #333538;*/
+  background: #333;
   
   /*box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;
   -webkit-box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;*/
@@ -603,11 +605,11 @@ body.console {
 
 .base_header_menu .btn-group .btn .counter {
   position: absolute;
-  bottom: -13px;
-  left: 2px;
+  bottom: -18px;
+  left: 0px;
 
   text-align: center;
-  width: 25px;
+  width: 100%;
 }
 
 .base_header_menu .btn-group .btn .counter span {
@@ -740,6 +742,7 @@ body.console {
 
   font-weight: 200;
   
+  margin-top: 10px;
   padding-left: 5px;
 }
 
@@ -1295,11 +1298,11 @@ ul.tutorial_list li.later span {
   bottom: 75px;
   text-align: center;
   width: 100%;
-  z-index: 100;
+  z-index: 500;
   opacity: 0;
   
-  background: white;
-  color: #333;
+  /*background: white;*/
+  /*color: #333;*/
 
   /*-webkit-border-radius: 2px;
   border-radius: 2px;*/
@@ -1307,9 +1310,24 @@ ul.tutorial_list li.later span {
 
 #toast > div {
   display: inline-block;
-  /*background: #555;
-  color: white;*/
-  padding: 4px;
+  background: #333;
+  color: white;
+  padding: 6px;
+}
+
+#toast.toast-danger > div {
+  background: #E74C3C;
+  color:white;
+}
+
+#toast.toast-info > div {
+  background: #3498DB;
+  color:white;
+}
+
+#toast.toast-success > div {
+  background: #2ECC71;
+  color:white;
 }
 
 
@@ -1453,6 +1471,7 @@ ul.tutorial_list li.later span {
   display: inline-block;
 
   padding: 5px;
+  padding-right: 0px;
 
   font-size: 18px;
   font-weight: bold;
@@ -1475,8 +1494,28 @@ ul.tutorial_list li.later span {
 .lot_options_flag .dk_container {
   margin-bottom: 0px;
 
-  box-shadow: 0px 0px 4px 4px #444;
-  -webkit-box-shadow: 0px 0px 4px 4px #444;
+  /*box-shadow: 0px 0px 4px 4px #444;
+  -webkit-box-shadow: 0px 0px 4px 4px #444;*/
+
+}
+
+.lot_options_flag .shadow {
+  border-bottom: 3px solid transparent;
+  border-left: 10px solid #333333;
+  border-top: 3px solid transparent;
+  display: inline-block;
+  height: 44px;
+  margin-bottom: -17px;
+  margin-left: -5px;
+  margin-right: -1px;
+  width: 1px;
+
+  display: none;
+}
+
+.lot_options_flag .dk_container a.dk_toggle {
+  border-radius: 6px 0px 0px 6px;
+  -webkit-border-radius: 6px 0px 0px 6px;
 }
 
 .lot_options_flag.flag_type_undecided .dk_container a.dk_toggle,
@@ -2805,6 +2844,22 @@ iframe#email_html body {
   border-left: 4px solid #000;
 }
 
+.common_thread_view .email_holder .email[data-sender="email1"] .email_body {
+  border-bottom: 4px solid #16A085;
+}
+.common_thread_view .email_holder .email[data-sender="email2"] .email_body {
+  border-bottom: 4px solid #8E44AD;
+}
+.common_thread_view .email_holder .email[data-sender="email3"] .email_body {
+  border-bottom: 4px solid #D35400;
+}
+.common_thread_view .email_holder .email[data-sender="email4"] .email_body {
+  border-bottom: 4px solid #2980B9;
+}
+.common_thread_view .email_holder .email[data-sender="my_email"] .email_body {
+  border-bottom: 4px solid #000;
+}
+
 
 
 
@@ -3052,23 +3107,128 @@ iframe#email_html body {
     line-height: 15pt;
 }
 
-.common_compose .addresses {
+.common_compose .addresses,
+.common_thread_reply_content .addresses {
   padding: 0 2.5% 10px;
+  margin: 0px 8px;
+
+  background: #95A5A6;
 }
 
+.common_compose .single_address,
+.common_thread_reply_content .single_address {
+  padding: 0 2.5% 10px;
+  margin: 0px 8px;
+  /*background: #95A5A6;*/
+}
+
+.common_compose .addresses .address_list,
+.common_thread_reply_content .addresses .address_list {
+  display: none;
+  overflow-x: hidden;
+}
+
+.common_compose .addresses .btn-toolbar,
+.common_thread_reply_content .addresses .btn-toolbar {
+  padding-top: 10px;
+  margin-top: 0px;
+}
+
+.addresses .quick_contacts .tab-content {
+  margin-top: 10px;
+}
+
+.addresses .tab-content > div {
+  display: none;
+}
+
+.addresses .tab-content > div.active {
+  display: block;
+}
+
+.addresses .quick_contacts .btn-toolbar a {
+  background: #34495E;
+}
+.addresses .quick_contacts .btn-toolbar a.active {
+  background: #4e6d8d;
+}
+
+.addresses .contact,
+.addresses .no_frequent {
+  padding: 15px 10px;
+  margin-bottom: 2px;
+
+  background: #4e6d8d;
+  color: white;
+}
+.addresses .no_frequent {
+  background: #7F8C8D;
+}
+.addresses .contact span {
+  opacity: 0.7;
+}
+
+.common_compose .addresses .btn-toolbar .btn span,
+.common_thread_reply_content .addresses .btn-toolbar .btn span {
+  padding-left: 5px;
+  color: #eee;
+
+  opacity: 0; /* hiding until working */
+}
+
+.common_compose .addresses .address_list.active,
+.common_thread_reply_content .addresses .address_list.active {
+  display: block;
+}
+
+.common_compose .addresses .address_list .add,
+.common_thread_reply_content .addresses .address_list .add {
+  margin-top: 10px;
+}
+
+.common_compose .addresses .address_list input,
+.common_thread_reply_content .addresses .address_list input {
+  width: 60%;
+  padding: 15px;
+}
+.common_compose .addresses .address_list button,
+.common_thread_reply_content .addresses .address_list button {
+  width: 15%;
+  text-align: center;
+}
+
+
+.addresses .searching_contacts .before_searching {
+  padding: 15px 10px;
+  margin-bottom: 2px;
+
+  background: #7F8C8D;
+  color: white;
+}
+
+
 .common_compose .addresses span.participant,
-.common_thread_reply_content .addresses span.participant {
+.common_thread_reply_content .addresses span.participant,
+
+.common_compose .single_address span.participant,
+.common_thread_reply_content .single_address span.participant {
   display: inline-block;
 
   margin-right: 10px;
-  margin-top: 10px;
-  padding: 10px;
+  margin-bottom: 2px;
+  padding: 15px;
 
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 300;
 
-  border-radius: 2px;
-  -webkit-border-radius: 2px;
+  background: #34495E;
+
+  width: 100%;
+  overflow: hidden;
+  word-wrap: break-word;
+
+  border-radius: 0px;
+  -webkit-border-radius: 0px;
 }
 
 
