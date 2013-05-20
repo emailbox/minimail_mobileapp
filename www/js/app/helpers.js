@@ -522,6 +522,11 @@ Handlebars.registerHelper("ensure_string", function(obj) {
 Application Specific Helpers
 //////////////////////////*/
 
+
+Handlebars.registerHelper("echo", function(obj) {
+	return new Handlebars.SafeString(obj);
+});
+
 Handlebars.registerHelper("getclient", function(client_id) {
 	
 	return App.Models.ClientData[client_id].name;
@@ -640,6 +645,19 @@ Handlebars.registerHelper("display_unread_leisure_count_old", function(threads) 
 		return new Handlebars.SafeString('<span class="circle unread"><span>' + unread + '</span></span>');
 	} else {
 		return '';
+	}
+
+});
+
+
+
+Handlebars.registerHelper("count", function(list) {
+	// Figure out how many unread there are
+	try {
+		return list.length;
+	} catch(err){
+		return 0;
+		// return _.size(list);
 	}
 
 });
