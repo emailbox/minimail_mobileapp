@@ -164,9 +164,9 @@ App.Views.Body = Backbone.View.extend({
 		var template = App.Utils.template('t_thread_counter');
 
 		// Add to button
-		console.log('add to button');
-		console.log(data.count);
-		console.log($button);
+		// console.log('add to button');
+		// console.log(data.count);
+		// console.log($button);
 		$button.append(template({count: data.count}));
 		
 		return false;
@@ -5864,7 +5864,7 @@ App.Views.ThreadOptions = Backbone.View.extend({
 
 		// Update the view
 		// - todo...
-		App.Utils.Notification.toast('Updated Note');
+		App.Utils.Notification.toast('Updated Note', 'success');
 
 		return false;
 
@@ -10838,7 +10838,7 @@ App.Views.Settings = Backbone.View.extend({
 			}
 		});
 
-		App.Utils.Notification.toast('Sync has been triggered, it may take a moment');
+		App.Utils.Notification.toast('Update will take a minute', 'info');
 
 		return;
 	},
@@ -11524,10 +11524,12 @@ App.Views.BodyLogin = Backbone.View.extend({
 								// // Reload page, back to #home
 								// window.location = [location.protocol, '//', location.host, location.pathname].join('');
 
-								$('body').html('');
+								$('body').html('Loading');
 
 								// Reload page, back to #home
-								window.location = [location.protocol, '//', location.host, location.pathname].join('');
+								window.setTimeout(function(){
+									window.location = [location.protocol, '//', location.host, location.pathname].join('');
+								},500);
 							});
 
 					} else {
