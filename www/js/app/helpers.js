@@ -1242,6 +1242,21 @@ Handlebars.registerHelper("thread_participants_pretty", function(emails) {
 });
 
 
+Handlebars.registerHelper("thread_last_sender_pretty", function(emails) {
+	// Return (pretty) names of last sender
+
+	var from = emails[emails.length - 1].original.headers.From_Parsed[0];
+	if(from[0].length > 0){
+		// Has a name
+		return from[0];
+	} else {
+		// Use email
+		return from[1];
+	}
+
+});
+
+
 Handlebars.registerHelper("email_participants_pretty", function(email) {
 	// Return (pretty) names of participants
 
