@@ -2,7 +2,7 @@
 <widget xmlns     = 'http://www.w3.org/ns/widgets'
         xmlns:gap = 'http://phonegap.com/ns/1.0'
         id        = "minimail"
-        version   = "0.0.41">
+        version   = "0.0.42">
     <name>minimail</name>
 
     <description>
@@ -56,7 +56,8 @@
     <gap:splash src="res/screen/ios/screen-iphone-portrait.png"    gap:platform="ios"     width="1536" height="2008" />
 
     <plugin name="NetworkStatus" value="org.apache.cordova.NetworkManager" />
-
+    <plugin name="File" value="org.apache.cordova.FileUtils" />
+    <plugin name="FileTransfer" value="org.apache.cordova.FileTransfer" />
 
 	<gap:plugin name="Storage" />
 	<gap:plugin name="GenericPush" />
