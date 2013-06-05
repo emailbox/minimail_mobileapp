@@ -3,6 +3,8 @@ var tmp_credentials = {
 	//base_api_url: "https://cryptic-everglades-7993.herokuapp.com",
 	base_api_url: "https://getemailbox.com",
 
+	encryption_key: "blowfish_key",
+
 	app_key: "pkg.dev.minimail",
 	prefix_access_token : 'minimail_',
 
