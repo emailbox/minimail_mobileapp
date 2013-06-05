@@ -363,10 +363,12 @@ App.Collections.EmailsFull = Backbone.Collection.extend({
 					}
 				},
 				fields : [
-							// 'app.AppPkgDevMinimail',
-							// 'common',
-							// 'attributes',
-							// 'original.headers'
+							'app',
+							'attributes',
+							'common',
+							'original',
+							'-original.HtmlBody',
+							'-original.ParsedDataHtml'
 							],
 				limit : 20
 				
