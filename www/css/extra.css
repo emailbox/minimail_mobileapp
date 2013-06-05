@@ -1310,7 +1310,7 @@ ul.tutorial_list li.later span {
 
 #toast > div {
   display: inline-block;
-  background: #333;
+  background: black;
   color: white;
   padding: 6px;
 }
