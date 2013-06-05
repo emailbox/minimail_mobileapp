@@ -88,8 +88,102 @@ App.Utils = {
 		}
 	},
 
+	Encryption: {
+		encrypt: function(string_data){
+			return sjcl.encrypt(App.Credentials.encryption_key, string_data)
+		},
+		decrypt: function(encrypted_string_data){
+			return sjcl.decrypt(App.Credentials.encryption_key, encrypted_string_data)
+		}
+
+	},
+
 	Storage: {
 		// Always use a promise
+		init: function(){
+
+			var dfd = $.Deferred();
+
+			if(usePg){
+
+				// Read in saved data cache
+				window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, 
+					function (fileSystem) {
+						fileSystem.root.getFile("minimail.cache", null, 
+							function (fileEntry) {
+								fileEntry.file(
+									function gotFile(file){
+										var reader = new FileReader();
+										reader.onloadend = function(evt) {
+											// console.log(evt.target.result);
+											try {
+												// The reverse of saving
+												// - decrypt
+												// - decode base64 data
+												// - parse JSON string
+												App.Data.InMemory = JSON.parse(App.Utils.base64.decode(App.Utils.Encryption.decrypt(evt.target.result)));
+											} catch(err){
+												console.log('Failed parsing');
+												console.log(err);
+												App.Data.InMemory = {};
+											}
+											dfd.resolve();
+										};
+										reader.readAsText(file);
+									}, 
+									fail);
+							}, fail);
+					}, 
+					fail);
+
+				// Start listener for saving to File API
+				var waitingToSave = 0
+				App.Events.on('FileSave',function(){
+
+					// Merge into a once-every-100ms-at-most queue
+					if(!waitingToSave){
+						waitingToSave = 1;
+						window.setTimeout(function(){
+							waitingToSave = 0;
+							window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, 
+								function (fileSystem) {
+									fileSystem.root.getFile("minimail.cache", {create: true, exclusive: false}, 
+										function (fileEntry) {
+
+											fileEntry.createWriter(
+												function (writer) {
+													// Should be analyzing the document storage amount here
+													// var bf = new Blowfish(App.Credentials.encryption_key); // what key should I be encrypting it with??
+													var ciphertext = App.Utils.Encryption.encrypt(App.Utils.base64.encode(JSON.stringify(App.Data.InMemory)));
+													writer.write(ciphertext);
+												}, fail);
+
+										},
+									fail);
+								}, 
+								fail);
+						},100);
+					}
+
+				});
+
+			} else {
+				// No initial storage needed on desktop
+				setTimeout(function(){
+					dfd.resolve();
+				},1);
+			}
+
+			function fail(evt) {
+				console.log('FAILED evt');
+				console.log(evt);
+				dfd.resolve();
+				// console.log(evt.target.error.code);
+			}
+
+			return dfd.promise();
+
+		},
 
 		get: function(key, namespace){
 			namespace = (namespace != undefined) ? namespace.toString() + '_' : false || '_';
@@ -99,23 +193,28 @@ App.Utils = {
 
 			var dfd = $.Deferred();
 
-			if(useForge){
+			if(usePg){
 
-				forge.prefs.get(key,function(value){
+
+				setTimeout(function(){
 
 					try {
-						value = JSON.parse(value);
+						var value = App.Data.InMemory[namespace + key];
 					} catch(err){
 						dfd.resolve(null);
 						return;
 					}
 
+					// Resolve with result of cache
 					dfd.resolve(value);
+					return;
 
-				},
-				function(error){
-					dfd.resolve(null);
-				});
+				},1);
+
+				// Trigger file save
+				// App.Events.trigger('FileSave');
+
+
 
 			} else {
 
@@ -150,19 +249,25 @@ App.Utils = {
 
 			var dfd = $.Deferred();
 
-			if(useForge){
+			if(usePg){
+				// Using local key:value storage with updates serialized using File API
 				
-				forge.prefs.set(key, JSON.stringify(value), function(){
-					// App.Events.trigger('saveAppDataStore');
-					dfd.resolve(true);
+				setTimeout(function(){
 
-				},
-				function(error){
-					clog('set error');
-					clog('key: ' + key);
-					clog(error);
-					dfd.resolve(null);
-				});
+					try {
+						App.Data.InMemory[namespace + key] = value;
+					} catch(err){
+
+					}
+
+					// Trigger file save
+					App.Events.trigger('FileSave');
+
+					// Resolve with result of cache
+					dfd.resolve();
+
+				},1);
+
 
 			} else {
 
@@ -226,7 +331,44 @@ App.Utils = {
 
 			var dfd = $.Deferred();
 
-			if(useForge){
+			if(usePg){
+				// Trigger flushing of local filesystem?
+
+				try {
+					setTimeout(function(){
+
+						// get keys
+						var keys = Object.keys(App.Data.InMemory);
+						_.each(keys, function(key,idx){
+							if (key.indexOf('critical_') !== 0) {
+								// console.info(key);
+								delete App.Data.InMemory[key];
+							}
+						});
+
+						// var i, key, remove = [];
+						// for (i=0; i < window.localStorage.length ; i++) {
+						// 	key = localStorage.key(i);
+						// 	if (key.indexOf('critical_') !== 0) {
+						// 		// console.info(key);
+						// 		remove.push(key);
+						// 	}
+						// }
+						// for (i=0; i<remove.length; i++){
+						// 	// console.log(3);
+						// 	window.localStorage.removeItem(remove[i]);
+						// }
+
+						// Save new App.Data.InMemory
+						App.Events.trigger('FileSave');
+
+						// Resolve after completed
+						dfd.resolve(true);
+					}, 1);
+				} catch(err){
+					console.error(err);
+				}
+
 
 			} else {
 				// Get latest values
@@ -1033,7 +1175,7 @@ var Api = {
 		type: 'POST',
 		data: '',
 		dataType: 'html',
-		timeout: 5000,
+		timeout: 25000,
 		contentType: "application/json; charset=utf-8"
 	},
 
