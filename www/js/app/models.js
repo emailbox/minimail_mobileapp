@@ -138,6 +138,7 @@ App.Models.EmailFull = App.Models.EmailBoxModel.extend({
 					'common',
 					'original',
 					'-original.HtmlBody',
+					'-original.HtmlBodyOriginal',
 					'-original.ParsedDataHtml'
 				],
 				limit: 1

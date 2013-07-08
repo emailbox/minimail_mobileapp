@@ -10733,6 +10733,7 @@ App.Views.Settings = Backbone.View.extend({
 	className: 'view_settings',
 
 	events: {
+		'click .setting[data-setting-type="stats"]' : 'stats',
 		'click .setting[data-setting-type="general"]' : 'general_settings',
 		'click .setting[data-setting-type="sync"]' : 'sync_inbox',
 		'click .setting[data-setting-type="speedtest"]' : 'speedtest',
@@ -10822,6 +10823,40 @@ App.Views.Settings = Backbone.View.extend({
 
 		}, this);
 
+	},
+
+	stats: function(ev){
+
+		var that = this;
+		ev.preventDefault();
+		// ev.stopPropagation();
+
+		// Launch stats view
+		// - should it really be a subView?
+
+		this.displayedSubview = new App.Views.Stats();
+
+		// Render the subView
+		this.displayedSubview.render();
+
+		// Append to View
+		this.$el.after(this.displayedSubview.el); // could do this.speedtestSubView.render().el ?
+
+		// Hide this View
+		this.$el.hide();
+
+		// Listen for subview closing
+		this.displayedSubview.on('back', function(){
+			// Show the parent
+			// - close the guy
+
+			this.displayedSubview.close();
+
+			that.$el.show();
+
+		}, this);
+
+		return false;
 	},
 
 	sync_inbox: function(ev){
@@ -10967,6 +11002,11 @@ App.Views.Settings = Backbone.View.extend({
 		// Settings
 		var settings = [
 			{
+				key: 'stats',
+				text: 'Stats',
+				subtext: 'oh so pretty'
+			},
+			{
 				key: 'general',
 				text: 'General Settings',
 				subtext: 'random things',
@@ -11105,6 +11145,134 @@ App.Views.GeneralSettings = Backbone.View.extend({
 
 		// Write HTML
 		that.$el.html(template(App.Data.settings));
+
+		// Back button
+		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);
+
+		return this;
+	}
+
+});
+
+App.Views.Stats = Backbone.View.extend({
+
+	className: 'settings_stats_view',
+
+	events: {
+		'click #dk_container_options .dk_toggle' : 'toggle_all',
+		'click .cancel' : 'backButton'
+	},
+
+	initialize: function() {
+		_.bindAll(this, 'render');
+		_.bindAll(this, 'beforeClose');
+		_.bindAll(this, 'back');
+
+	},
+
+	beforeClose: function(){
+		// De-bubble this back button
+		App.Utils.BackButton.debubble(this.backbuttonBind);
+	},
+
+	backButton: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		this.back();
+
+		ev.preventDefault();
+		ev.stopPropagation();
+		return false;
+	},
+
+	back: function(){
+		// Go back to settings page
+		var that = this;
+
+		this.trigger('back');
+	},
+
+	toggle_all: function(ev){
+		// Show/hide options for all
+		var that = this,
+			elem = ev.currentTarget;
+
+		var $parent = this.$('#dk_container_options');
+
+		if($parent.hasClass('dk_open')){
+			$parent.removeClass('dk_open');
+		} else {
+			$parent.addClass('dk_open');
+		}
+
+	},
+
+	render_stat: function(stat_key){
+		var that = this;
+
+
+		switch(stat_key){
+			case 'sent_vs_received':
+
+				break;
+
+			case 'something_else':
+
+				break;
+
+			default:
+				break;
+
+		}
+		
+		return false;
+
+	},
+
+	render: function(){
+		var that = this;
+
+		// Remove any previous one
+		// $('.logout').remove();
+
+		// Build from template
+		var template = App.Utils.template('t_stats');
+
+		var stat_choices = [
+			{
+				name: 'Sent vs. Received',
+				key: 'sent_vs_received'
+			},
+			{
+				name: 'Response Times',
+				key: 'response_times'
+			},
+			{
+				name: 'Traffic Patterns',
+				key: 'traffic_patterns'
+			}
+		];
+
+		// Write HTML
+		that.$el.html(template({
+			winWidth: App.Data.xy.win_width,
+			stat_choices: stat_choices
+		}));
+
+		var ctx = this.$('#myChart').get(0).getContext("2d");
+		var data = [
+			{
+				value: 10,
+				color:"#F7464A"
+			},
+			{
+				value : 50,
+				color : "#4D5360"
+			}
+
+		];
+		var myNewChart = new Chart(ctx).Doughnut(data);
 
 		// Back button
 		this.backbuttonBind = App.Utils.BackButton.newEnforcer(this.back);

@@ -11,10 +11,10 @@
 	</title>
 
 	<!-- Using local development (Android) (comment out for build.phonegap.com) -->
-	<!--
+	
     <script src="js_main/cordova-2.4.0.js"></script>
     <script src="js_main/childbrowser_local.js"></script>
--->
+
 
 
 	<!-- Using build.phonegap.com -->
@@ -28,7 +28,7 @@
 	<link rel="stylesheet/less" type="text/css" href="css/less/bootstrap.less">
 	-->
 
-	<script src="https://getemailbox.com/socket.io/socket.io.js" async="true"></script>
+	<script src="https://listen.getemailbox.com/socket.io/socket.io.js" async="true"></script>
 	<!--<script src="js/libs/local_socket_io.js" async="true"></script>-->
 
 	<!-- FilePicker (custom, similar/same to github version by brett) -->
@@ -68,6 +68,8 @@
 	<script src="js/libs/sjcl.js"></script>
 	<script src="js/libs/underscore-1.3.3.min.js"></script>
 	<script src="js/libs/handlebars-1.0.0.beta.6.js"></script>
+
+	<script src="js/libs/chart.js"></script>
 
 	<script src="js/libs/backbone-1.0.0.js"></script>
 	<script src="js/libs/backbone.localStorage-min.js"></script>
@@ -2730,7 +2732,6 @@
 
 	</script>
 
-
 	<script id="t_settings_general" type="text/x-handlebars-template">
 
 		<div class="body_container">
@@ -2759,6 +2760,82 @@
 					<div class="left">
 						<h1>
 							General Settings
+						</h1>
+					</div>
+					<div class="right">
+						<div class="btn-toolbar">
+							<div class="btn-group btn-single pull-right">
+								<button data-action="cancel" class="btn cancel">
+									Back
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+					
+			</div>
+			
+		</div>
+
+
+	</script>
+
+	<script id="t_stats" type="text/x-handlebars-template">
+
+		<div class="body_container">
+
+			<div class="stats_holder">
+
+				<div class="stats_list">
+
+					<div class="dk_container dk_shown dk_theme_default" id="dk_container_options" tabindex="1">
+						<a class="dk_toggle">
+							<span class="dk_label">
+								Choose Stats
+							</span>
+							<span class="select-icon">
+								&#x25BC;
+							</span>
+						</a>
+						<div class="dk_options" style="top: 44px;">
+							<ul class="dk_options_inner">
+								{{#each stat_choices}}
+									<li><a>{{name}}</a></li>
+								{{/each}}
+							</ul>
+						</div>
+					</div>
+
+				</div>
+
+				<div style="height:360px">
+					<canvas id="myChart" width="{{winWidth}}" height="360" class="clearfix"></canvas>
+				</div>
+
+				<div class="stats_row_sentreceived text-center">
+					<div class="left">
+						<h2>Received</h3>
+						<h3>146</h3>
+					</div>
+					<div class="right">
+						<h2>Sent</h3>
+						<h3>19</h3>
+					</div>
+				</div>
+
+
+			</div>
+
+		</div>
+
+		<div class="footer">
+					
+			<div class="footer_holder clearfix">
+
+				<div class="base_footer_menu clearfix">
+					<div class="left">
+						<h1>
+							Stats
 						</h1>
 					</div>
 					<div class="right">

@@ -55,7 +55,8 @@ body {
   position: relative;
   /*background: url(../img/whitey.png) repeat;*/
   overflow: hidden;
-  background: #444;
+  background: white;
+  color: #333;
 }
 
 body.console {
@@ -409,7 +410,10 @@ body.console {
   background: -webkit-linear-gradient(#333, #111);*/
 
   /*background: #333538;*/
-  background: #333;
+  /*background: #333;*/
+  background: white;
+  border-top: 1px solid #eee;
+
   
   /*box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
   -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;*/
@@ -435,7 +439,9 @@ body.console {
   text-decoration: none;
 }
 
-
+.footer .btn.cancel {
+  margin-right: 10px;
+}
 
 .header {
 
@@ -459,7 +465,7 @@ body.console {
   /*background: #333;*/
   /*background: -webkit-linear-gradient(#111, #333);*/
   /*background: #333538;*/
-  background: #333;
+  background: white;
   
   /*box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;
   -webkit-box-shadow: 0px -1px 0px 0px rgba(255,255,255,0.15) inset;*/
@@ -483,7 +489,7 @@ body.console {
 .header h1 {
   display: inline-block;
 
-  color: white;
+  /*color: white;*/
 
   /*width: 50%;*/
 
@@ -731,7 +737,7 @@ body.console {
 .footer h1 {
   display: inline-block;
 
-  color: white;
+  /*color: white;*/
 
   /*width: 50%;*/
 
@@ -807,7 +813,8 @@ body.console {
   /*background: #333;
   background: -moz-linear-gradient(#444, #333);
   background: -webkit-linear-gradient(#444, #333);*/
-  background: #333538;
+  /*background: #333538;*/
+  background: white;
   
   position: fixed;
   bottom:75px;
@@ -1721,7 +1728,8 @@ ul.tutorial_list li.later span {
 .thread {
   position: relative;
   /*border-top: 1px solid rgb(170,170,170);*/
-  border-bottom: 2px solid #444;
+  /*border-bottom: 2px solid #444;*/
+  border-bottom: 2px solid rgba(0,0,0,0.05);
   
   /*box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
   -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;*/
@@ -1942,8 +1950,10 @@ ul.tutorial_list li.later span {
   
   z-index: 11;
     
-  color: rgb(170,170,170);
-  background: #333538;
+  /*color: rgb(170,170,170);*/
+  /*background: #333538;*/
+  color: #333;
+  background: white;
 
   font-weight: normal;
 
@@ -1956,7 +1966,8 @@ ul.tutorial_list li.later span {
 
 .thread-preview.multi-selected {
   /*background: rgba(250, 203, 71, 0.4);*/
-  background: #2C3E50;
+  /*background: #2C3E50;*/
+  background: rgba(110, 170, 170, 0.7);
 }
 
 .thread[data-thread-type="later"] .thread-preview {
@@ -2011,7 +2022,8 @@ ul.tutorial_list li.later span {
 }
 
 .thread-preview .card-middle .subject {
-  color: #eee;
+  /*color: #eee;*/
+  color: #b5b5b5;
   display: inline-block;
   
   width: 85%;
@@ -2661,7 +2673,7 @@ ul.tutorial_list li.later span {
 
 .common_thread_view {
   /*background: #2e353f;*/
-  background: #444;
+  /*background: #444;*/
   padding-bottom: 120px;
 }
 
@@ -2670,8 +2682,8 @@ ul.tutorial_list li.later span {
 }
 
 .common_thread_view .body_container {
-  background: #2e353f;
-  background: #444;
+  /*background: #2e353f;*/
+  /*background: #444;*/
 }
 
 .common_thread_view .thread_container {
@@ -2681,14 +2693,15 @@ ul.tutorial_list li.later span {
 .common_thread_view .thread_details {
   padding: 10px;
 
-  color: white;
+  color: #333;
 }
 
 .common_thread_view .thread_details .subject {
   font-size: 24px;
   line-height: 28px;
-
   font-weight: bold;
+
+  margin-top: 20px;
 }
 
 .common_thread_view .thread_details .people {
@@ -2726,7 +2739,8 @@ ul.tutorial_list li.later span {
 
 .common_thread_view .email_holder .details {
   /*background: #7F8C8D;*/
-  color: white;
+  /*color: white;*/
+  color: #333;
   /*border-bottom: 1px solid #ccc;*/
   
 }
@@ -2796,7 +2810,7 @@ iframe#email_html body {
 }
 
 .common_thread_view .email .hidden_options {
-  background: #444;
+  /*background: #444;*/
   /*padding: 10px;*/
   display: none;
   padding-bottom: 0px;
@@ -2815,12 +2829,12 @@ iframe#email_html body {
 .common_thread_view .email .hidden_options > div.option {
   padding: 15px 10px;
   /*margin-bottom: 5px;*/
-  color: white;
-  background: #2C3E50;
+  color: #333;
+  /*background: #2C3E50;*/
 
-  border-left: 4px solid black;
-  border-bottom: 1px solid #222;
-  background: #333;
+  border-left: 4px solid #eee;
+  border-bottom: 1px solid #ddd;
+  /*background: #333;*/
 }
 
 .common_thread_view .email_holder .email[data-sender="email1"] .hidden_options,
@@ -3507,6 +3521,9 @@ iframe#email_html body {
 
 /* Misc */
 
+.margin-right {
+  margin-right: 10px;
+}
 
 .circle {
   background-color: rgba(0, 0139, 0139, 0.5);
@@ -3759,9 +3776,10 @@ iframe#email_html body {
 .view_settings .setting {
   padding: 10px;
 
-  background: #333538;
-  color: white;
-  border-bottom: 2px solid #444;
+  /*background: #333538;*/
+  /*color: white;*/
+  color: #333;
+  border-bottom: 2px solid #eee;
 }
 
 .view_settings .setting .photo {
@@ -3784,7 +3802,7 @@ iframe#email_html body {
   font-size: 18pt;
   line-height: 20pt;
   font-weight: 100;
-  color: #eee;
+  color: #444;
 
   width: 100%;
 }
@@ -3797,11 +3815,42 @@ iframe#email_html body {
   width: 100%;
 }
 
+.stats_list {
+  width: 80%;
+  margin: 10px 0;
+  margin-left: 10%;
+}
+
+.stats_list .dk_container {
+  width: 100%;
+}
+
+.stats_list .dk_container .select-icon {
+  line-height: 44px;
+}
+
+.stats_row_sentreceived {
+  margin-top: 10px;
+}
+
+.stats_row_sentreceived > div {
+  float: left;
+  width: 50%;
+}
+
+.stats_row_sentreceived h3 {
+  color: #666;
+}
+
+.stats_row_sentreceived .right h3 {
+  color: #F7464A;
+}
+
 
 /* Speed Test */
 
 .speedtest_view {
-  color: white;
+  color: #333;
 }
 
 

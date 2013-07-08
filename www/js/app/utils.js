@@ -1280,8 +1280,93 @@ var Api = {
 
 	count: function(queryOptions){
 
-		return Api.query('/api/count',queryOptions);
+		var dfd = $.Deferred();
+		
+		if(App.Data.timers['count']){
+			// already started timer
+			// - add to current bucket
+			
+			App.Data.timerbucket['count'].push([dfd, queryOptions]);
 
+		} else {
+
+			// Start timer
+			App.Data.timers['count'] = 1;
+			App.Data.timerbucket['count'] = [];
+
+			App.Data.timerbucket['count'].push([dfd, queryOptions]);
+
+			// Start waiting period for new searchOptions
+			setTimeout(function(){
+				// Turn off timer
+				App.Data.timers['count'] = 0;
+
+				// Clone timer bucket
+				var queriesToRun = App.Data.timerbucket['count'].splice(0);
+
+				// Create search query
+				// - iterate through each possible query
+				var reqData = {};
+				var runQueryOptions = {
+					data: {
+						type: "multi",
+						multiple: {} // object
+					},
+					success: function(response){
+						response = JSON.parse(response);
+
+						console.log('Event response');
+						console.log(JSON.stringify(response));
+
+						// query has returned
+						// - parse out the deferreds according to the indexKey
+
+						// resolve each dfd accordingly
+
+						_.each(response.data, function(elemData, idx){
+							// idx refers to the index of the queriesToRun
+							// console.log('elemData');
+							// console.log(elemData);
+
+							// Resolve
+							queriesToRun[idx][0].resolve(elemData);
+
+							// Call success function
+							// console.log(queriesToRun[idx]);
+							queriesToRun[idx][1].success(JSON.stringify(elemData));
+
+						});
+
+					},
+					error: function(response){
+						// What was the error?
+						// - pass it along to responses
+						
+						_.each(queriesToRun, function(elemData){
+							elemData[0].reject(response);
+							if(elemData[1].error){
+								elemData[1].error(response);
+							}
+						});
+						
+
+					}
+				};
+				_.each(queriesToRun, function(query, idx){
+					// search[0] = dfd, search[1] = queryOptions
+
+					runQueryOptions.data.multiple[idx] = query[1].data;
+				});
+
+				// Run query
+				Api.query('/api/count',runQueryOptions);
+
+			}, 100);
+
+		}
+
+		// Return a deferred
+		return dfd.promise();
 	},
 
 	update: function(queryOptions){
@@ -1645,7 +1730,7 @@ var Api = {
 			// return false;
 			console.log('Starting to listen...');
 			try {
-				var socket = io.connect(App.Credentials.base_api_url + '/'); // SSL
+				var socket = io.connect(App.Credentials.base_listen_url + '/'); // SSL
 			} catch(e){
 				// Not loaded, try again in a minute
 				console.log('not loaded socket.io');
@@ -1680,6 +1765,8 @@ var Api = {
 					alert('missing new_event.event');
 					return;
 				}
+
+				console.log('Event incoming: ' + new_event.event);
 
 				// Log that we received a new Event
 				// clog('Event Received:' + new_event.event);

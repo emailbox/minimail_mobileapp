@@ -37,6 +37,8 @@ var App = {
 			win_width: 0,
 			mode: 'portrait' // landscape
 		},
+		timers: {},
+		timerbucket: {},
 		Store: { // a temporary data store
 
 			ModelCache: {},

@@ -368,6 +368,7 @@ App.Collections.EmailsFull = Backbone.Collection.extend({
 							'common',
 							'original',
 							'-original.HtmlBody',
+							'-original.HtmlBodyOriginal',
 							'-original.ParsedDataHtml'
 							],
 				limit : 20

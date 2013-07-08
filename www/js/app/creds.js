@@ -1,7 +1,8 @@
 
 var tmp_credentials = {
 	//base_api_url: "https://cryptic-everglades-7993.herokuapp.com",
-	base_api_url: "https://getemailbox.com",
+	base_api_url: "https://api.getemailbox.com",
+	base_listen_url: "https://listen.getemailbox.com",
 
 	encryption_key: "blowfish_key",
 
@@ -19,7 +20,7 @@ var tmp_credentials = {
 	
 	minimail_server: 'http://minimail.getemailbox.com',
 
-	usePatching: true, // emailbox diff/patch
+	usePatching: false, // emailbox diff/patch
 	useCache: true // backbone.cache to localStorage
 
 };
