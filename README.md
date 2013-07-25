@@ -25,7 +25,7 @@ Source for the minimail mobile email client. The app works in conjunction with a
 > **Note:** Push Notifications don't work when building locally. Working only on PhoneGap Build (actually, not even there yet)
 
 ## Design and Debugging  
-Try out [debug.phonegap.com](http://debug.phonegap.com) (super buggy and slow, but a useful HTML view) or use minimail's CSS editor (under the developer/debug menu when using the server client). With minimail's CSS editor, you won't have to change any code to see your CSS updates live. 
+Try out [debug.phonegap.com](http://debug.phonegap.com) (super buggy and slow, but a useful HTML view) or open up index.html in your browser and use the native developer tools.  
 
 ## Server-side   
 By default the basic server is used. If you want to run your own server:  
