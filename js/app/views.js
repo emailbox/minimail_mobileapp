@@ -269,7 +269,7 @@ App.Views.Body = Backbone.View.extend({
 		$(elem).parents('.more-dropdown').removeClass('dk_open');
 
 		// Change active buton (if necessary)
-		if(id == 'later' || id == 'now'){
+		if(id == 'later' || id == 'now' || id=="waiting_on_me" || id=="waiting_on_other"){
 			this.$('.threads_change [data-action]').removeClass('active');
 			this.$('.threads_change [data-action="more"]').addClass('active');
 		}
@@ -6771,13 +6771,15 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		'click #dk_container_options .dk_toggle' : 'toggle_all',
 		'click #dk_container_options .dk_options a' : 'all_action',
 
-		'click .toggle-due-later' : 'toggle_due_later'
+		'click .toggle-due-later' : 'toggle_due_later',
+		'click .toggle-waiting' : 'toggle_label'
 
 	},
 
 	initialize: function(options) {
 		var that = this;
 		_.bindAll(this, 'render');
+		_.bindAll(this, 'render_total_count');
 		_.bindAll(this, 'render_structure');
 		_.bindAll(this, 'beforeClose');
 		_.bindAll(this, 'after_multi_delay_modal');
@@ -6800,10 +6802,13 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		// Set showDelayChooserFooter
 		this.showDelayChooserFooter = this.showDelayChooserFooter || false;
+		this.showSubfilterChooserFooter = this.showSubfilterChooserFooter || false;
 
 		// Continue with collection initiation
 		this.start_thread_getting(threadType);
 
+
+		this.render_total_count();
 
 	},
 
@@ -6920,7 +6925,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 	},
 
-	refresh: function(use_filter){
+	refresh: function(use_filter, sub_filter){
 		var that = this;
 		// Asked to refresh the page
 		// - clear any missing elements, add any that need to be added
@@ -6928,16 +6933,18 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		// Refresh gets called a lot
 		console.info("REFRESHING");
-
+		console.log(use_filter);
 
 		var newFilter = '';
 
 		if(use_filter == undefined){
 			// Not passed any, use "normal"
 			newFilter = "normal";
+			sub_filter = undefined;
 
 			// un-active the "Due" and "Later" buttons
 			that.$('.toggle-due-later').removeClass('active');
+			that.$('.toggle-waiting').removeClass('active');
 
 
 		} else {
@@ -6977,11 +6984,13 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		if(newFilter != "normal"){
 			console.info('currentFilter exists');
 			options.filter = newFilter;
+			options.sub_filter = sub_filter;
 		}
 
 		// Fetch new filter
 		window.setTimeout(function(){
 			that.useCollection.fetchDefault(options);
+			that.render_total_count(true);
 		}, 100);
 
 		// Re-sort
@@ -7066,6 +7075,47 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		return false;
 	},
 
+	toggle_label: function(ev){
+		var that = this,
+			elem = ev.currentTarget;
+
+		// Toggle displaying "Due Now" or "Later" (or neither)
+
+		// Already active?
+		// - trigger a refresh?
+		if($(elem).hasClass('active')){
+			// // Already active, so going back to "normal" view (same as pressing the "normal" button again)
+			// // - err, actually we should do a "refresh" right?
+			// this.refresh(true); // passing the refresh has "due" or "later"
+
+		} else {
+			// Now active, so de-press the other filter (Due/Later) button
+			$(elem).parent().find('.btn').removeClass('active');
+			// Add .active to this button
+			$(elem).addClass('active');
+
+			// // Switch view to this one
+			// if($(elem).attr('data-action') == "due"){
+			// 	// "now"
+			// 	//  - shows ONLY Due Now
+			// 	that.currentFilter = "due";
+			// 	this.refresh(true);
+
+			// } else {
+			// 	// "later"
+			// 	// - shows ONLY Due Later
+			// 	that.currentFilter = "later";
+			// 	this.refresh(true);
+
+			// }
+
+		}
+		// $(elem).addClass('active');
+		this.refresh($(elem).attr('data-action'), $(elem).attr('data-label'));
+
+		return false;
+	},
+
 	reset_threads: function(threads, options){
 		var that = this; // not the view, passing context to 'add'
 
@@ -7093,6 +7143,8 @@ App.Views.Inbox_Base = Backbone.View.extend({
 			// that.check_inbox_zero();
 		}
 
+		that.check_inbox_zero();
+
 		// Scroll to bottom
 		that.scroll_to_bottom = true;
 
@@ -7114,7 +7166,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Create the View
 		thread.dv = new App.Views.SubCommonThread({
 			model : thread,
-			threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
+			// threadType: threadType, // NEED TO ADD THREADTYPE!!! TODO
 			idx_in_collection: idx,
 			fadein: true,
 			parentView: that
@@ -8069,7 +8121,8 @@ App.Views.Inbox_Base = Backbone.View.extend({
 		// Write HTML
 		this.$el.html(template({
 			threadType: this.threadType,
-			showDelayChooserFooter: this.showDelayChooserFooter
+			showDelayChooserFooter: this.showDelayChooserFooter,
+			showSubfilterChooserFooter: this.showSubfilterChooserFooter
 		}));
 
 		// // Resize the scrollable part (.all_threads)
@@ -8103,11 +8156,14 @@ App.Views.Inbox_Base = Backbone.View.extend({
 	},
 
 	check_inbox_zero: function(){
+		var that = this;
 		// See if we should render inbox-zero
-		if(this.useCollection.length == 0){
-			this.render_zero();
-			this.remove_waitingToRemove();
-		}
+		window.setTimeout(function(){
+			if(that.useCollection.length == 0){
+				that.remove_waitingToRemove();
+				that.render_zero();
+			}
+		},1000);
 
 	},
 	render_zero: function(){
@@ -8131,6 +8187,19 @@ App.Views.Inbox_Base = Backbone.View.extend({
 
 		return this;
 		
+	},
+
+	render_total_count: function(){
+		var that = this;
+
+		that.useCollection.fetchCount()
+			.then(function(count){
+
+				// Template
+				that.$('.threads_total_count span.count').text(count);
+
+			});
+
 	},
 
 	remove_waitingToRemove: function(){
@@ -8275,7 +8344,7 @@ App.Views.Inbox_Base = Backbone.View.extend({
 App.Views.Inbox_Normal = App.Views.Inbox_Base.extend({
 
 	zero_template: 't_zero_inbox_normal',
-	showDelayChooserFooter: true,
+	showDelayChooserFooter: false, // default true
 
 	collection_init: function(){
 		var that = this;
@@ -8349,6 +8418,7 @@ App.Views.Inbox_Dunno = App.Views.Inbox_Base.extend({
 App.Views.Inbox_Now = App.Views.Inbox_Base.extend({
 
 	zero_template: 't_all_due_done',
+	showSubfilterChooserFooter: true,
 	
 	collection_init: function(){
 		var that = this;
@@ -8366,6 +8436,7 @@ App.Views.Inbox_Now = App.Views.Inbox_Base.extend({
 App.Views.Inbox_Later = App.Views.Inbox_Base.extend({
 
 	zero_template: 't_all_later_done',
+	showSubfilterChooserFooter: true,
 
 	collection_init: function(){
 		var that = this;
@@ -8464,8 +8535,9 @@ App.Views.SubCommonThread = Backbone.View.extend({
 			// this.el.className = this.className + ' fade-in';
 		}
 
-		// threadType
-		this.threadType = this.options.threadType;
+		// // threadType
+		// // - gets set when the thread is loaded
+		// this.threadType = this.options.threadType;
 
 		// Have model?
 		if(!this.model){
@@ -8870,16 +8942,38 @@ App.Views.SubCommonThread = Backbone.View.extend({
 
 		this.$el.removeClass('preloading');
 
+		// Determine ThreadType
+		var threadType = 'normal';
+		var jThread = this.model.Full.toJSON();
+		try {
+			if(jThread.app.AppPkgDevMinimail.done != 1){
+				// Has a wait_until?
+				if(jThread.app.AppPkgDevMinimail.wait_until){
+					threadType = 'due';
+					// Not actually due yet? 
+					var now = new Date();
+					if(jThread.app.AppPkgDevMinimail.wait_until > now.getTime() / 1000){
+						threadType = 'later';
+					}
+				}
+			}
+		} catch(err){
+			// Fields did not exist
+		}
+
 		this.$el.attr('data-id', this.model.get('_id')); // fix, Thread._id
-		this.$el.attr('data-thread-type', this.options.threadType);
+		this.$el.attr('data-thread-type', threadType);
 		this.$el.attr('data-sort', this.model.toJSON().attributes.last_message_datetime_sec);
+
+		// Done trumps all
+
 
 		// Data for template
 		// console.log(this.model.Email.toJSON());
 		var data = {
-			Thread: this.model.Full.toJSON(),
+			Thread: jThread,
 			Email: this.model.Email.toJSON(),
-			threadType: this.threadType
+			threadType: threadType
 		};
 
 		// console.log(data);
@@ -9943,6 +10037,9 @@ App.Views.Search = Backbone.View.extend({
 	initialize: function(options) {
 		var that = this;
 		_.bindAll(this, 'render');
+
+		// Gather counts
+
 
 	},
 

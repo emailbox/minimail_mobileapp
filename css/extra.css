@@ -393,6 +393,20 @@ body.console {
 }
 
 
+.even_split_columns {
+
+}
+
+.even_split_columns .col-left {
+  float: left;
+  width: 50%;
+}
+
+.even_split_columns .col-right {
+  float: left;
+  width: 50%;
+}
+
 
 /* header and header */
 
@@ -870,6 +884,41 @@ body.console {
 
 
 /* Search (searching emails and threads) main view */
+/* Dashboard */
+
+.quick_stats {
+  position: absolute;
+  top:0;
+  left:0;
+  width: 100%;
+}
+
+.quick_stats > h1 {
+  text-align: center;
+  padding-top: 10px;
+
+  font-size: 18px;
+  text-transform: uppercase;
+}
+.quick_stats h1.received,
+.quick_stats h1.sent {
+  text-align: center;
+  padding-top: 10px;
+}
+
+.quick_stats h1.received {
+  color: #666;
+}
+
+.quick_stats h1.sent {
+  color: #F7464A;
+}
+
+.quick_stats p {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 11px;
+}
 
 .thread_footer.search_footer form {
   margin: 0px;
@@ -1615,6 +1664,16 @@ ul.tutorial_list li.later span {
   background: #F39C12;
   /*color: #333;*/
 }
+.lot_options_flag.flag_type_me .dk_container a.dk_toggle,
+.lot_options_flag.flag_type_me .dk_container a.dk_toggle .select-icon {
+  background: #8E44AD;
+  /*color: #333;*/
+}
+.lot_options_flag.flag_type_other .dk_container a.dk_toggle,
+.lot_options_flag.flag_type_other .dk_container a.dk_toggle .select-icon {
+  background: #8E44AD;
+  /*color: #333;*/
+}
 
 .lot_options_flag .dk_options {
   width: 100%;
@@ -1698,6 +1757,13 @@ ul.tutorial_list li.later span {
 
 /* All Threads */
 
+.threads_change .btn.btn-reverse:not(:first-child) {
+  border-left: 0px;
+}
+.threads_change .btn.btn-reverse:not(:last-child) {
+  border-right: 0px;
+}
+
 .btn.btn-danger.toggle-due-later {
   border: 2px solid #e74c3c;
   color: #e74c3c;
@@ -1705,6 +1771,20 @@ ul.tutorial_list li.later span {
 }
 .btn.btn-danger.toggle-due-later.active {
   background: #e74c3c;
+  color: white;
+}
+
+.btn.btn-info.toggle-waiting:not(:first-child) {
+  border-left: 0px;
+}
+
+.btn.btn-info.toggle-waiting {
+  border: 2px solid #8E44AD;
+  color: #8E44AD;
+  background: white;
+}
+.btn.btn-info.toggle-waiting.active {
+  background: #8E44AD;
   color: white;
 }
 
@@ -1759,6 +1839,63 @@ ul.tutorial_list li.later span {
 .multi_select_options .multi-delay {
   background: #F39C12;
 }
+
+.threads_total_count {
+  display: inline-block;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+
+  z-index: 100;
+
+  border-radius: 50%;
+  -webkit-border-radius: 50%;
+
+  font-size: 10px;
+  text-align: center;
+
+  width: 60px;
+  height: 60px;
+
+  line-height: 60px;
+
+  background: #34495e;
+  color: white;
+}
+
+.threads_total_count.threads_type_normal,
+.threads_total_count.threads_type_inbox {
+  background: #1abc9c;
+}
+
+.threads_total_count.threads_type_delayed {
+  background: #E74C3C;
+}
+.threads_total_count.threads_type_later {
+  background: #F39C12;
+  /*color: #333;*/
+}
+.threads_total_count.threads_type_me {
+  background: #8E44AD;
+  /*color: #333;*/
+}
+.threads_total_count.threads_type_other {
+  background: #8E44AD;
+  /*color: #333;*/
+}
+
+
+.threads_total_count span.count {
+  font-size: 24px;
+  font-weight: bold;
+  font-family: "Helvetica Neue", "Georgia", serif;
+}
+
+.threads_total_count span.count sup {
+  font-size: 10px;
+  /*margin-top: -40px;*/
+}
+
 
 .inbox_zero {
     text-align: center;
@@ -1839,7 +1976,7 @@ ul.tutorial_list li.later span {
   position: relative;
   /*border-top: 1px solid rgb(170,170,170);*/
   /*border-bottom: 2px solid #444;*/
-  border-bottom: 2px solid rgba(0,0,0,0.05);
+  border-bottom: 2px solid #eee;
   
   /*box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;
   -webkit-box-shadow: rgba(255,255,255,0.15) 0px 1px 0px inset;*/
@@ -1867,6 +2004,10 @@ ul.tutorial_list li.later span {
 
 .thread:first-child {
   border-top: 2px solid rgba(0,0,0,0.05);
+}
+
+.thread:last-child {
+  border-bottom: 0px;
 }
 
 .thread.preloading {
@@ -2086,22 +2227,22 @@ ul.tutorial_list li.later span {
 }
 
 .thread[data-thread-type] .thread-preview {
-  border-left: 8px solid #1ABC9C;
+  border-left: 4px solid #1ABC9C;
 }
 
 .thread[data-thread-type="later"] .thread-preview {
-  border-left: 8px solid #F39C12;
+  border-left: 4px solid #F39C12;
   /*border-right: 4px solid rgb(250, 203, 71);*/
 }
 
 .thread[data-thread-type="delayed"] .thread-preview,
 .thread[data-thread-type="due"] .thread-preview {
-  border-left: 8px solid #E74C3C;
+  border-left: 4px solid #E74C3C;
   /*border-right: 4px solid rgb(169, 7, 30);*/
 }
 
 .thread[data-thread-type="undecided"] .thread-preview {
-  border-left: 8px solid #1ABC9C;
+  border-left: 4px solid #1ABC9C;
   /*border-right: 4px solid rgb(0, 203, 71);*/
 }
 
@@ -2143,14 +2284,14 @@ ul.tutorial_list li.later span {
 
 .thread-preview .card-middle .subject {
   /*color: #eee;*/
-  color: #b5b5b5;
+  color: #4a4a4a;
   display: inline-block;
   
   width: 85%;
 
   font-weight: normal;
 
-  font-size: 18px;
+  font-size: 14px;
   line-height: 22px;
 }
 
@@ -3267,11 +3408,15 @@ iframe#email_html body {
 .base_header_menu .more-dropdown {
   position: absolute;
   top: -260px;
-  right: 255px;
+  right: 345px;
 }
 
 .base_header_menu .more-dropdown li {
   line-height: 36px;
+}
+
+.base_header_menu .more-dropdown .dk_options.arrow-bottom:before {
+  right: 157px;
 }
 
 .common_edit_email .base_header_menu > .left,
@@ -3961,7 +4106,7 @@ iframe#email_html body {
     height: 20px;
     /*margin: 100px auto;*/
     position: absolute;
-    right: 0px;
+    left: 0px;
     top: 0px;
   
     /* Styles */
@@ -4331,11 +4476,6 @@ iframe#email_html body {
   border-top-right-radius: 6px;
   border-bottom-right-radius: 6px;
 }
-
-
-
-
-
 
 
 

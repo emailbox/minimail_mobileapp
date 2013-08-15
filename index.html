@@ -261,29 +261,39 @@
 								<li class=""><a data-action="stats"><i class="fui-heart-24"></i>&nbsp;&nbsp;&nbsp; Stats</a></li>
 								<li class=""><a data-action="settings"><i class="fui-menu-24"></i>&nbsp;&nbsp;&nbsp; Settings</a></li>
 								<li class=""><a data-action="compose"><i class="fui-new-16"></i>&nbsp;&nbsp;&nbsp; Write New Email</a></li>
-								<li class=""><a data-action="later"><i class="fui-calendar-24"></i>&nbsp;&nbsp;&nbsp; Due Later</a></li>
-								<li class=""><a data-action="now"><i class="fui-time-24"></i>&nbsp;&nbsp;&nbsp; All Due</a></li>
+								<li class=""><a data-action="waiting_on_other"><i class="fui-calendar-24" style="opacity:0;"></i>&nbsp;&nbsp;&nbsp; Waiting on <strong>Other</strong></a></li>
+								<li class=""><a data-action="waiting_on_me"><i class="fui-time-24" style="opacity:0;"></i>&nbsp;&nbsp;&nbsp; Waiting on <strong>Me</strong></a></li>
 							</ul>
 						</div>
 					</div>
 
-					<div class="btn-toolbar text-center">
+					<div class="btn-toolbar text-center" style="height:59px;overflow:hidden;">
 						<div class="btn-group threads_change">
-							<a data-action="inbox_normal" class="btn btn-info">
+							<a data-action="more" class="btn btn-disabled btn-reverse">
+								<i class="fui-menu-16"></i>
+
+							</a>
+							<a data-action="search" class="btn btn-disabled btn-reverse">
+								<i class="fui-video-16"></i>
+							</a>
+						</div>
+						<div class="btn-group threads_change">
+							<a data-action="inbox_normal" class="btn btn-info btn-reverse">
 								<i class="fui-mail-16"></i>
 							</a>
+							<!--
 							<a data-action="waiting_on_me" class="btn btn-info">
 								Me
 							</a>
 							<a data-action="waiting_on_other" class="btn btn-info">
 								Other
 							</a>
-							<a data-action="search" class="btn btn-info">
-								<i class="icon-search icon-white"></i>
+							-->
+							<a data-action="now" class="btn btn-info btn-reverse">
+								<i class="fui-time-16"></i>
 							</a>
-							<a data-action="more" class="btn btn-info">
-								<i class="fui-menu-16"></i>
-
+							<a data-action="later" class="btn btn-info btn-reverse">
+								<i class="fui-calendar-16"></i>
 							</a>
 
 						</div>
@@ -425,6 +435,7 @@
 
 	<script id="t_all" type="text/x-handlebars-template">
 
+
 			<div class="multi_select_options no_multi_select">
 
 				<div class="btn-toolbar">
@@ -500,6 +511,11 @@
 			{{topflag threadType}}
 		</div>
 		-->
+			
+		<div class="threads_total_count fade-in-looks-weird threads_type_{{threadType}}">
+			<span class="count"></span>
+		</div>
+
 
 		<div class="lot_options_flag flag_type_{{threadType}} slide-from-right_old">
 			
@@ -595,8 +611,34 @@
 							<a data-action="later" class="btn btn-warning toggle-due-later">
 								Later
 							</a>
-						</div>
 
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+		{{/if}}
+
+
+		{{#if showSubfilterChooserFooter}}
+			<div class="footer2 common_footer">
+
+				<div class="footer_holder clearfix">
+
+					<div class="btn-toolbar text-center">
+						<div class="btn-group threads_change">
+							<a data-action="label"  data-label="waiting_on_me" class="btn btn-info toggle-waiting">
+								&nbsp;&nbsp;Me&nbsp;&nbsp;
+							</a>
+							<a data-action="label" data-label="waiting_on_other" class="btn btn-info toggle-waiting">
+								Other
+							</a>
+							<a data-action="label" data-label="Starred" class="btn btn-info toggle-waiting">
+								Stars
+							</a>
+
+						</div>
 					</div>
 
 				</div>
@@ -717,7 +759,7 @@
 		</div>
 		-->
 		
-		<div class="inbox_zero fade-in-looks-weird">
+		<div class="inbox_zero fade-in">
 			<span class="words">No Upcoming</span>
 			<br />
 			<br />
@@ -839,7 +881,6 @@
 	
 
 	</script>
-
 
 	<script id="t_common_thread_view_loading" type="text/x-handlebars-template">
 
@@ -2151,6 +2192,24 @@
 
 	
 	<script id="t_search" type="text/x-handlebars-template">
+
+
+		<div class="quick_stats">
+
+			<h1>Today Summary</h1>
+
+			<div class="even_split_columns clearfix">
+				<div class="col-left">
+					<h1 class="received">42</h1>
+					<p>Received</p>
+				</div>
+				<div class="col-right">
+					<h1 class="sent">6</h1>
+					<p>Sent</p>
+				</div>
+			</div>
+
+		</div>
 
 		<div class="quick_searches scroller">
 

@@ -268,6 +268,30 @@ h6 {
       /*background-color: #5dade2;*/ }
     .btn.btn-info2:active, .btn.btn-info.active {
       background-color: #2383c4; }
+
+  /* reverse */
+  .btn.btn-info.btn-reverse {
+    background-color: white;
+    color: #3498db; 
+    border: 2px solid #3498db;
+  }
+    .btn.btn-info:hover, .btn.btn-info:focus {
+      /*background-color: #5dade2;*/ 
+    }
+    .btn.btn-info2:active, .btn.btn-info.btn-reverse.active {
+      background-color: #3498db; /*#2383c4; */
+      color: white;
+    }
+  .btn.btn-disabled.btn-reverse {
+    background-color: white;
+    color: #95a5a6; 
+    border: 2px solid #95a5a6;
+  }
+    .btn.btn-disabled.btn-reverse.active {
+      background-color: #95a5a6; /*#2383c4; */
+      color: white;
+    }
+
   .btn.btn-danger {
     background-color: #e74c3c; }
     .btn.btn-danger:hover, .btn.btn-danger:focus {

@@ -1088,10 +1088,11 @@ App.Collections.WaitingOnMe = Backbone.Collection.extend({
 			// only "new" (not Due too, they show up under Due only)
 			// - the displayed "count" would show New vs. Due totals, so easy to navigate and filter (IMO)
 			// alert('what');
-			searchData.conditions['app.AppPkgDevMinimail.wait_until'] = {
-				'$exists' : false
-			};
-			console.log(searchData);
+
+			// searchData.conditions['app.AppPkgDevMinimail.wait_until'] = {
+			// 	'$exists' : false
+			// };
+			// console.log(searchData);
 
 		} else if(options.filter == "due") {
 			// Only "due" ones
@@ -1301,44 +1302,104 @@ App.Collections.DelayedThreads = Backbone.Collection.extend({
 	},
 
 	fetchDefault: function(options){
+		// DUE or NOW emails
+
 		var that = this;
-		console.info('fetch delayed');
+		options = options || {};
+		options = $.extend({
+			options: {}
+		}, options);
 
-		// Return "undecided emails"
-		// - the "?" emails
+		// create cache prefix
+		options.options.collectionCachePrefix = App.Utils.MD5(JSON.stringify(options));
 
-		// - Must be "unread"
-		// - must be past "wait_until" time
+		// Get time
+		var now = new Date();
+		var now_sec = parseInt(now.getTime() / 1000, 10);
+
+		// Default search data
+		var searchData = {
+			model: 'Thread',
+			conditions: {},
+			fields: ['_id','app.AppPkgDevMinimail.wait_until','attributes.last_message_datetime_sec'], // id + seconds
+			limit: 20,
+			sort: {
+				'app.AppPkgDevMinimail.wait_until' : -1
+			}
+		};
 
 		var now = new Date();
 		var now_sec = parseInt(now.getTime() / 1000);
-
-		// Fetch from emailbox
-		return this.fetch({
-			options: options,
-			data: {
-				model: 'Thread',
-				conditions: {
-					'$and' : [
-						{
-							'app.AppPkgDevMinimail.wait_until' : {
-								'$lte' : now_sec
-							}
-						},
-						{
-							'app.AppPkgDevMinimail.done' : {
-								"$ne" : 1
-							}
-						}
-					]
+		searchData.conditions = {
+			'$and' : [
+				{
+					'app.AppPkgDevMinimail.wait_until' : {
+						'$lte' : now_sec
+					}
 				},
-				fields: ['_id','app.AppPkgDevMinimail.wait_until','attributes.last_message_datetime_sec'], // id + seconds
-				limit: 10,
-				sort: {
-					'app.AppPkgDevMinimail.wait_until' : -1
+				{
+					'app.AppPkgDevMinimail.done' : {
+						"$ne" : 1
+					}
 				}
-			}
+			]
+		};
+
+		// Are we searching for a specific label?
+		if(options.filter == "label") {
+			// Only "due" ones
+			// console.info('Due');
+			searchData.conditions['$and'] = [
+				{
+					'original.labels' : options.sub_filter
+				},
+				{
+					'app.AppPkgDevMinimail.wait_until' : {
+						'$lte' : now_sec
+					}
+				},
+				{
+					'app.AppPkgDevMinimail.done' : {
+						"$ne" : 1
+					}
+				}
+			];
+
+		}
+
+
+		// Run fetch (and handles caching)
+		return this.fetch({
+			options: options.options,
+			data: searchData
 		});
+
+		// // Fetch from emailbox
+		// return this.fetch({
+		// 	options: options,
+		// 	data: {
+		// 		model: 'Thread',
+		// 		conditions: {
+		// 			'$and' : [
+		// 				{
+		// 					'app.AppPkgDevMinimail.wait_until' : {
+		// 						'$lte' : now_sec
+		// 					}
+		// 				},
+		// 				{
+		// 					'app.AppPkgDevMinimail.done' : {
+		// 						"$ne" : 1
+		// 					}
+		// 				}
+		// 			]
+		// 		},
+		// 		fields: ['_id','app.AppPkgDevMinimail.wait_until','attributes.last_message_datetime_sec'], // id + seconds
+		// 		limit: 10,
+		// 		sort: {
+		// 			'app.AppPkgDevMinimail.wait_until' : -1
+		// 		}
+		// 	}
+		// });
 
 		// Return fetch call (not actual results)
 		// return models;
