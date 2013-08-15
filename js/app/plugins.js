@@ -696,7 +696,6 @@ App.Plugins.Minimail = {
 				}
 
 				// Still hovering over this guy? 
-
 				var this_x = $(this).attr('finger-position-x');
 				var this_y = $(this).attr('finger-position-y');
 
@@ -743,6 +742,19 @@ App.Plugins.Minimail = {
 				});
 
 				var x_ratio_diff = Math.abs(x_diff / $(this).parents('.thread').width());
+
+
+				// Get direction of travel
+				var this_last_x = parseInt($(this).attr('last-position-x'), 10);
+				if(coords.x != this_last_x){
+					$(this).attr('last-position-x',coords.x);
+					if(coords.x > this_last_x){
+						$(this).attr('last-x-dir',1);
+					} else {
+						$(this).attr('last-x-dir',-1);
+					}
+				}
+
 
 				// Figure out which color to show as the bg
 				if(x_diff > 0){
@@ -804,6 +816,9 @@ App.Plugins.Minimail = {
 			$(this).parents('.scroller').css('overflow-y','auto');
 
 			if($(this).hasClass('touch_start')){
+
+				// Remove 'tripped' ? (any reason not to?)
+				$(this).parents('.thread').removeClass('tripped');
 				
 				var coords = App.Utils.get_point_position(e);
 				if(!coords.y){
@@ -825,15 +840,38 @@ App.Plugins.Minimail = {
 				// 	return;
 				// }
 
+				// Get direction of travel
+				// - must match the direction we are intending to go (cannot have gone slightly backwards)
+				var direction_of_travel = parseInt($(this).attr('last-x-dir'), 10);
+
+
 				if(!$(this).hasClass('previewing') && x_ratio_diff > App.Credentials.thread_move_x_threshold && !$parent_controller.hasClass('multi-select-mode')){
 					// Moved far enough to take an action (delay/done)
 
 					var thread_id = $(this).parents('.thread').attr('data-id');
 
+					// Swiped fast enough?
+					var newTime = new Date().getTime();
+					var elapsed = newTime - parseInt($(that).attr('finger-time'), 10);
+					if(elapsed > 1500){
+						// Not fast enough, took more than 1 second
+
+						// // Revert back to original position
+						App.Plugins.Minimail.revert_box(this);
+						return;
+					}
+
+
+
 					// Which action to take?
 					if(x_diff > 0){
 						// Sliding right
 						// - mark as done
+						if(direction_of_travel != 1){
+							// Went backwards
+							App.Plugins.Minimail.revert_box(this);
+							return;
+						}
 
 						App.Utils.toast('Marked as done');
 
@@ -865,6 +903,12 @@ App.Plugins.Minimail = {
 					} else {
 						// Sliding left
 						// - bring up delay screen
+						
+						if(direction_of_travel != -1){
+							// Went backwards
+							App.Plugins.Minimail.revert_box(this);
+							return;
+						}
 
 						// App.Utils.toast('Delayed');
 
